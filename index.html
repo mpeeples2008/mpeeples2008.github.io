@@ -6,9 +6,13 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <title>Gone Viral!</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    /* Added fallback font stack for broader compatibility */
+    /* How to Play popup font size increased by +4px */
+    /* NOTE: 'Press Start 2P' removed and replaced with system font "Lucida Console", "Courier New", Courier, monospace.
+       Font sizes were increased in several places to better match the original visual scale.
+       If you want finer control, tweak specific font-size values near the selectors that set them. */
 
-        :root {
+                :root {
             --board-size: 720px
         }
 
@@ -17,7 +21,7 @@
             margin: 0;
             font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial;
             /* full-page background image, fixed centered - made to work in both narrow and wide configurations */
-            background: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab.png') center center / cover no-repeat fixed;
+            background: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)), url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab3.png') center center / cover no-repeat fixed;
             color: #0b3d91;
         }
 
@@ -68,7 +72,7 @@
             box-sizing: border-box;
             border: 4px solid rgba(0,0,0,0.25);
             box-shadow: 8px 8px 0 rgba(0,0,0,0.12), -6px -6px 0 rgba(255,255,255,0.02);
-            font-family: 'Press Start 2P', monospace;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
             color: #ffd166;
             text-shadow: 2px 2px 0 rgba(0,0,0,0.55);
         }
@@ -91,12 +95,12 @@
             }
 
             .small.scorebox .score-line {
-                font-size: 9px;
+                font-size: 15px;
                 color: #ffd166;
             }
 
             .small.scorebox .high-line {
-                font-size: 8px;
+                font-size: 16px;
                 opacity: 0.85;
                 color: #ffe9b0;
                 margin-top: 2px;
@@ -108,7 +112,7 @@
                 }
 
         .level-box {
-            font-size: 9px; /* or whatever size you want */
+            font-size: 15px; /* or whatever size you want */
             display: flex;
             gap: 12px;
             align-items: center;
@@ -121,7 +125,7 @@
             box-sizing: border-box;
             border: 4px solid rgba(0,0,0,0.25);
             box-shadow: 8px 8px 0 rgba(0,0,0,0.12), -6px -6px 0 rgba(255,255,255,0.02);
-            font-family: 'Press Start 2P', monospace;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
             color: #ffd166;
             text-shadow: 2px 2px 0 rgba(0,0,0,0.55);
         }
@@ -340,8 +344,8 @@
             box-shadow: 6px 6px 0 rgba(0,0,0,0.12);
             min-width: 85px;
             color: #ffd166;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 11px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 15px;
             text-shadow: 2px 2px 0 rgba(0,0,0,0.55);
         }
 
@@ -354,7 +358,7 @@
 
         /* Make HUD buttons match retro badge look */
         .hud button {
-            font-family: 'Press Start 2P', monospace;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
             background: linear-gradient(180deg,#ffffff,#e6e3ff);
             color: #0b3d91;
             border: 4px solid rgba(0,0,0,0.18);
@@ -362,7 +366,7 @@
             border-radius: 8px;
             box-shadow: 4px 4px 0 rgba(0,0,0,0.12);
             cursor: pointer;
-            font-size: 11px;
+            font-size: 15px;
         }
 
         /* small screens tweak */
@@ -420,14 +424,14 @@
             top: 12%;
             transform: translateX(-50%) translateY(-6px) scale(0.85);
             z-index: 40000;
-            font-family: 'Press Start 2P', monospace;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
             background: linear-gradient(180deg, #0b3d91, #08306a); /* default deep-blue base for retro look */
             color: #ffd166; /* warm pixel color for text */
             padding: 10px 18px;
             border-radius: 8px;
             border: 4px solid rgba(0,0,0,0.45); /* thick pixel-like border */
             font-weight: 400;
-            font-size: 14px;
+            font-size: 16px;
             display: flex;
             gap: 10px;
             align-items: center;
@@ -520,7 +524,7 @@
         /* small responsive adjustment so badges aren't huge on mobile */
         @media (max-width: 420px) {
             .chain-badge {
-                font-size: 11px;
+                font-size: 15px;
                 padding: 8px 12px;
             }
 
@@ -550,8 +554,8 @@
             background: linear-gradient(180deg,#0b3d91,#08306a);
             color: #ffd166;
             box-shadow: 8px 8px 0 rgba(0,0,0,0.25);
-            font-family: 'Press Start 2P', monospace;
-            font-size: 20px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 22px;
             text-align: center;
             line-height: 1;
             pointer-events: none; /* non-interactive */
@@ -577,8 +581,8 @@
             background: linear-gradient(180deg,#8a1f14,#6a0f0f);
             color: #ffd166;
             box-shadow: 8px 8px 0 rgba(0,0,0,0.3);
-            font-family: 'Press Start 2P', monospace;
-            font-size: 20px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 22px;
             text-align: center;
             pointer-events: none;
             opacity: 0;
@@ -587,14 +591,14 @@
 
             /* Inner title and subtitle */
             .game-over-popup .go-title {
-                font-size: 24px;
+                font-size: 26px;
                 text-transform: uppercase;
                 text-shadow: 3px 3px 0 rgba(0,0,0,0.6);
                 letter-spacing: 0.04em;
             }
 
             .game-over-popup .go-sub {
-                font-size: 14px;
+                font-size: 16px;
                 color: #ffe9b0;
                 text-shadow: 2px 2px 0 rgba(0,0,0,0.6);
             }
@@ -638,7 +642,7 @@
 
         /* Inner title larger and tightly tracked */
         .level-complete .lc-title {
-            font-size: 20px;
+            font-size: 22px;
             letter-spacing: 0.02em;
             text-transform: uppercase;
             text-shadow: 3px 3px 0 rgba(0,0,0,0.6);
@@ -705,8 +709,8 @@
             bottom: 12px;
             z-index: 60000;
             padding: 8px 10px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 10px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 16px;
             border-radius: 8px;
             border: 3px solid rgba(0,0,0,0.18);
             background: linear-gradient(180deg,#ffffff,#e6e3ff);
@@ -769,7 +773,7 @@
 
         .meter-count {
             font-family: 'Press Start 2P',monospace;
-            font-size: 10px;
+            font-size: 16px;
             color: #ffd166;
             text-shadow: 2px 2px 0 rgba(0,0,0,0.55)
         }
@@ -805,12 +809,12 @@
             #highScoreHud strong {
                 font-weight: 700;
                 margin-right: 6px;
-                font-size: 11px;
+                font-size: 15px;
             }
 
         #highScoreValue {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 11px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 15px;
         }
 
         /* Assistant: low-click pulsing for clicks meter */
@@ -841,7 +845,52 @@
                 /* optional: slightly brighten segments */
                 filter: drop-shadow(0 2px 2px rgba(0,0,0,0.12));
             }
-    </style>
+    
+/* --- Assistant bubble: recommended combined approach --- */
+#assist-bubble, .assist-bubble {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: env(safe-area-inset-bottom, 12px);
+  transform-origin: bottom center;
+  max-width: min(92vw, 420px);
+  max-height: 60vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border-radius: 12px;
+  z-index: 9999;
+  /* a subtle shadow to lift it above game UI */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+  background: var(--bubble-bg, rgba(255,255,255,0.98));
+}
+
+/* Small screen tweaks */
+@media (max-width: 360px) {
+  #assist-bubble, .assist-bubble {
+    max-width: 94vw;
+    padding: 8px 10px;
+    max-height: 66vh;
+  }
+}
+
+/* Optional class to limit height and show internal scroll */
+#assist-bubble.scrollable, .assist-bubble.scrollable {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Visual hint for read-more trigger, if used */
+.read-more-trigger {
+  display: inline-block;
+  margin-top: 8px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-size: 0.95em;
+}
+/* --- end assistant bubble CSS --- */
+
+</style>
 
     <style>
         /* Control trio: compact square buttons in HUD */
@@ -857,8 +906,8 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                font-family: 'Press Start 2P', monospace;
-                font-size: 12px;
+                font-family: "Lucida Console", "Courier New", Courier, monospace;
+                font-size: 16px;
                 border-radius: 6px;
                 border: 4px solid rgba(0,0,0,0.18);
                 background: linear-gradient(180deg,#ffffff,#e6e3ff);
@@ -872,7 +921,7 @@
             .control-trio .ctrl {
                 width: 40px;
                 height: 36px;
-                font-size: 10px;
+                font-size: 16px;
             }
         }
     </style>
@@ -883,7 +932,7 @@
             width: 100px;
             height: 40px;
             font-family: 'Press Start 2P',monospace;
-            font-size: 12px;
+            font-size: 16px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -898,7 +947,7 @@
             .small-ctrl {
                 width: 40px;
                 height: 36px;
-                font-size: 10px;
+                font-size: 16px;
             }
         }
     </style>
@@ -921,8 +970,8 @@
             background: linear-gradient(180deg,#0b3d91,#08306a);
             color: #ffd166;
             box-shadow: 8px 8px 0 rgba(0,0,0,0.25);
-            font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 16px;
             text-align: left;
             pointer-events: auto;
             opacity: 0;
@@ -948,7 +997,7 @@
 
             .audio-popup label {
                 width: 130px;
-                font-size: 11px;
+                font-size: 15px;
                 color: #ffe9b0;
             }
 
@@ -967,7 +1016,7 @@
             .audio-popup .btn {
                 border-radius: 8px;
                 padding: 8px 12px;
-                font-size: 11px;
+                font-size: 15px;
                 border: 4px solid rgba(0,0,0,0.18);
                 background: linear-gradient(180deg,#ffffff,#e6e3ff);
                 color: #0b3d91;
@@ -1466,15 +1515,15 @@
         }
 
         .ai-intro-text {
-            font-size: 10px;
+            font-size: 16px;
             line-height: 1.5;
             margin-bottom: 20px;
             text-shadow: 2px 2px 0 rgba(0,0,0,0.55);
         }
 
         .ai-start-btn {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 16px;
             padding: 14px 28px;
             background: linear-gradient(180deg,#ffffff,#e6e3ff);
             color: #0b3d91;
@@ -1513,7 +1562,8 @@
             color: #ffd166;
             padding: 10px 14px;
             border-radius: 10px;
-            font-size: 14px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 16px;
             line-height: 1.35;
             box-shadow: 4px 4px 0 rgba(0,0,0,0.45);
             text-align: left;
@@ -1532,8 +1582,8 @@
 
         /* Match AI assistant in-game message style for intro Start Mission text */
         .ai-intro-text {
-            font-family: 'Press Start 2P', monospace; /* same font as in-game AI */
-            font-size: 11px; /* adjust to match in-game scale */
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            font-size: 15px; /* adjust to match in-game scale */
             line-height: 1.5;
             color: #ffd166; /* same yellow tone */
             text-shadow: 2px 2px 0 #000; /* slight retro pixel shadow */
@@ -3526,12 +3576,12 @@
                         <path fill="currentColor" d="M2 3C2 3.5523 1.5523 4 1 4C0.44772 4 0 3.5523 0 3C0 1.44772 1.4477 0 3 0C4.5523 0 6 1.44772 6 3C6 4.285 5.5004 4.8678 4.4472 5.3944C4.0004 5.6178 4 5.6183 4 6C4 6.5523 3.5523 7 3 7C2.4477 7 2 6.5523 2 6C2 4.715 2.4996 4.1322 3.5528 3.6056C3.9996 3.3822 4 3.3817 4 3C4 2.55228 3.4477 2 3 2C2.5523 2 2 2.55228 2 3zM3 10C2.4477 10 2 9.5523 2 9C2 8.4477 2.4477 8 3 8C3.5523 8 4 8.4477 4 9C4 9.5523 3.5523 10 3 10z" />
                     </svg>
                 </div>
-                <div style="font-size:13px;color:#ffd166;">How to Play</div>
+                <div style="font-size:18px;color:#ffd166;">How to Play</div>
             </div>
             <button id="helpClose" class="ctrl small-ctrl" aria-label="Close help">❌</button>
         </div>
 
-        <ul style="margin:6px 0 0 6px; color:#ffe9b0; font-size:10px; line-height:1.4;">
+        <ul style="margin:6px 0 0 6px; color:#ffe9b0; font-size:14px; line-height:1.4;">
             <li>You start with 10 nano-bots.</li>
             <li>Use them by clicking on pathogens to make them grow and burst.</li>
             <li>Bursting pathogens can create cascades and earn you additional nano-bots.</li>
@@ -3646,7 +3696,7 @@
             background: linear-gradient(180deg,#111,#222);
             color: #ffd166;
             font-family: monospace, 'Press Start 2P', sans-serif;
-            font-size: 14px;
+            font-size: 16px;
             z-index: 100000;
             pointer-events: none;
             opacity: 0;
@@ -3668,7 +3718,7 @@
         @media (max-width:420px) {
             .assist-bubble {
                 max-width: 86vw;
-                font-size: 11px;
+                font-size: 15px;
                 bottom: 110px;
             }
         }
@@ -4456,5 +4506,65 @@
             });
         })();
     </script>
+<script>
+
+/* --- Assistant bubble visibility helpers --- */
+(function() {
+  function ensureBubbleVisible(selector, margin = 12) {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    // Use visualViewport for more accurate mobile viewport height if available
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const rect = el.getBoundingClientRect();
+    // If bottom is below viewport (i.e., hidden)
+    if (rect.bottom > vh - margin) {
+      const dy = rect.bottom - (vh - margin);
+      // If document can be scrolled, prefer scrolling the document
+      if (document.scrollingElement && document.scrollingElement.scrollHeight > window.innerHeight) {
+        window.scrollBy({ top: dy, behavior: 'smooth' });
+      } else {
+        // Otherwise nudge the element upward temporarily
+        const currentBottom = parseFloat(getComputedStyle(el).bottom) || 12;
+        el.style.bottom = (currentBottom + dy + 8) + 'px';
+        // revert after short delay so layout returns to normal
+        setTimeout(() => { el.style.bottom = ''; }, 1200);
+      }
+    }
+  }
+
+  // Watch for content changes in the bubble and ensure visibility when it updates
+  function observeBubble(selector) {
+    const target = document.querySelector(selector);
+    if (!target) return;
+    const obs = new MutationObserver(() => {
+      // small delay to let layout settle (images/fonts)
+      setTimeout(() => ensureBubbleVisible(selector, 14), 50);
+    });
+    obs.observe(target, { childList: true, subtree: true, characterData: true });
+    // Also ensure on window resize / visualViewport resize (keyboard opens)
+    window.addEventListener('resize', () => ensureBubbleVisible(selector, 14));
+    if (window.visualViewport) {
+      visualViewport.addEventListener('resize', () => ensureBubbleVisible(selector, 14));
+    }
+  }
+
+  // Initialize when DOM ready
+  function init() {
+    // common IDs/classes used by your game (fall back to a generic selector if unknown)
+    const selectors = ['#assist-bubble', '.assist-bubble', '.ai-intro-content', '.ai-intro-text'];
+    selectors.forEach(s => observeBubble(s));
+    // Expose helper for manual calls
+    window.ensureAssistBubbleVisible = ensureBubbleVisible;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+/* --- end assistant helpers --- */
+
+</script>
 </body>
 </html>
