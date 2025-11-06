@@ -580,7 +580,10 @@
 }
 
 /* title */
-.level-complete .lc-title {
+.level-complete .lc-title
+
+
+ {
   font-weight: 700;
   font-family: 'Press Start 2P', monospace;
   font-size: 20px;
@@ -610,7 +613,10 @@
 
 /* tweak for small screens so it doesn't look huge */
 @media (max-width: 420px) {
-  .level-complete .lc-title { font-size: 18px; }
+  .level-complete .lc-title
+
+
+ { font-size: 18px; }
   .level-complete .lc-image img { max-width: 90vw; }
 }
 
@@ -693,7 +699,10 @@
         }
 
         /* Inner title larger and tightly tracked */
-        .level-complete .lc-title {
+        .level-complete .lc-title
+
+
+ {
             font-size: 20px;
             letter-spacing: 0.02em;
             text-transform: uppercase;
@@ -1692,6 +1701,32 @@
     </style>
     <!-- END START-MISSION modal CSS -->
 
+
+<style>
+.level-complete .lc-hint {
+  margin-top: 8px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: 'Press Start 2P', monospace;
+  opacity: 0.9;
+  text-align: center;
+  pointer-events: none;
+}
+</style>
+
+
+<style>
+/* Ensure AI assistant elements sit above all popups without altering layout */
+#assist-badge,
+.ai-assistant-bubble,
+.ai-intro-overlay,
+.assistant-bubble,
+.ai-face-slot,
+.ai-intro-content {
+  z-index: 97000 !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -2121,20 +2156,14 @@ const levelCompleteImages = [
   'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster19.png'
 ];
 
+
 function showLevelComplete(opts = {}) {
-    const title = opts.title || 'LEVEL COMPLETE';
-    const duration = (typeof opts.duration === 'number') ? opts.duration : 0;
+  const title = opts.title || 'LEVEL COMPLETE';
+  const imgSrc = opts.imageUrl || levelCompleteImages[Math.floor(Math.random() * levelCompleteImages.length)] || '';
 
-    // pick a random badge image
-    const imgSrc = levelCompleteImages[
-      Math.floor(Math.random() * levelCompleteImages.length)
-    ];
-
-    // --- Option A: Remove previous popup to prevent duplicates ---
-    const prior = document.querySelector('.level-complete');
-    if (prior) {
-      try { prior.remove(); } catch (e) { /* ignore */ }
-    }
+  // remove any previous popup
+  const prior = document.querySelector('.level-complete');
+  if (prior) try { prior.remove(); } catch (e) {}
 
   try {
     const el = document.createElement('div');
@@ -2143,25 +2172,42 @@ function showLevelComplete(opts = {}) {
     el.setAttribute('aria-live', 'polite');
     el.innerHTML = `
       <div class="lc-title">${title}</div>
-      <div class="lc-image">
-        <img src="${imgSrc}" alt="Level badge" />
-      </div>
+      <div class="lc-image"><img src="${imgSrc}" alt="" /></div>
+      <div class="lc-hint">Click to continue</div>
     `;
     document.body.appendChild(el);
+
+    // show popup
     void el.offsetWidth;
     el.classList.add('show');
-    setTimeout(() => {
+    try { if (window.Assistant) Assistant.emit && Assistant.emit('levelComplete'); } catch (e) {}
+
+    // make persistent until user click or keypress
+    el.style.pointerEvents = 'auto';
+    el.tabIndex = 0;
+    el.style.cursor = 'pointer';
+
+    const dismiss = () => {
       el.classList.remove('show');
       el.classList.add('hide');
-      el.addEventListener('animationend', function onEnd() {
-        el.removeEventListener('animationend', onEnd);
-        el.remove();
-      });
-    }, duration);
+      el.addEventListener('animationend', () => { try { el.remove(); } catch (e) {} }, { once: true });
+      document.removeEventListener('keydown', keyHandler);
+    };
+
+    const keyHandler = (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+        dismiss();
+      }
+    };
+
+    el.addEventListener('click', dismiss, { once: true });
+    document.addEventListener('keydown', keyHandler);
+
   } catch (e) {
     console.warn('showLevelComplete error', e);
   }
 }
+
 
 // small helpers to avoid injecting raw HTML unsafely (useful if title or url come from outside)
 function escapeHtml(str) {
@@ -2432,49 +2478,7 @@ function escapeHtmlAttr(str) {
 
 
             // ---------- Level complete popup helper ----------
-            function showLevelComplete(opts = {}) {
-                // opts.title default
-                const title = opts.title || 'LEVEL COMPLETE';
-                // pick a random badge image
-const imgSrc = levelCompleteImages[
-  Math.floor(Math.random() * levelCompleteImages.length)
-];
-
-                const duration = (typeof opts.duration === 'number') ? opts.duration : 4500; // ms visible before fade out
-                try {
-                    // create element
-                    const el = document.createElement('div');
-                    el.className = 'level-complete';
-                    el.setAttribute('role', 'status');
-                    el.setAttribute('aria-live', 'polite');
-                    el.innerHTML = `
-                                                                                  <div class="lc-title">${title}</div>
-                                                                                  <div class="lc-image"><img src="${imgSrc}" alt="Level badge" /></div>
-                                                                                `;
-                    document.body.appendChild(el);
-
-                    // force reflow then show
-                    void el.offsetWidth;
-                    el.classList.add('show');
-                    try { if (window.Assistant) Assistant.emit && Assistant.emit('levelComplete'); } catch (e) { }
-
-
-                    // schedule hide
-                    setTimeout(() => {
-                        try {
-                            el.classList.remove('show');
-                            el.classList.add('hide');
-                            el.addEventListener('animationend', function onEnd() {
-                                el.removeEventListener('animationend', onEnd);
-                                try { el.remove(); } catch (e) { }
-                            });
-                        } catch (e) { }
-                    }, duration);
-
-                } catch (e) {
-                    console.warn('showLevelComplete error', e);
-                }
-            }
+            
 
             // ---------- Game Over popup helper ----------
 
