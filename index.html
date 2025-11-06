@@ -551,34 +551,69 @@
             }
         }
 
-        /* ---------- Level Complete popup (badge-like) ---------- */
-        .level-complete {
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%) scale(0.9);
-            z-index: 95000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-            width: min(720px, 86vw);
-            max-width: 92%;
-            padding: 20px 28px;
-            border-radius: 14px;
-            border: 6px solid rgba(0, 0, 0, 0.45);
-            background: linear-gradient(180deg, #0b3d91, #08306a);
-            color: #ffd166;
-            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.25);
-            font-family: 'Press Start 2P', monospace;
-            font-size: 20px;
-            text-align: center;
-            line-height: 1;
-            pointer-events: none;
-            /* non-interactive */
-            opacity: 0;
-            will-change: transform, opacity;
-        }
+       /* container base (if you already have .level-complete, don't duplicate; merge the .visible transition bits) */
+.level-complete {
+  position: fixed;              /* likely you already use fixed/absolute; keep as needed */
+  left: 50%;
+  top: 45%;                     /* tweak vertical position to taste */
+  transform: translate(-50%, -50%) scale 0.9;
+  max-height: 85vh;
+  overvlow: hidden;
+  z-index: 9999;
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.78);
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .28s ease, transform .28s ease;
+  max-width: calc(100% - 40px);
+}
+
+/* visible state */
+.level-complete.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* title */
+.level-complete .lc-title {
+  font-weight: 700;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* image container placed AFTER title (user requested) */
+.level-complete .lc-image {
+  margin-top: 10px;
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+/* the image itself: constrain to max-width: 360px but be responsive */
+.level-complete .lc-image img {
+  display: inline-block;
+  width: 100%;
+  max-width: 360px;      /* your requested maximum width */
+  height: auto;
+  max-height: 70vh;      /* keep very tall images in viewport */
+  object-fit: contain;   /* preserve aspect, center contents if needed */
+  border-radius: 6px;    /* optional */
+  user-select: none;
+  pointer-events: none;
+}
+
+/* tweak for small screens so it doesn't look huge */
+@media (max-width: 420px) {
+  .level-complete .lc-title { font-size: 18px; }
+  .level-complete .lc-image img { max-width: 90vw; }
+}
+
 
         /* ---------- Game Over popup ---------- */
         .game-over-popup {
@@ -1045,7 +1080,7 @@
             position: fixed;
             right: 12px;
             bottom: 12px;
-            z-index: 70000;
+            z-index: 96000;
             /* above most HUD elements but below popups that use 95000+ */
             width: 44px;
             /* size you can adjust */
@@ -2062,6 +2097,80 @@
     </div>
 
     <script>
+
+        // Put this near top of your script (edit paths to your images)
+const levelCompleteImages = [
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster01.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster02.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster03.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster04.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster05.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster06.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster07.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster08.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster09.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster10.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster11.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster12.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster13.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster14.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster15.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster16.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster17.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster18.png',
+  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster19.png'
+];
+
+function showLevelComplete(opts = {}) {
+    const title = opts.title || 'LEVEL COMPLETE';
+    const duration = (typeof opts.duration === 'number') ? opts.duration : 0;
+
+    // pick a random badge image
+    const imgSrc = levelCompleteImages[
+      Math.floor(Math.random() * levelCompleteImages.length)
+    ];
+
+    // --- Option A: Remove previous popup to prevent duplicates ---
+    const prior = document.querySelector('.level-complete');
+    if (prior) {
+      try { prior.remove(); } catch (e) { /* ignore */ }
+    }
+
+  try {
+    const el = document.createElement('div');
+    el.className = 'level-complete';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.innerHTML = `
+      <div class="lc-title">${title}</div>
+      <div class="lc-image">
+        <img src="${imgSrc}" alt="Level badge" />
+      </div>
+    `;
+    document.body.appendChild(el);
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(() => {
+      el.classList.remove('show');
+      el.classList.add('hide');
+      el.addEventListener('animationend', function onEnd() {
+        el.removeEventListener('animationend', onEnd);
+        el.remove();
+      });
+    }, duration);
+  } catch (e) {
+    console.warn('showLevelComplete error', e);
+  }
+}
+
+// small helpers to avoid injecting raw HTML unsafely (useful if title or url come from outside)
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[s]));
+}
+function escapeHtmlAttr(str) {
+  return String(str).replace(/"/g, '&quot;').replace(/&/g, '&amp;');
+}
+
         // Difficulty tuning: base density and growth per screen (fraction 0..1)
         const BASE_DENSITY = 0.60;       // fraction of cells initially filled (0..1)
         const DENSITY_GROWTH = 0.0;   // fraction added each screenPassed;   // fraction added each screenPassed
@@ -2326,7 +2435,12 @@
             function showLevelComplete(opts = {}) {
                 // opts.title default
                 const title = opts.title || 'LEVEL COMPLETE';
-                const duration = (typeof opts.duration === 'number') ? opts.duration : 1400; // ms visible before fade out
+                // pick a random badge image
+const imgSrc = levelCompleteImages[
+  Math.floor(Math.random() * levelCompleteImages.length)
+];
+
+                const duration = (typeof opts.duration === 'number') ? opts.duration : 4500; // ms visible before fade out
                 try {
                     // create element
                     const el = document.createElement('div');
@@ -2334,8 +2448,8 @@
                     el.setAttribute('role', 'status');
                     el.setAttribute('aria-live', 'polite');
                     el.innerHTML = `
-                                                                                  <div class="lc-icon" aria-hidden="true">${getRetroIconSVG('pixel-star')}</div>
                                                                                   <div class="lc-title">${title}</div>
+                                                                                  <div class="lc-image"><img src="${imgSrc}" alt="Level badge" /></div>
                                                                                 `;
                     document.body.appendChild(el);
 
@@ -2585,7 +2699,7 @@
                     screensPassed += 1;
                     updateHUD();
 
-                    try { showLevelComplete({ title: 'LEVEL COMPLETE', duration: 1400 }); } catch (e) { }
+                    try { showLevelComplete({ title: 'LEVEL COMPLETE', duration: 4500 }); } catch (e) { }
 
                     // wait a moment for the popup/animation, then new board
                     setTimeout(() => randomizeBoard(true), 420);
