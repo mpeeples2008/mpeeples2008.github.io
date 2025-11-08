@@ -1772,6 +1772,27 @@ document.addEventListener('DOMContentLoaded', function () {
 </head>
 
 <body>
+<!-- Ensure #popupMute exists immediately to avoid early runtime null errors -->
+<script>
+(function(){
+  try {
+    if (!document.getElementById('popupMute')) {
+      var btn = document.createElement('button');
+      btn.id = 'popupMute';
+      btn.type = 'button';
+      btn.style.display = 'none';
+      btn.setAttribute('aria-hidden','true');
+      document.addEventListener('DOMContentLoaded', function(){ // ensure body exists
+        try { document.body.appendChild(btn); } catch(e){ /* best-effort */ }
+      });
+      // If body already exists, append now
+      try { if (document.body) document.body.appendChild(btn); } catch(e){}
+      console.info('[GoneViral] immediate #popupMute created to avoid null errors.');
+    }
+  } catch(e){ console.warn('[GoneViral] ensure popupMute failed', e); }
+})();
+</script>
+
     <div class="wrap">
         <div class="title-sprite">
             <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Gone_Viral_long.png"
