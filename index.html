@@ -555,7 +555,7 @@
 .level-complete {
   position: fixed;              /* likely you already use fixed/absolute; keep as needed */
   left: 50%;
-  top: 50%;                     /* tweak vertical position to taste */
+  top: 40%;                     /* tweak vertical position to taste */
   transform: translate(-50%, -50%) scale 0.9;
   max-height: 85vh;
   overvlow: hidden;
@@ -602,7 +602,7 @@
 .level-complete .lc-image img {
   display: inline-block;
   width: 100%;
-  max-width: 360px;      /* your requested maximum width */
+  max-width: 720px;      /* your requested maximum width */
   height: auto;
   max-height: 70vh;      /* keep very tall images in viewport */
   object-fit: contain;   /* preserve aspect, center contents if needed */
@@ -617,7 +617,7 @@
 
 
  { font-size: 18px; }
-  .level-complete .lc-image img { max-width: 90vw; }
+  .level-complete .lc-image img { max-width: 90vw; }F
 }
 
 
@@ -1074,9 +1074,9 @@
             position: absolute !important;
             right: 12px !important;
             bottom: 12px !important;
-            width: 52px !important;
+            width: 65px !important;
             /* adjust size as desired */
-            height: 52px !important;
+            height: 65px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -1092,7 +1092,7 @@
         #assist-bubble {
             position: absolute !important;
             right: 12px !important;
-            bottom: calc(12px + 56px) !important;
+            bottom: calc(12px + 65px) !important;
             /* badge bottom + badge height (52) + 4px gap */
             max-width: 72% !important;
             min-width: 160px !important;
@@ -1976,7 +1976,30 @@ const levelCompleteImages = [
   'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster16.png',
   'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster17.png',
   'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster18.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster19.png'
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster19.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster20.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster21.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster22.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster23.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster24.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster25.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster26.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster27.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster28.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster29.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster30.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster31.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster32.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster33.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster34.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster35.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster36.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster37.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster38.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster39.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster40.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster41.png',
+    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster42.png'
 ];
 
 
@@ -2846,13 +2869,13 @@ function escapeHtmlAttr(str) {
                     return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#ffd166"/><rect x="7" y="2" width="2" height="2" fill="#ffb84d"/><rect x="5" y="2" width="6" height="2" fill="#ffd166"/><rect x="4" y="4" width="8" height="2" fill="#ffb84d"/><rect x="3" y="6" width="10" height="2" fill="#ffd166"/><rect x="5" y="8" width="6" height="2" fill="#ffb84d"/></svg>`;
                 }
                 if (name === 'spark') {
-                    return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#ffe07a"/><rect x="6" y="2" width="4" height="1" fill="#ffd166"/><rect x="4" y="3" width="8" height="1" fill="#ffd166"/><rect x="7" y="4" width="2" height="2" fill="#ffd166"/><rect x="2" y="6" width="12" height="1" fill="#ffb84d"/></svg>`;
+                    return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#ffe07a"/><rect x="6" y="2" width="4" height="1" fill="#ffd166"/><rect x="4" y="3" width="8" height="1" fill="#ffd166"/><rect x="7" y="4" width="2" height="2" fill="#ffd166"/><rect x="2" y="6" width="12" height="1" fill="#ffb84d"/><rect x="7" y="10" width="2" height="2" fill="#ffe07a"/><rect x="7" y="0" width="2" height="2" fill="#ffe07a"/><rect x="6" y="8" width="4" height="1" fill="#ffd166"/><rect x="4" y="7" width="8" height="1" fill="#ffd166"/><rect x="7" y="9" width="2" height="2" fill="#ffd166"/><rect x="2" y="6" width="12" height="1" fill="#ffb84d"/><rect x="4" y="5" width="8" height="1" fill="#ffd166"/><rect x="5" y="4" width="6" height="1" fill="#ffb84d"/><rect x="4" y="9" width="8" height="1" fill="#ffb84d"/></svg>`;
                 }
                 if (name === 'starburst') {
                     return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#fff2a6"/><rect x="6" y="2" width="4" height="1" fill="#ffd166"/><rect x="4" y="3" width="8" height="1" fill="#ffd166"/><rect x="7" y="4" width="2" height="2" fill="#ffd166"/><rect x="0" y="5" width="16" height="1" fill="#ffb84d"/><rect x="5" y="6" width="6" height="1" fill="#ffd166"/></svg>`;
                 }
                 if (name === 'explosion') {
-                    return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#ffdf6d"/><rect x="5" y="2" width="6" height="1" fill="#ffd166"/><rect x="3" y="3" width="10" height="1" fill="#ffb84d"/><rect x="2" y="4" width="12" height="1" fill="#ff6f3f"/><rect x="4" y="6" width="8" height="1" fill="#ffb84d"/><rect x="6" y="7" width="4" height="1" fill="#ffd166"/></svg>`;
+                    return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#ffdf6d"/><rect x="5" y="2" width="6" height="1" fill="#ffd166"/><rect x="3" y="3" width="10" height="1" fill="#ffb84d"/><rect x="2" y="4" width="12" height="1" fill="#ff6f3f"/><rect x="4" y="5" width="8" height="2" fill="#ffb84d"/><rect x="6" y="7" width="4" height="1" fill="#ffd166"/></svg>`;
                 }
                 return '';
             }
@@ -4040,7 +4063,7 @@ function escapeHtmlAttr(str) {
         <div class="ai-intro-content">
             <div class="ai-intro-logo" style="margin-bottom:10px;">
                 <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/logo_sm.png"
-                     alt="Gone Viral Logo" style="width:300px;max-width:90vw;height:auto;display:block;margin:0 auto;">
+                     alt="Gone Viral Logo" style="width:400px;max-width:70vw;height:auto;display:block;margin:0 auto;">
             </div>
             <div class="ai-face-slot">
                 <!-- reuse the same assistant badge visual -->
@@ -4056,7 +4079,7 @@ function escapeHtmlAttr(str) {
             <button id="aiStartBtn" class="ai-start-btn">START</button>
             <div class="ai-intro-logo" style="margin-top:10px;">
                 <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Pathodyne.png"
-                     alt="Pathodyne Industries" style="width:300px;max-width:80vw;height:auto;display:block;margin:0 auto;">
+                     alt="Pathodyne Industries" style="width:400px;max-width:70vw;height:auto;display:block;margin:0 auto;">
                 </div>
             </div>
         </div>
@@ -5490,6 +5513,117 @@ document.addEventListener('DOMContentLoaded', function () {
   } catch (err) { console.warn('[GoneViral] template guard failed', err); }
 });
 </script>
+
+<!-- Added: WebAudio GainNode + iOS-friendly audio-volume patch (inserted by assistant) -->
+<script>
+(function(){
+  // Graceful installer for GainNode-based volume control.
+  // It waits for a real user gesture (touch/click) before creating/resuming AudioContext,
+  // then tries to attach a GainNode to the page's music audio element and wire the slider.
+  const slider = document.getElementById('musicVol');
+  if (!slider) return;
+  const sliderValEl = document.getElementById('musicVolVal');
+
+  function isProbablyIOS() {
+    return /iP(hone|od|ad)/.test(navigator.platform) ||
+      (navigator.userAgent.includes('Mac') && 'ontouchend' in document);
+  }
+
+  function attachGain(audioEl){
+    try {
+      if (!audioEl) return null;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!window._gv_audioCtx) {
+        window._gv_audioCtx = new AudioCtx();
+      }
+      const ctx = window._gv_audioCtx;
+      // Resume if suspended (common on mobile)
+      if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+        ctx.resume().catch(()=>{ /* ignore */ });
+      }
+      // create source only once per element
+      if (!audioEl._gv_webaudio_source) {
+        try {
+          audioEl._gv_webaudio_source = ctx.createMediaElementSource(audioEl);
+        } catch (e) {
+          console.warn('[GoneViral] createMediaElementSource failed', e);
+          return null;
+        }
+      }
+      // create or reuse gain node
+      if (!window._gv_gainNode) {
+        window._gv_gainNode = ctx.createGain();
+        window._gv_gainNode.gain.value = Number(window.musicVolume || slider.value || 0.2);
+        try {
+          audioEl._gv_webaudio_source.connect(window._gv_gainNode);
+          window._gv_gainNode.connect(ctx.destination);
+        } catch (e) {
+          console.warn('[GoneViral] WebAudio connect failed', e);
+        }
+      } else {
+        try { audioEl._gv_webaudio_source.connect(window._gv_gainNode); } catch(e){ /* ignore duplicate connects */ }
+      }
+      return window._gv_gainNode;
+    } catch (e) {
+      console.warn('[GoneViral] attachGain error', e);
+      return null;
+    }
+  }
+
+  // Primary initializer - run once on first user gesture
+  function initAudioOnUserGesture(){
+    try {
+      const audioEl = (typeof musicAudio !== 'undefined' && musicAudio) ? musicAudio : (window.musicAudio || document.querySelector('audio'));
+      const gain = attachGain(audioEl);
+
+      if (gain) {
+        // wire slider to GainNode
+        slider.addEventListener('input', function(e){
+          const v = Number(e.target.value);
+          try { gain.gain.value = v; } catch (err) { console.warn(err); }
+          window.musicVolume = v;
+          if (sliderValEl) sliderValEl.textContent = Math.round(v*100) + '%';
+        });
+        // set initial display/value
+        try { gain.gain.value = Number(slider.value); } catch(e){}
+        if (sliderValEl) sliderValEl.textContent = Math.round(Number(slider.value)*100) + '%';
+        console.info('[GoneViral] GainNode attached for volume control.');
+      } else {
+        // Fallback: try to set HTMLMediaElement.volume (may be ignored on iOS).
+        slider.addEventListener('input', function(e){
+          const v = Number(e.target.value);
+          window.musicVolume = v;
+          const a = (typeof musicAudio !== 'undefined' && musicAudio) ? musicAudio : (window.musicAudio || document.querySelector('audio'));
+          if (a) {
+            try { a.volume = v; } catch (err) { /* some platforms ignore this */ }
+          }
+          if (sliderValEl) sliderValEl.textContent = Math.round(v*100) + '%';
+        });
+        if (sliderValEl) sliderValEl.textContent = Math.round(Number(slider.value)*100) + '%';
+        console.info('[GoneViral] GainNode unavailable; falling back to audio.volume (may not work on iOS).');
+      }
+
+      // If iOS and GainNode couldn't be attached, show a small hint in console and leave UI as-is.
+      if (isProbablyIOS() && !window._gv_gainNode) {
+        console.info('[GoneViral] Detected iOS: fine-grained audio.volume may be controlled only by the device. Consider using device volume or allow the GainNode path by starting audio playback once (tap).');
+      }
+    } catch (e) {
+      console.warn('[GoneViral] initAudioOnUserGesture error', e);
+    } finally {
+      // Remove these listeners after first-run
+      document.removeEventListener('pointerdown', initAudioOnUserGesture);
+      document.removeEventListener('touchstart', initAudioOnUserGesture);
+    }
+  }
+
+  // Listen for the first user gesture to create/resume AudioContext (required on iOS)
+  document.addEventListener('pointerdown', initAudioOnUserGesture, { passive: true, once: true });
+  document.addEventListener('touchstart', initAudioOnUserGesture, { passive: true, once: true });
+})();
+</script>
+<!-- End assistant patch -->
+
 </body>
 
 </html>
