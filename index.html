@@ -314,9 +314,9 @@
         .particle {
             position: fixed;
             z-index: 30000;
-            width: 50px;
+            width: 35px;
             /* small size as default */
-            height: 50px;
+            height: 35px;
             pointer-events: none;
             transform-origin: center center;
             transform: translate3d(0px, 0px, 0) translate(-50%, -50%) scale(1.5);
@@ -2690,7 +2690,7 @@ function escapeHtmlAttr(str) {
                 const scale = 1 + (Math.random() * 0.08);
 
                 // clamp duration
-                const dur = Math.max(750, Math.min(400, Math.round(duration)));
+                const dur = Math.max(600, Math.min(300, Math.round(duration)));
 
                 // apply transitions (transform for travel+rotation, opacity for fade)
                 pel.style.transition = `transform ${dur}ms cubic-bezier(.2,.8,.2,1), opacity ${Math.max(80, Math.min(dur, 900))}ms linear`;
