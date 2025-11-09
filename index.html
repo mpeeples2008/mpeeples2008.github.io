@@ -1671,15 +1671,15 @@
     <style>
         /* Ensure AI assistant elements sit above all popups without altering layout */
         #assist-badge,
-        .assist-bubble
-        {position: fixed !important;
-         z-index: 999999 !imporant;
-        },
+        .assist-bubble,
         .ai-intro-overlay,
         .assistant-bubble,
         .ai-face-slot,
-        .ai-intro-content {
-            z-index: 100000 !important;
+        .ai-intro-content 
+        {
+            position: fixed !important;
+            z-index: 999999 !important;
+        }
         }
     </style>
 
