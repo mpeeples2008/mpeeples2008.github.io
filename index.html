@@ -11,6 +11,9 @@
 
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <title>Gone Viral!</title>
+
+    <link rel="preload" href="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PressStart2P-Regular.woff2" as="font" type="font/woff2" crossorigin>
+
     <style>
 
         @font-face {
@@ -26,10 +29,6 @@
         }
 
         html,
-        
-        
-        
-        
         body {
             height: 100%;
             margin: 0;
@@ -570,21 +569,27 @@
         .level-complete {
             position: fixed; /* likely you already use fixed/absolute; keep as needed */
             left: 50%;
-            top: 40%; /* tweak vertical position to taste */
-            transform: translate(-50%, -50%) scale 0.9;
-            max-height: 85vh;
-            overvlow: hidden;
+            top: 50%; /* tweak vertical position to taste */
+            transform: translate(-50%, -50%);
+            width: min(90vw, 900px);
+            max-width: 100% fit-content 10px);
+            max-height: 92vh;
+            box-sizing: border-box;
             z-index: 9999;
-            padding: 14px 18px;
+            padding: 12px 14px;
             border-radius: 10px;
-            background: rgba(0,0,0,0.78);
+            background: rgba(0,0,0,0.86);
             color: #fff;
             text-align: center;
             box-shadow: 0 8px 30px rgba(0,0,0,0.45);
             opacity: 0;
+            overflow: hidden;
             pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
             transition: opacity .28s ease, transform .28s ease;
-            max-width: calc(100% - 40px);
+            
         }
 
             /* visible state */
@@ -604,7 +609,7 @@
 
             /* image container placed AFTER title (user requested) */
             .level-complete .lc-image {
-                margin-top: 10px;
+                flex: 0 0 auto;
                 display: block;
                 width: 100%;
                 text-align: center;
@@ -612,11 +617,11 @@
 
                 /* the image itself: constrain to max-width: 360px but be responsive */
                 .level-complete .lc-image img {
-                    display: inline-block;
+                    display: block;
                     width: 100%;
-                    max-width: 720px; /* your requested maximum width */
+                    max-width: 900px; /* your requested maximum width */
                     height: auto;
-                    max-height: 70vh; /* keep very tall images in viewport */
+                    max-height: calc(72vh - 120px);
                     object-fit: contain; /* preserve aspect, center contents if needed */
                     border-radius: 6px; /* optional */
                     user-select: none;
@@ -627,10 +632,11 @@
         @media (max-width: 420px) {
             .level-complete .lc-title {
                 font-size: 18px;
+                word-break: break-word;
             }
 
             .level-complete .lc-image img {
-                max-width: 90vw;
+                max-height: calc(78vh - 110px);
             }
 
             F
@@ -1530,7 +1536,6 @@
             user-select: none;
             pointer-events: none; /* keeps clicks handled by the button */
         }
-
     </style>
 
 
@@ -4174,7 +4179,7 @@ function escapeHtmlAttr(str) {
             background: linear-gradient(180deg, #111, #222);
             color: #ffd166;
             font-family: monospace, 'Press Start 2P', sans-serif;
-            font-size: 14px;
+            font-size: 16px;
             z-index: 100000;
             pointer-events: none;
             opacity: 0;
@@ -4196,7 +4201,7 @@ function escapeHtmlAttr(str) {
         @media (max-width:420px) {
             .assist-bubble {
                 max-width: 86vw;
-                font-size: 11px;
+                font-size: 13px;
                 bottom: 110px;
             }
         }
