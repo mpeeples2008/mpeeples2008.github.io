@@ -3,17 +3,31 @@
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta property="og:image" content="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/social_media.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="640" />
+    <meta property="og:image:height" content="320" />
+
 
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <title>Gone Viral!</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+
 
         :root {
             --board-size: 720px
         }
 
         html,
+        
+        
+        @font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PressStart2P-Regular.woff2') format('woff2');
+            font-display: swap;
+        }
+        
         body {
             height: 100%;
             margin: 0;
@@ -89,29 +103,29 @@
             /* ensures text uses full box width */
         }
 
-        .small.scorebox .score-line,
-        .small.scorebox .high-line {
-            width: 100%;
-            text-align: left !important;
-            /* force left alignment inside */
-        }
+            .small.scorebox .score-line,
+            .small.scorebox .high-line {
+                width: 100%;
+                text-align: left !important;
+                /* force left alignment inside */
+            }
 
-        .small.scorebox .score-line {
-            font-size: 9px;
-            color: #ffd166;
-        }
+            .small.scorebox .score-line {
+                font-size: 9px;
+                color: #ffd166;
+            }
 
-        .small.scorebox .high-line {
-            font-size: 8px;
-            opacity: 0.85;
-            color: #ffe9b0;
-            margin-top: 2px;
-            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
-        }
+            .small.scorebox .high-line {
+                font-size: 8px;
+                opacity: 0.85;
+                color: #ffe9b0;
+                margin-top: 2px;
+                text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+            }
 
-        .small.scorebox .high-line span#highScoreValue {
-            font-size: inherit;
-        }
+                .small.scorebox .high-line span#highScoreValue {
+                    font-size: inherit;
+                }
 
         .level-box {
             font-size: 9px;
@@ -159,13 +173,13 @@
                 padding: 18px 14px
             }
 
-            .hud .small {
-                align-self: stretch
-            }
+                .hud .small {
+                    align-self: stretch
+                }
 
-            .hud button {
-                width: 100%
-            }
+                .hud button {
+                    width: 100%
+                }
         }
 
         /* cell property style */
@@ -214,13 +228,13 @@
             transform-origin: center center
         }
 
-        .petri img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            display: block;
-            opacity: 1
-        }
+            .petri img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+                opacity: 1
+            }
 
         /* virus face sprite: single centered image, only scaling changes */
         .face-sprite {
@@ -239,21 +253,20 @@
             justify-content: center
         }
 
-        .face-sprite img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            image-rendering: pixelated;
-            pointer-events: none;
-            transform-origin: center center;
-            display: block
-        }
+            .face-sprite img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                image-rendering: pixelated;
+                pointer-events: none;
+                transform-origin: center center;
+                display: block
+            }
 
         /* Animate size-3 viruses with gentle jitter/pulse - make it look like it's ready to burst! */
         @keyframes jitter {
 
-            0%,
-            100% {
+            0%, 100% {
                 transform: scale(1) translate(0, 0);
             }
 
@@ -289,9 +302,9 @@
             z-index: 4
         }
 
-        .stain.show {
-            animation: stainpop 520ms forwards
-        }
+            .stain.show {
+                animation: stainpop 520ms forwards
+            }
 
         @keyframes stainpop {
             0% {
@@ -328,15 +341,15 @@
             transition: transform 520ms cubic-bezier(.2, .8, .2, 1), opacity 300ms linear;
         }
 
-        /* particle contains an <img> (raster sprite) */
-        .particle>img {
-            width: 100%;
-            height: 100%;
-            display: block;
-            pointer-events: none;
-            user-select: none;
-            -webkit-user-drag: none;
-        }
+            /* particle contains an <img> (raster sprite) */
+            .particle > img {
+                width: 100%;
+                height: 100%;
+                display: block;
+                pointer-events: none;
+                user-select: none;
+                -webkit-user-drag: none;
+            }
 
 
         /* HUD child elements: retro 'panels' for each stat */
@@ -455,17 +468,17 @@
             /* chunky pixel shadow */
         }
 
-        .chain-badge .cb-icon {
-            width: 44px;
-            height: 36px;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            background: rgba(0, 0, 0, 0.18);
-            box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.12), inset 6px 6px 0 rgba(255, 255, 255, 0.02);
-        }
+            .chain-badge .cb-icon {
+                width: 44px;
+                height: 36px;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                background: rgba(0, 0, 0, 0.18);
+                box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.12), inset 6px 6px 0 rgba(255, 255, 255, 0.02);
+            }
 
         @keyframes badgeIn {
             0% {
@@ -529,13 +542,13 @@
             border-color: rgba(0, 0, 0, 0.6);
         }
 
-        /* pixel 'bevel' effect by adding layered box-shadows — subtle and GPU-friendly */
-        .chain-badge.great .cb-icon,
-        .chain-badge.amazing .cb-icon,
-        .chain-badge.stupendous .cb-icon,
-        .chain-badge.incredible .cb-icon {
-            box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.12), 6px 6px 0 rgba(0, 0, 0, 0.12);
-        }
+            /* pixel 'bevel' effect by adding layered box-shadows — subtle and GPU-friendly */
+            .chain-badge.great .cb-icon,
+            .chain-badge.amazing .cb-icon,
+            .chain-badge.stupendous .cb-icon,
+            .chain-badge.incredible .cb-icon {
+                box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.12), 6px 6px 0 rgba(0, 0, 0, 0.12);
+            }
 
         /* small responsive adjustment so badges aren't huge on mobile */
         @media (max-width: 420px) {
@@ -544,81 +557,82 @@
                 padding: 8px 12px;
             }
 
-            .chain-badge .cb-icon {
-                width: 34px;
-                height: 28px;
-                font-size: 14px
-            }
+                .chain-badge .cb-icon {
+                    width: 34px;
+                    height: 28px;
+                    font-size: 14px
+                }
         }
 
-       /* container base (if you already have .level-complete, don't duplicate; merge the .visible transition bits) */
-.level-complete {
-  position: fixed;              /* likely you already use fixed/absolute; keep as needed */
-  left: 50%;
-  top: 40%;                     /* tweak vertical position to taste */
-  transform: translate(-50%, -50%) scale 0.9;
-  max-height: 85vh;
-  overvlow: hidden;
-  z-index: 9999;
-  padding: 14px 18px;
-  border-radius: 10px;
-  background: rgba(0,0,0,0.78);
-  color: #fff;
-  text-align: center;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.45);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .28s ease, transform .28s ease;
-  max-width: calc(100% - 40px);
-}
+        /* container base (if you already have .level-complete, don't duplicate; merge the .visible transition bits) */
+        .level-complete {
+            position: fixed; /* likely you already use fixed/absolute; keep as needed */
+            left: 50%;
+            top: 40%; /* tweak vertical position to taste */
+            transform: translate(-50%, -50%) scale 0.9;
+            max-height: 85vh;
+            overvlow: hidden;
+            z-index: 9999;
+            padding: 14px 18px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.78);
+            color: #fff;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .28s ease, transform .28s ease;
+            max-width: calc(100% - 40px);
+        }
 
-/* visible state */
-.level-complete.visible {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
-}
+            /* visible state */
+            .level-complete.visible {
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateX(-50%) translateY(0);
+            }
 
-/* title */
-.level-complete .lc-title
+            /* title */
+            .level-complete .lc-title {
+                font-weight: 700;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 20px;
+                line-height: 1;
+            }
 
+            /* image container placed AFTER title (user requested) */
+            .level-complete .lc-image {
+                margin-top: 10px;
+                display: block;
+                width: 100%;
+                text-align: center;
+            }
 
- {
-  font-weight: 700;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 20px;
-  line-height: 1;
-}
+                /* the image itself: constrain to max-width: 360px but be responsive */
+                .level-complete .lc-image img {
+                    display: inline-block;
+                    width: 100%;
+                    max-width: 720px; /* your requested maximum width */
+                    height: auto;
+                    max-height: 70vh; /* keep very tall images in viewport */
+                    object-fit: contain; /* preserve aspect, center contents if needed */
+                    border-radius: 6px; /* optional */
+                    user-select: none;
+                    pointer-events: none;
+                }
 
-/* image container placed AFTER title (user requested) */
-.level-complete .lc-image {
-  margin-top: 10px;
-  display: block;
-  width: 100%;
-  text-align: center;
-}
+        /* tweak for small screens so it doesn't look huge */
+        @media (max-width: 420px) {
+            .level-complete .lc-title {
+                font-size: 18px;
+            }
 
-/* the image itself: constrain to max-width: 360px but be responsive */
-.level-complete .lc-image img {
-  display: inline-block;
-  width: 100%;
-  max-width: 720px;      /* your requested maximum width */
-  height: auto;
-  max-height: 70vh;      /* keep very tall images in viewport */
-  object-fit: contain;   /* preserve aspect, center contents if needed */
-  border-radius: 6px;    /* optional */
-  user-select: none;
-  pointer-events: none;
-}
+            .level-complete .lc-image img {
+                max-width: 90vw;
+            }
 
-/* tweak for small screens so it doesn't look huge */
-@media (max-width: 420px) {
-  .level-complete .lc-title
-
-
- { font-size: 18px; }
-  .level-complete .lc-image img { max-width: 90vw; }F
-}
+            F
+        }
 
 
         /* ---------- Game Over popup ---------- */
@@ -647,19 +661,19 @@
             will-change: transform, opacity;
         }
 
-        /* Inner title and subtitle */
-        .game-over-popup .go-title {
-            font-size: 24px;
-            text-transform: uppercase;
-            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
-            letter-spacing: 0.04em;
-        }
+            /* Inner title and subtitle */
+            .game-over-popup .go-title {
+                font-size: 24px;
+                text-transform: uppercase;
+                text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+                letter-spacing: 0.04em;
+            }
 
-        .game-over-popup .go-sub {
-            font-size: 14px;
-            color: #ffe9b0;
-            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
-        }
+            .game-over-popup .go-sub {
+                font-size: 14px;
+                color: #ffe9b0;
+                text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+            }
 
         @keyframes gameOverIn {
             0% {
@@ -699,10 +713,7 @@
         }
 
         /* Inner title larger and tightly tracked */
-        .level-complete .lc-title
-
-
- {
+        .level-complete .lc-title {
             font-size: 20px;
             letter-spacing: 0.02em;
             text-transform: uppercase;
@@ -790,10 +801,10 @@
             /* space between buttons */
         }
 
-        .bottom-controls .bottom-mute {
-            position: static;
-            /* remove the fixed positioning */
-        }
+            .bottom-controls .bottom-mute {
+                position: static;
+                /* remove the fixed positioning */
+            }
 
         /* Meter styles (10-segment retro pixel bar) */
         .meter {
@@ -819,20 +830,20 @@
             justify-content: center
         }
 
-        .meter-segments .seg {
-            width: 12px;
-            height: 12px;
-            border: 2px solid #081426;
-            background: #2b2b2b;
-            box-shadow: inset -3px -3px 0 rgba(0, 0, 0, 0.18);
-            border-radius: 1px
-        }
+            .meter-segments .seg {
+                width: 12px;
+                height: 12px;
+                border: 2px solid #081426;
+                background: #2b2b2b;
+                box-shadow: inset -3px -3px 0 rgba(0, 0, 0, 0.18);
+                border-radius: 1px
+            }
 
-        .meter-segments .seg.filled {
-            background: linear-gradient(180deg, #ffd166, #ffb84d);
-            border-color: #081426;
-            box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.18)
-        }
+                .meter-segments .seg.filled {
+                    background: linear-gradient(180deg, #ffd166, #ffb84d);
+                    border-color: #081426;
+                    box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.18)
+                }
 
         .meter-count {
             font-family: 'Press Start 2P', monospace;
@@ -869,11 +880,11 @@
             user-select: none;
         }
 
-        #highScoreHud strong {
-            font-weight: 700;
-            margin-right: 6px;
-            font-size: 11px;
-        }
+            #highScoreHud strong {
+                font-weight: 700;
+                margin-right: 6px;
+                font-size: 11px;
+            }
 
         #highScoreValue {
             font-family: 'Press Start 2P', monospace;
@@ -904,10 +915,10 @@
             transform-origin: center;
         }
 
-        #clicksMeter.low-warning .segment {
-            /* optional: slightly brighten segments */
-            filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
-        }
+            #clicksMeter.low-warning .segment {
+                /* optional: slightly brighten segments */
+                filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
+            }
     </style>
 
     <style>
@@ -918,22 +929,22 @@
             align-items: center;
         }
 
-        .control-trio .ctrl {
-            width: 48px;
-            height: 40px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
-            border-radius: 6px;
-            border: 4px solid rgba(0, 0, 0, 0.18);
-            background: linear-gradient(180deg, #ffffff, #e6e3ff);
-            color: #0b3d91;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
-            cursor: pointer;
-            padding: 6px;
-        }
+            .control-trio .ctrl {
+                width: 48px;
+                height: 40px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 12px;
+                border-radius: 6px;
+                border: 4px solid rgba(0, 0, 0, 0.18);
+                background: linear-gradient(180deg, #ffffff, #e6e3ff);
+                color: #0b3d91;
+                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+                cursor: pointer;
+                padding: 6px;
+            }
 
         /* Slightly smaller on narrow screens */
         @media (max-width:420px) {
@@ -998,50 +1009,50 @@
             transition: opacity 220ms ease, transform 220ms ease, visibility 0ms 220ms;
         }
 
-        /* shown */
-        .audio-popup.show {
-            opacity: 1;
-            visibility: visible;
-            transform: translate(-50%, -50%) scale(1);
-            transition: opacity 220ms ease, transform 220ms ease;
-        }
+            /* shown */
+            .audio-popup.show {
+                opacity: 1;
+                visibility: visible;
+                transform: translate(-50%, -50%) scale(1);
+                transition: opacity 220ms ease, transform 220ms ease;
+            }
 
-        /* content rows */
-        .audio-popup .row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 10px 0;
-        }
+            /* content rows */
+            .audio-popup .row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin: 10px 0;
+            }
 
-        .audio-popup label {
-            width: 130px;
-            font-size: 11px;
-            color: #ffe9b0;
-        }
+            .audio-popup label {
+                width: 130px;
+                font-size: 11px;
+                color: #ffe9b0;
+            }
 
-        .audio-popup input[type="range"] {
-            flex: 1;
-        }
+            .audio-popup input[type="range"] {
+                flex: 1;
+            }
 
-        .audio-popup .controls {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 12px;
-        }
+            .audio-popup .controls {
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+                margin-top: 12px;
+            }
 
-        /* popup small button */
-        .audio-popup .btn {
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 11px;
-            border: 4px solid rgba(0, 0, 0, 0.18);
-            background: linear-gradient(180deg, #ffffff, #e6e3ff);
-            color: #0b3d91;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
-            cursor: pointer;
-        }
+            /* popup small button */
+            .audio-popup .btn {
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 11px;
+                border: 4px solid rgba(0, 0, 0, 0.18);
+                background: linear-gradient(180deg, #ffffff, #e6e3ff);
+                color: #0b3d91;
+                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+                cursor: pointer;
+            }
 
         /* the HUD gear button uses same small-ctrl style already present; optional slight tweak for icon */
         .small-ctrl .gear-icon {
@@ -1059,9 +1070,6 @@
         }
     </style>
     <!-- END AUDIO POPUP CSS -->
-
-    
-
     <!-- Assistant: force wrap-anchored layout + correct image sizing -->
     <style id="assistant-wrap-fix">
         /* Ensure .wrap is a positioning context (safe to set again) */
@@ -1102,12 +1110,12 @@
             z-index: 10000 !important;
         }
 
-        /* Show state unchanged */
-        #assist-bubble.show {
-            opacity: 1 !important;
-            transform: translateY(0) scale(1) !important;
-            pointer-events: auto !important;
-        }
+            /* Show state unchanged */
+            #assist-bubble.show {
+                opacity: 1 !important;
+                transform: translateY(0) scale(1) !important;
+                pointer-events: auto !important;
+            }
 
         /* Ensure the face image fills the badge container */
         #assist-badge img {
@@ -1207,9 +1215,9 @@
             transform-origin: center center;
         }
 
-        #assist-badge.speaking .mouth-shape.talk {
-            animation: mouth-wobble 320ms ease-in-out infinite;
-        }
+            #assist-badge.speaking .mouth-shape.talk {
+                animation: mouth-wobble 320ms ease-in-out infinite;
+            }
 
         /* Eyebrow styling & expression rules */
         #brow-left,
@@ -1494,19 +1502,34 @@
             transition: transform 120ms ease;
         }
 
-        .ai-start-btn:hover {
-            transform: scale(1.05);
-        }
+            .ai-start-btn:hover {
+                transform: scale(1.05);
+            }
 
         .ai-intro-overlay.fade-out {
             opacity: 0;
             pointer-events: none;
             transition: opacity 600ms ease;
         }
+
+        button.ctrl {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .btn-icon {
+            width: 33px; /* same as your SVG size */
+            height: 33px;
+            user-select: none;
+            pointer-events: none; /* keeps clicks handled by the button */
+        }
+
     </style>
-
-
-
 
 
     <!-- START-MISSION modal CSS -->
@@ -1534,69 +1557,67 @@
             line-height: 1.45;
             display: none;
             gap: 12px;
-
-
         }
 
-        /* visible state */
-        #startModal.show {
-            display: block;
-            animation: modalIn 260ms ease both;
-        }
+            /* visible state */
+            #startModal.show {
+                display: block;
+                animation: modalIn 260ms ease both;
+            }
 
-        /* inner layout: text left, small image anchored bottom-right inside modal */
-        #startModal .inner {
-            position: relative;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            min-height: 140px;
-        }
+            /* inner layout: text left, small image anchored bottom-right inside modal */
+            #startModal .inner {
+                position: relative;
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                min-height: 140px;
+            }
 
-        /* text column takes remaining width, left aligned */
-        #startModal .modal-text {
-            padding-right: 8px;
-            flex: 1 1 auto;
-            text-align: left;
-            white-space: pre-line;
-            color: #ffd166;
-            font-size: 14px;
-            text-indent: 0;  
-        }
+            /* text column takes remaining width, left aligned */
+            #startModal .modal-text {
+                padding-right: 8px;
+                flex: 1 1 auto;
+                text-align: left;
+                white-space: pre-line;
+                color: #ffd166;
+                font-size: 14px;
+                text-indent: 0;
+            }
 
-        /* small image anchored bottom-right inside the modal */
-        /* small image placed as a flex item to avoid overlapping text */
-        #startModal .modal-img {
-            position: static;
-            right: auto;
-            bottom: auto;
-            width: 84px;
-            height: auto;
-            display: block;
-            object-fit: contain;
-            border-radius: 6px;
-            pointer-events: none;
-            image-rendering: -webkit-optimize-contrast;
-            flex: 0 0 84px;
-            margin-left: 12px;
-            align-self: flex-end;
-        }
+            /* small image anchored bottom-right inside the modal */
+            /* small image placed as a flex item to avoid overlapping text */
+            #startModal .modal-img {
+                position: static;
+                right: auto;
+                bottom: auto;
+                width: 84px;
+                height: auto;
+                display: block;
+                object-fit: contain;
+                border-radius: 6px;
+                pointer-events: none;
+                image-rendering: -webkit-optimize-contrast;
+                flex: 0 0 84px;
+                margin-left: 12px;
+                align-self: flex-end;
+            }
 
-        /* Close button */
-        #startModal .close-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 12px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 4px solid rgba(0, 0, 0, 0.28);
-            background: linear-gradient(180deg, #111, #333);
-            color: #ffd166;
-            cursor: pointer;
-            font-family: "Lucida Console", "Courier New", Courier, monospace;
-            font-size: 12px;
-        }
+            /* Close button */
+            #startModal .close-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin-top: 12px;
+                padding: 10px 12px;
+                border-radius: 8px;
+                border: 4px solid rgba(0, 0, 0, 0.28);
+                background: linear-gradient(180deg, #111, #333);
+                color: #ffd166;
+                cursor: pointer;
+                font-family: "Lucida Console", "Courier New", Courier, monospace;
+                font-size: 12px;
+            }
 
         /* entry animation */
         @keyframes modalIn {
@@ -1627,147 +1648,189 @@
     <!-- END START-MISSION modal CSS -->
 
 
-<style>
-.level-complete .lc-hint {
-  margin-top: 8px;
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.85);
-  font-family: 'Press Start 2P', monospace;
-  opacity: 0.9;
-  text-align: center;
-  pointer-events: none;
-}
-</style>
+    <style>
+        .level-complete .lc-hint {
+            margin-top: 8px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0.9;
+            text-align: center;
+            pointer-events: none;
+        }
+    </style>
 
 
-<style>
-/* Ensure AI assistant elements sit above all popups without altering layout */
-#assist-badge,
-.ai-assistant-bubble,
-.ai-intro-overlay,
-.assistant-bubble,
-.ai-face-slot,
-.ai-intro-content {
-  z-index: 97000 !important;
-}
-</style>
+    <style>
+        /* Ensure AI assistant elements sit above all popups without altering layout */
+        #assist-badge,
+        .ai-assistant-bubble,
+        .ai-intro-overlay,
+        .assistant-bubble,
+        .ai-face-slot,
+        .ai-intro-content {
+            z-index: 97000 !important;
+        }
+    </style>
 
 
-<!-- Consolidated CSS overrides added by assistant -->
-<style>
-/* Consolidated HUD small panel styles (base) */
-.hud .small {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(255,255,255,0.02));
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 4px solid rgba(0, 0, 0, 0.25);
-  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.12);
-  min-width: 85px;
-  color: #ffd166;
-  font-family: 'Press Start 2P', monospace;
-  font-size: 11px;
-  text-shadow: 2px 2px 0 rgba(0,0,0,0.55);
-  box-sizing: border-box;
-}
+    <!-- Consolidated CSS overrides added by assistant -->
+    <style>
+        /* Consolidated HUD small panel styles (base) */
+        .hud .small {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(255,255,255,0.02));
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 4px solid rgba(0, 0, 0, 0.25);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.12);
+            min-width: 85px;
+            color: #ffd166;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.55);
+            box-sizing: border-box;
+        }
 
-/* Scorebox variant uses left-justified stacking */
-.small.scorebox {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  text-align: left !important;
-  line-height: 1.2;
-  width: 100%;
-}
+        /* Scorebox variant uses left-justified stacking */
+        .small.scorebox {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            text-align: left !important;
+            line-height: 1.2;
+            width: 100%;
+        }
 
-/* Score lines inside scorebox */
-.small.scorebox .score-line,
-.small.scorebox .high-line {
-  width: 100%;
-  text-align: left !important;
-}
-.small.scorebox .score-line { font-size: 9px; color: #ffd166; }
-.small.scorebox .high-line { font-size: 8px; opacity: 0.85; color: #ffe9b0; margin-top: 2px; text-shadow: 1px 1px 0 rgba(0,0,0,0.55); }
+            /* Score lines inside scorebox */
+            .small.scorebox .score-line,
+            .small.scorebox .high-line {
+                width: 100%;
+                text-align: left !important;
+            }
 
-/* HUD button baseline */
-.hud button {
-  font-family: 'Press Start 2P', monospace;
-  background: linear-gradient(180deg, #ffffff, #e6e3ff);
-  color: #0b3d91;
-  border: 4px solid rgba(0,0,0,0.18);
-  padding: 10px;
-  border-radius: 8px;
-  box-shadow: 4px 4px 0 rgba(0,0,0,0.12);
-  cursor: pointer;
-  font-size: 11px;
-  box-sizing: border-box;
-}
+            .small.scorebox .score-line {
+                font-size: 9px;
+                color: #ffd166;
+            }
 
-/* Ensure board and wrap sizing predictable and prevent overflow from transient particles */
-.wrap { box-sizing: border-box; max-width: 100%; margin: 0 auto; }
-.board { box-sizing: border-box; position: relative; overflow: hidden; }
+            .small.scorebox .high-line {
+                font-size: 8px;
+                opacity: 0.85;
+                color: #ffe9b0;
+                margin-top: 2px;
+                text-shadow: 1px 1px 0 rgba(0,0,0,0.55);
+            }
 
-/* Keep .cell overflow hidden within cell (prevents per-cell overflow) */
-.cell { overflow: hidden; }
+        /* HUD button baseline */
+        .hud button {
+            font-family: 'Press Start 2P', monospace;
+            background: linear-gradient(180deg, #ffffff, #e6e3ff);
+            color: #0b3d91;
+            border: 4px solid rgba(0,0,0,0.18);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.12);
+            cursor: pointer;
+            font-size: 11px;
+            box-sizing: border-box;
+        }
 
-/* Small screens tweak preserved */
-@media (max-width:420px) {
-  .board { width: 94vw; }
-}
-</style>
-<!-- End consolidated CSS overrides -->
+        /* Ensure board and wrap sizing predictable and prevent overflow from transient particles */
+        .wrap {
+            box-sizing: border-box;
+            max-width: 100%;
+            margin: 0 auto;
+        }
 
-<!-- Assistant: breathe and hue animations -->
+        .board {
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
 
+        /* Keep .cell overflow hidden within cell (prevents per-cell overflow) */
+        .cell {
+            overflow: hidden;
+        }
 
+        /* Small screens tweak preserved */
+        @media (max-width:420px) {
+            .board {
+                width: 94vw;
+            }
+        }
+    </style>
+    <!-- End consolidated CSS overrides -->
+    <!-- Assistant: breathe and hue animations -->
+    <!-- End Assistant breathe/hue -->
+    <!-- Assistant: breathe-only animation -->
+    <style id="assistant-breathe-only">
+        @keyframes breathe {
+            0% {
+                transform: scale(0.985);
+            }
 
-<!-- End Assistant breathe/hue -->
+            50% {
+                transform: scale(1.02);
+            }
 
-<!-- Assistant: breathe-only animation -->
-<style id="assistant-breathe-only">
-@keyframes breathe {
-  0% { transform: scale(0.985); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(0.985); }
-}
-.virus--size-0 .face-sprite { animation: breathe var(--breathe-duration, 5.5s) ease-in-out infinite alternate; transform-origin: center; will-change: transform; }
-.virus--size-1 .face-sprite { animation: breathe var(--breathe-duration, 4.0s) ease-in-out infinite alternate; transform-origin: center; will-change: transform; }
-.virus--size-2 .face-sprite { animation: breathe var(--breathe-duration, 3.2s) ease-in-out infinite alternate; transform-origin: center; will-change: transform; }
-</style>
+            100% {
+                transform: scale(0.985);
+            }
+        }
 
-<script id="assistant-breathe-only-script">
-document.addEventListener('DOMContentLoaded', function () {
-  function assign(el) {
-    const d = (Math.random() * 1.2) - 0.6;
-    el.style.animationDelay = d.toFixed(2) + 's';
-    if (el.closest('.virus--size-0')) el.style.setProperty('--breathe-duration', (5.5 + Math.random()*0.6).toFixed(2) + 's');
-    if (el.closest('.virus--size-1')) el.style.setProperty('--breathe-duration', (4.0 + Math.random()*0.5).toFixed(2) + 's');
-    if (el.closest('.virus--size-2')) el.style.setProperty('--breathe-duration', (3.2 + Math.random()*0.4).toFixed(2) + 's');
-  }
-  const elems = document.querySelectorAll('.virus--size-0 .face-sprite, .virus--size-1 .face-sprite, .virus--size-2 .face-sprite');
-  elems.forEach(assign);
-  const board = document.querySelector('#board');
-  if (board && window.MutationObserver) {
-    const mo = new MutationObserver(muts => {
-      muts.forEach(m => {
-        m.addedNodes.forEach(node => {
-          if (!node || node.nodeType !== 1) return;
-          const faces = node.querySelectorAll && node.querySelectorAll('.face-sprite');
-          if (faces && faces.length) { faces.forEach(assign); }
-          if (node.classList && node.classList.contains('face-sprite')) assign(node);
+        .virus--size-0 .face-sprite {
+            animation: breathe var(--breathe-duration, 5.5s) ease-in-out infinite alternate;
+            transform-origin: center;
+            will-change: transform;
+        }
+
+        .virus--size-1 .face-sprite {
+            animation: breathe var(--breathe-duration, 4.0s) ease-in-out infinite alternate;
+            transform-origin: center;
+            will-change: transform;
+        }
+
+        .virus--size-2 .face-sprite {
+            animation: breathe var(--breathe-duration, 3.2s) ease-in-out infinite alternate;
+            transform-origin: center;
+            will-change: transform;
+        }
+    </style>
+
+    <script id="assistant-breathe-only-script">
+        document.addEventListener('DOMContentLoaded', function () {
+            function assign(el) {
+                const d = (Math.random() * 1.2) - 0.6;
+                el.style.animationDelay = d.toFixed(2) + 's';
+                if (el.closest('.virus--size-0')) el.style.setProperty('--breathe-duration', (5.5 + Math.random() * 0.6).toFixed(2) + 's');
+                if (el.closest('.virus--size-1')) el.style.setProperty('--breathe-duration', (4.0 + Math.random() * 0.5).toFixed(2) + 's');
+                if (el.closest('.virus--size-2')) el.style.setProperty('--breathe-duration', (3.2 + Math.random() * 0.4).toFixed(2) + 's');
+            }
+            const elems = document.querySelectorAll('.virus--size-0 .face-sprite, .virus--size-1 .face-sprite, .virus--size-2 .face-sprite');
+            elems.forEach(assign);
+            const board = document.querySelector('#board');
+            if (board && window.MutationObserver) {
+                const mo = new MutationObserver(muts => {
+                    muts.forEach(m => {
+                        m.addedNodes.forEach(node => {
+                            if (!node || node.nodeType !== 1) return;
+                            const faces = node.querySelectorAll && node.querySelectorAll('.face-sprite');
+                            if (faces && faces.length) { faces.forEach(assign); }
+                            if (node.classList && node.classList.contains('face-sprite')) assign(node);
+                        });
+                    });
+                });
+                mo.observe(board, { childList: true, subtree: true });
+            }
         });
-      });
-    });
-    mo.observe(board, { childList: true, subtree: true });
-  }
-});
-</script>
-<!-- End Assistant breathe-only animation -->
+    </script>
+    <!-- End Assistant breathe-only animation -->
 
 </head>
 
@@ -1808,46 +1871,21 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
 
             <div class="control-trio" role="group" aria-label="Controls">
-
-
-
                 <button id="startBtn" class="ctrl small-ctrl" aria-label="S">
-                    <svg class="start-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200"
-                        preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
-                        <path fill="currentColor" d="M364.798,80.329l-30.419,790.778
-    c-40.935-21.007-92.292-30.096-146.179-22.449C72.007,865.114-11.66,952.766,1.33,1044.407
-    c12.992,91.647,117.714,152.585,233.902,136.124c103.119-14.613,180.524-85.303,187.557-165.075l0.022,0.045
-    c0.016-0.181,0.026-0.452,0.042-0.656c0.173-2.026,0.271-4.08,0.346-6.119c4.327-82.368,30.815-708.026,30.815-708.026
-    l652.416-67.219l-29.467,563.479c-41.867-23.303-95.68-33.684-152.264-25.665c-116.192,16.473-199.854,104.105-186.863,195.759
-    c12.986,91.639,117.709,152.587,233.901,136.107c105.313-14.906,183.777-88.319,187.895-170.171l0.05-0.05
-    C1161.89,896.157,1198.7,46.799,1200,16.784L364.798,80.329z" />
-                    </svg>
+                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/start.png" alt="Start" class="btn-icon">
                 </button>
                 <button id="restart" class="ctrl small-ctrl" aria-label="Restart">
-                    <svg class="restart-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <path fill-rule="evenodd" clip-rule="evenodd"
-                            d="M8.87 10.5046L10.8204 12.4504L9.76045 13.511L6 9.75456L9.76045 5.99805L10.8204 7.05871L8.87 9.00456H18V18H11.9532V16.5H16.5V10.5046H8.87Z"
-                            fill="currentColor" />
-                    </svg>
+                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/reset.png" alt="Retart" class="btn-icon">
                 </button>
 
                 <button id="audioBtn" class="ctrl small-ctrl" aria-label="Audio Settings" title="Audio Settings">
-                    <svg class="gear-icon" viewBox="0 0 24 24" width="24" height="24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <rect x="0" fill="none" width="24" height="24" />
-                        <g>
-                            <path
-                                d="M20 12c0-.568-.06-1.122-.174-1.656l1.834-1.612-2-3.464-2.322.786c-.82-.736-1.787-1.308-2.86-1.657L14 2h-4l-.48 2.396c-1.07.35-2.04.92-2.858 1.657L4.34 5.268l-2 3.464 1.834 1.612C4.06 10.878 4 11.432 4 12s.06 1.122.174 1.656L2.34 15.268l2 3.464 2.322-.786c.82.736 1.787 1.308 2.86 1.657L10 22h4l.48-2.396c1.07-.35 2.038-.92 2.858-1.657l2.322.786 2-3.464-1.834-1.613c.113-.535.174-1.09.174-1.657zm-8 4c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"
-                                / fill="currentColor">
-                        </g>
-                    </svg>
+                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/gear.png" alt="Audio" class="btn-icon">
                 </button>
-                <!-- help / how-to-play button -->
-                <button id="helpBtn" class="ctrl small-ctrl" aria-label="How to Play" title="How to Play">?</button>
-
-
-
+                <button id="helpBtn" class="ctrl small-ctrl" aria-label="How to Play" title="How to Play">
+                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/question.png" alt="Question" class="btn-icon">
+                </button>
             </div>
+
             <div id="assist-badge" class="assist-badge" aria-live="polite" aria-atomic="true" title="Lab Assistant"
                  role="button">
                 <!-- Inline retro monitor SVG: paste into #assist-badge -->
