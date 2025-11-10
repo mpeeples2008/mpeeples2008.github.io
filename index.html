@@ -2,6 +2,47 @@
 <html lang="en">
 
 <head>
+
+<!-- Simple SfxManager shim inserted to replace complex monkeypatching -->
+<script>
+/* Simple, safe SfxManager for local testing and reliability */
+window.SfxManager = (function(){
+  const S = {
+    installed: false,
+    volume: 0.6,
+    enabled: true,
+    // Play a small audio via HTMLAudioElement; swallow errors
+    play: function(url){
+      if (!this.enabled || !url) return;
+      try {
+        // Avoid attempting to load file:// resources for local testing
+        if (location && location.protocol === 'file:' && url.startsWith('/')) {
+          // skip attempting to fetch absolute local paths
+          return;
+        }
+        const a = new Audio(url);
+        a.volume = this.volume;
+        const p = a.play();
+        if (p && typeof p.catch === 'function') p.catch(()=>{});
+      } catch(e) {
+      }
+    },
+    preload: function(urls){
+      if (!Array.isArray(urls)) return;
+      if (location && location.protocol === 'file:') return; // skip preloading on file://
+      try {
+        urls.forEach(u=>{
+          try { fetch(u, {mode:'no-cors'}).catch(()=>{}); } catch(e){}
+        });
+      } catch(e){}
+    },
+    install: function(){ this.installed = true; },
+    setVolume: function(v){ this.volume = Number(v) || 0.6; },
+  };
+  return S;
+})();
+</script>
+
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta property="og:image" content="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/social_media.png" />
     <meta property="og:image:type" content="image/png" />
@@ -14,9 +55,78 @@
 
     <link rel="preload" href="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PressStart2P-Regular.woff2" as="font" type="font/woff2" crossorigin>
 
-    <style>
+    
 
-        @font-face {
+    
+
+
+    
+
+
+    <!-- AUDIO POPUP CSS INSERTED BY CHATGPT -->
+    
+    <!-- END AUDIO POPUP CSS -->
+    <!-- Assistant: force wrap-anchored layout + correct image sizing -->
+    
+
+
+    <!-- START-MISSION modal CSS -->
+    
+    <!-- END START-MISSION modal CSS -->
+
+
+    
+
+
+    
+
+
+    <!-- Consolidated CSS overrides added by assistant -->
+    
+    <!-- End consolidated CSS overrides -->
+    <!-- Assistant: breathe and hue animations -->
+    <!-- End Assistant breathe/hue -->
+    <!-- Assistant: breathe-only animation -->
+    
+
+    <script id="assistant-breathe-only-script">
+        document.addEventListener('DOMContentLoaded', function () {
+            function assign(el) {
+                const d = (Math.random() * 1.2) - 0.6;
+                el.style.animationDelay = d.toFixed(2) + 's';
+                if (el.closest('.virus--size-0')) el.style.setProperty('--breathe-duration', (5.5 + Math.random() * 0.6).toFixed(2) + 's');
+                if (el.closest('.virus--size-1')) el.style.setProperty('--breathe-duration', (4.0 + Math.random() * 0.5).toFixed(2) + 's');
+                if (el.closest('.virus--size-2')) el.style.setProperty('--breathe-duration', (3.2 + Math.random() * 0.4).toFixed(2) + 's');
+            }
+            const elems = document.querySelectorAll('.virus--size-0 .face-sprite, .virus--size-1 .face-sprite, .virus--size-2 .face-sprite');
+            elems.forEach(assign);
+            const board = document.querySelector('#board');
+            if (board && window.MutationObserver) {
+                const mo = new MutationObserver(muts => {
+                    muts.forEach(m => {
+                        m.addedNodes.forEach(node => {
+                            if (!node || node.nodeType !== 1) return;
+                            const faces = node.querySelectorAll && node.querySelectorAll('.face-sprite');
+                            if (faces && faces.length) { faces.forEach(assign); }
+                            if (node.classList && node.classList.contains('face-sprite')) assign(node);
+                        });
+                    });
+                });
+                mo.observe(board, { childList: true, subtree: true });
+            }
+        });
+    </script>
+    <!-- End Assistant breathe-only animation -->
+
+
+
+
+<style>
+/* Consolidated CSS - grouped by purpose (blocks preserved) */
+
+/* Modals */
+
+@font-face {
             font-family: 'Press Start 2P';
             src: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PressStart2P-Regular.woff2') format('woff2');
             font-weight: normal;
@@ -924,73 +1034,9 @@
                 /* optional: slightly brighten segments */
                 filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
             }
-    </style>
-
-    <style>
-        /* Control trio: compact square buttons in HUD */
-        .control-trio {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-            .control-trio .ctrl {
-                width: 48px;
-                height: 40px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                font-family: 'Press Start 2P', monospace;
-                font-size: 12px;
-                border-radius: 6px;
-                border: 4px solid rgba(0, 0, 0, 0.18);
-                background: linear-gradient(180deg, #ffffff, #e6e3ff);
-                color: #0b3d91;
-                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
-                cursor: pointer;
-                padding: 6px;
-            }
-
-        /* Slightly smaller on narrow screens */
-        @media (max-width:420px) {
-            .control-trio .ctrl {
-                width: 40px;
-                height: 36px;
-                font-size: 10px;
-            }
-        }
-    </style>
 
 
-    <style>
-        .small-ctrl {
-            width: 100px;
-            height: 40px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            border: 4px solid rgba(0, 0, 0, 0.18);
-            background: linear-gradient(180deg, #fff, #e6e3ff);
-            color: #0b3d91;
-            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
-        }
-
-        @media (max-width:420px) {
-            .small-ctrl {
-                width: 40px;
-                height: 36px;
-                font-size: 10px;
-            }
-        }
-    </style>
-
-
-    <!-- AUDIO POPUP CSS INSERTED BY CHATGPT -->
-    <style>
-        /* ------------ audio popup (matches badge/game-over styling but interactive) ------------- */
+/* ------------ audio popup (matches badge/game-over styling but interactive) ------------- */
         .audio-popup {
             position: fixed;
             left: 50%;
@@ -1072,11 +1118,9 @@
             height: 24px;
             color: inherit;
         }
-    </style>
-    <!-- END AUDIO POPUP CSS -->
-    <!-- Assistant: force wrap-anchored layout + correct image sizing -->
-    <style id="assistant-wrap-fix">
-        /* Ensure .wrap is a positioning context (safe to set again) */
+
+
+/* Ensure .wrap is a positioning context (safe to set again) */
         .wrap {
             position: relative;
         }
@@ -1405,7 +1449,7 @@
         /* default: hide (keeps initial behavior) */
         #assist-badge .retro-monitor #brow-left,
         #assist-badge .retro-monitor #brow-right {
-            opacity: 0 !important;
+            opacity: 1 !important;
             transition: opacity 140ms linear, transform 140ms ease;
             transform-origin: center;
         }
@@ -1535,7 +1579,7 @@
     
 /* Assistant: added expressions - ensure neutral mouth is only visible when expr-neutral is present */
 #assist-badge.expr-neutral .mouth-shape.neutral { opacity: 1 !important; transform: translateY(0); }
-#assist-badge:not(.expr-neutral) .mouth-shape.neutral { opacity: 0 !important; }
+#assist-badge:not(.expr-neutral) .mouth-shape.neutral { opacity: 1 !important; }
 
 /* New expression: wink (half-closed eye implied by brow tilt and wink mouth) */
 #assist-badge.expr-wink .mouth-shape.wink { opacity: 1; transform: translateY(0); }
@@ -1557,7 +1601,7 @@
 #assist-badge.expr-talk .mouth-shape.neutral,
 #assist-badge.expr-surprised .mouth-shape.neutral,
 #assist-badge.speaking .mouth-shape.neutral {
-    opacity: 0 !important;
+    opacity: 1 !important;
 }
 
 /* make talk mouth animate only when speaking */
@@ -1565,12 +1609,9 @@
 
 /* small visual tweak: angry mouth color override */
 #assist-badge.expr-angry .mouth-shape.angry { stroke: #ff6b6b; }
-</style>
 
 
-    <!-- START-MISSION modal CSS -->
-    <style>
-        /* START-MISSION modal */
+/* START-MISSION modal */
         #startModal {
             position: fixed;
             left: 50%;
@@ -1680,25 +1721,60 @@
                 padding: 16px;
             }
         }
-    </style>
-    <!-- END START-MISSION modal CSS -->
 
 
-    <style>
-        .level-complete .lc-hint {
-            margin-top: 8px;
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.85);
-            font-family: 'Press Start 2P', monospace;
-            opacity: 0.9;
-            text-align: center;
-            pointer-events: none;
-        }
-    </style>
+/* Assistant toggle styles */
+.assistant-control { width:100%; box-sizing: border-box; }
+
+/* Hide native checkbox but keep it accessible */
+.assistant-toggle-input {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+/* custom switch */
+.assistant-toggle-switch {
+  display:inline-block;
+  width:46px;
+  height:26px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  position: relative;
+  transition: background .18s ease;
+  vertical-align: middle;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.4);
+}
+.assistant-toggle-switch::after{
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: transform .18s ease;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.25);
+}
+
+/* checked state */
+.assistant-toggle-input:checked + .assistant-toggle-switch{
+  background: linear-gradient(90deg, #34d399, #06b6d4);
+}
+.assistant-toggle-input:checked + .assistant-toggle-switch::after{
+  transform: translateX(20px);
+}
+
+/* audio popup sizing */
+.audio-popup { min-width: 420px; max-width: 90vw; padding: 14px; box-sizing: border-box; }
 
 
-    <style>
-        /* Ensure AI assistant elements sit above all popups without altering layout */
+/* Assistant & AI UI */
+
+/* Ensure AI assistant elements sit above all popups without altering layout */
         #assist-badge,
         .ai-assistant-bubble,
         .ai-intro-overlay,
@@ -1707,12 +1783,142 @@
         .ai-intro-content {
             z-index: 97000 !important;
         }
-    </style>
 
 
-    <!-- Consolidated CSS overrides added by assistant -->
-    <style>
-        /* Consolidated HUD small panel styles (base) */
+/* Added expressions: pout, grin, bigsurprised, smirk - use neutral stroke #ffd166 */
+#assist-badge .mouth-shape.pout { transition: opacity 140ms linear, transform 160ms ease; }
+#assist-badge.expr-pout .mouth-shape.pout { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+
+#assist-badge .mouth-shape.grin { transition: opacity 140ms linear, transform 160ms ease; }
+#assist-badge.expr-grin .mouth-shape.grin { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+
+#assist-badge .mouth-shape.bigsurprised { transition: opacity 140ms linear, transform 160ms ease; }
+#assist-badge.expr-bigsurprised .mouth-shape.bigsurprised { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+
+#assist-badge .mouth-shape.smirk { transition: opacity 140ms linear, transform 160ms ease; }
+#assist-badge.expr-smirk .mouth-shape.smirk { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+
+/* Ensure all mouth shapes use the neutral stroke color by default */
+#assist-badge .mouth-shape { stroke: #ffd166 !important; }
+
+/* Ensure eyebrow strokes follow neutral color; target common eyebrow ids/classes if present */
+#assist-badge #brow-left, #assist-badge #brow-right, #assist-badge .brow { stroke: #ffd166 !important; }
+
+/* Defensive: neutral mouth only visible when expr-neutral */
+#assist-badge:not(.expr-neutral) .mouth-shape.neutral { opacity: 1 !important; }
+#assist-badge.expr-neutral .mouth-shape.neutral { opacity: 1 !important; stroke: #ffd166; }
+
+
+/* Assistant disabled helper */
+body.assistant-disabled #assist-badge,
+body.assistant-disabled .assist-bubble,
+body.assistant-disabled .assistant-face {
+  display: none !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+
+
+/* Minimal, mobile-first assistant styles */
+        .assist-badge {
+            position: fixed;
+            right: 12px;
+            bottom: 72px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+            touch-action: manipulation;
+            transform: scale(1.15);
+        }
+
+        .assist-badge img {
+            width: 28px;
+            height: 28px;
+            display: block;
+        }
+
+        .assist-bubble {
+            position: fixed;
+            right: 12px;
+            bottom: 40px;
+            max-width: 72vw;
+            min-width: 160px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #111, #222);
+            color: #ffd166;
+            font-family: monospace, 'Press Start 2P', sans-serif;
+            font-size: 16px;
+            z-index: 999999;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(6px) scale(0.98);
+            transition: opacity 180ms ease, transform 200ms ease;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+
+        .assist-bubble.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .assist-badge.notif {
+            box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.08), 0 4px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        @media (max-width:420px) {
+            .assist-bubble {
+                max-width: 86vw;
+                font-size: 13px;
+                bottom: 110px;
+            }
+        }
+
+
+/* HUD / Badge / Game UI */
+
+/* Control trio: compact square buttons in HUD */
+        .control-trio {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+            .control-trio .ctrl {
+                width: 48px;
+                height: 40px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 12px;
+                border-radius: 6px;
+                border: 4px solid rgba(0, 0, 0, 0.18);
+                background: linear-gradient(180deg, #ffffff, #e6e3ff);
+                color: #0b3d91;
+                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+                cursor: pointer;
+                padding: 6px;
+            }
+
+        /* Slightly smaller on narrow screens */
+        @media (max-width:420px) {
+            .control-trio .ctrl {
+                width: 40px;
+                height: 36px;
+                font-size: 10px;
+            }
+        }
+
+
+/* Consolidated HUD small panel styles (base) */
         .hud .small {
             display: flex;
             align-items: center;
@@ -1800,13 +2006,11 @@
                 width: 94vw;
             }
         }
-    </style>
-    <!-- End consolidated CSS overrides -->
-    <!-- Assistant: breathe and hue animations -->
-    <!-- End Assistant breathe/hue -->
-    <!-- Assistant: breathe-only animation -->
-    <style id="assistant-breathe-only">
-        @keyframes breathe {
+
+
+/* Animations / Confetti / Particles */
+
+@keyframes breathe {
             0% {
                 transform: scale(0.985);
             }
@@ -1837,63 +2041,47 @@
             transform-origin: center;
             will-change: transform;
         }
-    </style>
 
-    <script id="assistant-breathe-only-script">
-        document.addEventListener('DOMContentLoaded', function () {
-            function assign(el) {
-                const d = (Math.random() * 1.2) - 0.6;
-                el.style.animationDelay = d.toFixed(2) + 's';
-                if (el.closest('.virus--size-0')) el.style.setProperty('--breathe-duration', (5.5 + Math.random() * 0.6).toFixed(2) + 's');
-                if (el.closest('.virus--size-1')) el.style.setProperty('--breathe-duration', (4.0 + Math.random() * 0.5).toFixed(2) + 's');
-                if (el.closest('.virus--size-2')) el.style.setProperty('--breathe-duration', (3.2 + Math.random() * 0.4).toFixed(2) + 's');
+
+/* Misc */
+
+.small-ctrl {
+            width: 100px;
+            height: 40px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            border: 4px solid rgba(0, 0, 0, 0.18);
+            background: linear-gradient(180deg, #fff, #e6e3ff);
+            color: #0b3d91;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+        }
+
+        @media (max-width:420px) {
+            .small-ctrl {
+                width: 40px;
+                height: 36px;
+                font-size: 10px;
             }
-            const elems = document.querySelectorAll('.virus--size-0 .face-sprite, .virus--size-1 .face-sprite, .virus--size-2 .face-sprite');
-            elems.forEach(assign);
-            const board = document.querySelector('#board');
-            if (board && window.MutationObserver) {
-                const mo = new MutationObserver(muts => {
-                    muts.forEach(m => {
-                        m.addedNodes.forEach(node => {
-                            if (!node || node.nodeType !== 1) return;
-                            const faces = node.querySelectorAll && node.querySelectorAll('.face-sprite');
-                            if (faces && faces.length) { faces.forEach(assign); }
-                            if (node.classList && node.classList.contains('face-sprite')) assign(node);
-                        });
-                    });
-                });
-                mo.observe(board, { childList: true, subtree: true });
-            }
-        });
-    </script>
-    <!-- End Assistant breathe-only animation -->
+        }
 
-<style>
 
-/* Added expressions: pout, grin, bigsurprised, smirk - use neutral stroke #ffd166 */
-#assist-badge .mouth-shape.pout { transition: opacity 140ms linear, transform 160ms ease; }
-#assist-badge.expr-pout .mouth-shape.pout { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+.level-complete .lc-hint {
+            margin-top: 8px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0.9;
+            text-align: center;
+            pointer-events: none;
+        }
 
-#assist-badge .mouth-shape.grin { transition: opacity 140ms linear, transform 160ms ease; }
-#assist-badge.expr-grin .mouth-shape.grin { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
-
-#assist-badge .mouth-shape.bigsurprised { transition: opacity 140ms linear, transform 160ms ease; }
-#assist-badge.expr-bigsurprised .mouth-shape.bigsurprised { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
-
-#assist-badge .mouth-shape.smirk { transition: opacity 140ms linear, transform 160ms ease; }
-#assist-badge.expr-smirk .mouth-shape.smirk { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
-
-/* Ensure all mouth shapes use the neutral stroke color by default */
-#assist-badge .mouth-shape { stroke: #ffd166 !important; }
-
-/* Ensure eyebrow strokes follow neutral color; target common eyebrow ids/classes if present */
-#assist-badge #brow-left, #assist-badge #brow-right, #assist-badge .brow { stroke: #ffd166 !important; }
-
-/* Defensive: neutral mouth only visible when expr-neutral */
-#assist-badge:not(.expr-neutral) .mouth-shape.neutral { opacity: 0 !important; }
-#assist-badge.expr-neutral .mouth-shape.neutral { opacity: 1 !important; stroke: #ffd166; }
 
 </style>
+
 </head>
 
 <body>
@@ -1917,7 +2105,7 @@
                     src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanobot.png"
                     alt="Nano Bot Icon" width="28" height="28">
 
-                <div class="meter-segments" aria-hidden="true">
+                <div class="meter-segments">
                     <div class="seg filled pop" data-idx="0"></div>
                     <div class="seg filled pop" data-idx="1"></div>
                     <div class="seg filled pop" data-idx="2"></div>
@@ -1940,7 +2128,7 @@
                     <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/reset.png" alt="Retart" class="btn-icon">
                 </button>
 
-                <button id="audioBtn" class="ctrl small-ctrl" aria-label="Audio Settings" title="Audio Settings">
+                <button id="audioBtn" class="ctrl small-ctrl" aria-label="Audio Settings" title="Audio Settings" data-modal-open="audioPopup">
                     <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/gear.png" alt="Audio" class="btn-icon">
                 </button>
                 <button id="helpBtn" class="ctrl small-ctrl" aria-label="How to Play" title="How to Play">
@@ -1951,7 +2139,7 @@
             <div id="assist-badge" class="assist-badge" aria-live="polite" aria-atomic="true" title="Lab Assistant"
                  role="button">
                 <!-- Inline retro monitor SVG: paste into #assist-badge -->
-                <svg class="retro-monitor" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"
+                <svg class="retro-monitor" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
                      focusable="false">
                     <defs>
                         <linearGradient id="screenGrad" x1="0" x2="0" y1="0" y2="1">
@@ -2069,7 +2257,7 @@
 
                 </svg>
             </div>
-            <div id="assist-bubble" class="assist-bubble" role="status" aria-hidden="true">
+            <div id="assist-bubble" class="assist-bubble" role="status">
                 <div id="assist-text">...</div>
             </div>
         </div>
@@ -3007,23 +3195,24 @@ function escapeHtmlAttr(str) {
             /* createConfettiPiece / getConfettiPiece / releaseConfettiPiece
              replaced with no-ops to avoid creating DOM nodes or animations */
             function makeConfettiPiece() {
-                // intentionally disabled - confetti removed to improve performance
-                const d = document.createElement('div'); d.className = 'confetti'; d._inUse = false; return d;
-            }
+  /* confetti disabled - no-op */
+  return;
+}
             function getConfettiPiece() {
-                // intentionally return null (or a harmless placeholder) so no pieces get animated
-                return null;
-            }
-            function releaseConfettiPiece(p) {// no-op
-            }
+  /* confetti disabled - no-op */
+  return;
+}
+            function releaseConfettiPiece(p) {
+  /* confetti disabled - no-op */
+  return;
+}
 
             /* emitConfettiAt is replaced with a safe no-op. showChainBadge still calls it,
                but nothing will be created or animated. */
             function emitConfettiAt(x, y, tier) {
-                // Intentionally disabled: confetti removed.
-                // If you later want to re-enable confetti, restore the original implementation.
-                return;
-            }
+  /* confetti disabled - no-op */
+  return;
+}
 
 
             /* ---------- showChainBadge with retro icon + confetti ---------- */
@@ -3070,7 +3259,7 @@ function escapeHtmlAttr(str) {
                         document.body.appendChild(badge);
                         const pos = placeBadge();
                         requestAnimationFrame(() => badge.classList.add('show'));
-                        try { const rect = badge.getBoundingClientRect(); const cx = pos.cx || (rect.left + rect.width / 2); const cy = pos.cy || (rect.top + rect.height / 2); emitConfettiAt(cx, cy, rule.className); } catch (e) { }
+                        try { const rect = badge.getBoundingClientRect(); const cx = pos.cx || (rect.left + rect.width / 2); const cy = pos.cy || (rect.top + rect.height / 2); void(cx, cy, rule.className); } catch (e) { }
                         if (rule.scoreBonus) totalScore += rule.scoreBonus;
                         if (rule.extraClicks) { clicksLeft = Math.min(MAX_CLICKS, clicksLeft + rule.extraClicks); playSfx('fill'); }
                         updateHUD();
@@ -3646,7 +3835,7 @@ function escapeHtmlAttr(str) {
                                 }
                                 // preserve prototype so instanceof checks still work
                                 PatchedAudio.prototype = RealAudio.prototype;
-                                window.Audio = PatchedAudio;
+                                /* window.Audio override removed */
                             })();
                         } catch (e) { }
 
@@ -3678,22 +3867,31 @@ function escapeHtmlAttr(str) {
                         const popupMute = document.getElementById('popupMute');
 
                         function showAudioPopup() {
-                            if (!audioPopup) return;
-                            // sync values from current runtime (prefer local, then window)
-                            const mv = (typeof musicVolume !== 'undefined') ? musicVolume : (window.musicVolume || 0.2);
-                            const sv = (typeof sfxVolume !== 'undefined') ? sfxVolume : (window.sfxVolume || 0.5);
-                            const am = (typeof allMuted !== 'undefined') ? allMuted : window.allMuted;
-                            if (musicSlider) musicSlider.value = String(mv);
-                            if (sfxSlider) sfxSlider.value = String(sv);
-                            if (musicVal) musicVal.textContent = Math.round((mv * 100)) + '%';
-                            if (sfxVal) sfxVal.textContent = Math.round((sv * 100)) + '%';
-                            if (popupMute) {
-                                popupMute.textContent = am ? 'Unmute' : 'Mute';
-                                popupMute.setAttribute('aria-pressed', String(!!am));
-                            }
-                            audioPopup.classList.add('show');
-                            audioPopup.setAttribute('aria-hidden', 'false');
-                        }
+    // Query local elements safely at invocation time
+    var audioPopup = document.getElementById('audioPopup') || document.getElementById('audio-popup');
+    var musicSlider = document.getElementById('musicVol');
+    var sfxSlider = document.getElementById('sfxVol');
+    var musicVal = document.getElementById('musicVolVal') || document.getElementById('musicVolVal');
+    var sfxVal = document.getElementById('sfxVolVal') || document.getElementById('sfxVolVal');
+    var popupMute = document.getElementById('popupMute');
+
+    if (!audioPopup) return;
+    if (musicSlider) musicSlider.value = String(window.musicVolume ?? 0.2);
+    if (sfxSlider) sfxSlider.value = String(window.sfxVolume ?? 0.5);
+    if (musicVal && musicSlider) {
+        try { musicVal.textContent = Math.round((parseFloat(musicSlider.value || 0) * 100)) + '%'; } catch(e){}
+    }
+    if (sfxVal && sfxSlider) {
+        try { sfxVal.textContent = Math.round((parseFloat(sfxSlider.value || 0) * 100)) + '%'; } catch(e){}
+    }
+    if (popupMute) {
+        try { popupMute.textContent = window.allMuted ? 'Unmute' : 'Mute'; } catch(e){}
+        try { popupMute.setAttribute('aria-pressed', String(!!window.allMuted)); } catch(e){}
+    }
+    audioPopup.classList.add('show');
+    audioPopup.style.display = '';
+    audioPopup.setAttribute('aria-hidden', 'false');
+}
 
                         function hideAudioPopup() {
                             if (!audioPopup) return;
@@ -3762,7 +3960,7 @@ function escapeHtmlAttr(str) {
 
 
     <!-- AUDIO SETTINGS POPUP INSERTED BY CHATGPT -->
-    <div id="audioPopup" class="audio-popup" role="dialog" aria-modal="true" aria-hidden="true"
+    <div id="audioPopup" class="audio-popup" role="dialog" aria-modal="true"
         style="pointer-events:auto;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
             <div style="display:flex; gap:8px; align-items:center;">
@@ -3789,6 +3987,19 @@ function escapeHtmlAttr(str) {
             <label for="sfxVol">SFX Volume</label>
             <input id="sfxVol" type="range" min="0" max="1" step="0.01" value="0.50" />
             <div id="sfxVolVal" style="width:40px;text-align:right;font-size:11px;color:#ffe9b0;">50%</div>
+            </div>
+        <div class="row">
+<div class="assistant-control" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+  <div style="flex:1">
+    <div style="font-weight:600;">Assistant UI</div>
+    <div style="font-size:12px; color:var(--muted, #9aa6b2);">Enable assistant animations and voice cues.</div>
+  </div>
+  <div style="flex:0 0 auto; position:relative;">
+  <input type="checkbox" id="assistantToggle" class="assistant-toggle-input" aria-label="Enable assistant" />
+  <span class="assistant-toggle-switch" aria-hidden="true"></span>
+</div>
+</div>
+
         </div>
 
         <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:8px;">
@@ -3866,16 +4077,31 @@ function escapeHtmlAttr(str) {
             const popupMute = document.getElementById('popupMute');
 
             function showAudioPopup() {
-                if (!audioPopup) return;
-                musicSlider.value = String(window.musicVolume ?? 0.2);
-                sfxSlider.value = String(window.sfxVolume ?? 0.5);
-                musicVal.textContent = Math.round((musicSlider.value * 100)) + '%';
-                sfxVal.textContent = Math.round((sfxSlider.value * 100)) + '%';
-                popupMute.textContent = window.allMuted ? 'Unmute' : 'Mute';
-                popupMute.setAttribute('aria-pressed', String(!!window.allMuted));
-                audioPopup.classList.add('show');
-                audioPopup.setAttribute('aria-hidden', 'false');
-            }
+    // Query local elements safely at invocation time
+    var audioPopup = document.getElementById('audioPopup') || document.getElementById('audio-popup');
+    var musicSlider = document.getElementById('musicVol');
+    var sfxSlider = document.getElementById('sfxVol');
+    var musicVal = document.getElementById('musicVolVal') || document.getElementById('musicVolVal');
+    var sfxVal = document.getElementById('sfxVolVal') || document.getElementById('sfxVolVal');
+    var popupMute = document.getElementById('popupMute');
+
+    if (!audioPopup) return;
+    if (musicSlider) musicSlider.value = String(window.musicVolume ?? 0.2);
+    if (sfxSlider) sfxSlider.value = String(window.sfxVolume ?? 0.5);
+    if (musicVal && musicSlider) {
+        try { musicVal.textContent = Math.round((parseFloat(musicSlider.value || 0) * 100)) + '%'; } catch(e){}
+    }
+    if (sfxVal && sfxSlider) {
+        try { sfxVal.textContent = Math.round((parseFloat(sfxSlider.value || 0) * 100)) + '%'; } catch(e){}
+    }
+    if (popupMute) {
+        try { popupMute.textContent = window.allMuted ? 'Unmute' : 'Mute'; } catch(e){}
+        try { popupMute.setAttribute('aria-pressed', String(!!window.allMuted)); } catch(e){}
+    }
+    audioPopup.classList.add('show');
+    audioPopup.style.display = '';
+    audioPopup.setAttribute('aria-hidden', 'false');
+}
 
             function hideAudioPopup() {
                 if (!audioPopup) return;
@@ -3911,8 +4137,8 @@ function escapeHtmlAttr(str) {
                 if (window.musicAudio) {
                     window.musicAudio.volume = Number(window.musicVolume) || window.musicAudio.volume || 0.2;
                     window.musicAudio.muted = !!window.allMuted;
-                }
-            } catch (e) { }
+                    }
+                } catch (e) { }
             updateAllSfxVolumes();
         });
     </script>
@@ -3979,21 +4205,7 @@ function escapeHtmlAttr(str) {
 
             // Monkeypatch Audio constructor so new instances get correct volume/muted and have play patched
             try {
-                var NativeAudio = window.Audio;
-                if (NativeAudio) {
-                    function WrappedAudio(src) {
-                        var inst = new NativeAudio(src);
-                        try {
-                            // attempt to set volume based on whether loop is set (if loop may be set later)
-                            // We'll patch play to re-evaluate before playing.
-                            inst.muted = !!window.allMuted;
-                            // no immediate volume set here (could be SFX or music); set in play()
-                        } catch (e) { }
-                        return inst;
-                    }
-                    WrappedAudio.prototype = NativeAudio.prototype;
-                    window.Audio = WrappedAudio;
-                }
+                /* audio monkeypatch removed */
             } catch (e) { }
 
             // Patch HTMLMediaElement.prototype.play to set volumes just-in-time
@@ -4111,7 +4323,7 @@ function escapeHtmlAttr(str) {
     </script>
     <!-- END AUDIO CONTROLS ENFORCER v3 -->
     <!-- HOW TO PLAY POPUP -->
-    <div id="helpPopup" class="audio-popup" role="dialog" aria-modal="true" aria-hidden="true"
+    <div id="helpPopup" class="audio-popup" role="dialog" aria-modal="true"
         style="pointer-events:auto;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
             <div style="display:flex; gap:8px; align-items:center;">
@@ -4208,69 +4420,7 @@ function escapeHtmlAttr(str) {
 
 
     <!-- BEGIN: Sarcastic Assistant (added by patch) -->
-    <style id="assistant-styles">
-        /* Minimal, mobile-first assistant styles */
-        .assist-badge {
-            position: fixed;
-            right: 12px;
-            bottom: 72px;
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: rgba(0, 0, 0, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 99999;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-            touch-action: manipulation;
-            transform: scale(1.15);
-        }
-
-        .assist-badge img {
-            width: 28px;
-            height: 28px;
-            display: block;
-        }
-
-        .assist-bubble {
-            position: fixed;
-            right: 12px;
-            bottom: 40px;
-            max-width: 72vw;
-            min-width: 160px;
-            padding: 8px 12px;
-            border-radius: 10px;
-            background: linear-gradient(180deg, #111, #222);
-            color: #ffd166;
-            font-family: monospace, 'Press Start 2P', sans-serif;
-            font-size: 16px;
-            z-index: 999999;
-            pointer-events: none;
-            opacity: 0;
-            transform: translateY(6px) scale(0.98);
-            transition: opacity 180ms ease, transform 200ms ease;
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-        }
-
-        .assist-bubble.show {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-        }
-
-        .assist-badge.notif {
-            box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.08), 0 4px 8px rgba(0, 0, 0, 0.25);
-        }
-
-        @media (max-width:420px) {
-            .assist-bubble {
-                max-width: 86vw;
-                font-size: 13px;
-                bottom: 110px;
-            }
-        }
-    </style>
+    
 
     <!-- assistant DOM -->
     <div id="assist-badge" class="assist-badge" aria-live="polite" aria-atomic="true" title="Lab Assistant"
@@ -4279,7 +4429,7 @@ function escapeHtmlAttr(str) {
         <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24'><rect rx='4' width='24' height='24' fill='%23000' opacity='0.4'/><circle cx='8.5' cy='10' r='1.6' fill='%23ffd166'/><circle cx='15.5' cy='10' r='1.6' fill='%23ffd166'/><rect x='6' y='14' width='12' height='1.6' rx='0.8' fill='%23ffd166' opacity='0.9'/></svg>"
             alt="assistant" />
     </div>
-    <div id="assist-bubble" class="assist-bubble" role="status" aria-hidden="true">
+    <div id="assist-bubble" class="assist-bubble" role="status">
         <div id="assist-text">...</div>
     </div>
 
@@ -5013,7 +5163,7 @@ function escapeHtmlAttr(str) {
 
 
     <!-- START MISSION modal -->
-    <div id="startModal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Mission briefing">
+    <div id="startModal" role="dialog" aria-modal="true" aria-label="Mission briefing">
         <div class="inner">
             <div class="modal-text">
     PATHODYNE INDUSTRIES SERVICE TERMINAL <br>
@@ -5641,7 +5791,6 @@ document.addEventListener('DOMContentLoaded', function () {
   // Safe single AudioContext, created on first user gesture.
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   if (!AudioCtx) {
-    console.info('[SfxManager] WebAudio not available; leaving existing Audio playback in place.');
     return;
   }
 
@@ -5705,49 +5854,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Public manager
-    const SfxManager = {
-      // play by URL or existing cached key
-      async play(urlOrEl, opts={}) {
-        try {
-          if (!urlOrEl) return null;
-          // If passed an HTMLMediaElement, try to use it (fallback path)
-          if (urlOrEl instanceof HTMLMediaElement) {
-            try {
-              // ensure volume/mute set
-              urlOrEl.volume = typeof opts.volume === 'number' ? opts.volume : (window.sfxVolume || 0.5);
-              urlOrEl.muted = !!window.allMuted;
-              // Play but don't allow many simultaneous identical audio elements to pile up
-              const playPromise = urlOrEl.play();
-              if (playPromise && playPromise.catch) playPromise.catch(()=>{});
-              return urlOrEl;
-            } catch(e){ console.warn('[SfxManager] play HTMLMediaElement failed', e); }
-          }
-          // If argument looks like a URL string
-          if (typeof urlOrEl === 'string') {
-            const url = urlOrEl;
-            let buf = bufferCache.get(url);
-            if (!buf) {
-              // try to fetch and decode
-              try { buf = await fetchDecode(url); } catch(e){ console.warn('[SfxManager] decode failed for', url); return null; }
-            }
-            // apply global sfxVolume
-            const vol = (typeof opts.volume === 'number') ? opts.volume : (window.sfxVolume || 0.5);
-            return playBuffer(buf, 0, vol, opts);
-          }
-        } catch (e) { console.warn('[SfxManager] play error', e); }
-        return null;
-      },
-      // Preload a list of URLs (non-blocking)
-      preload(list) {
-        if (!Array.isArray(list)) return;
-        list.forEach(u => { try { fetchDecode(u).catch(()=>{}); } catch(e){} });
-      },
-      stopAll() {
-        activeSources.forEach(s => { try{ s.stop(); }catch(e){} });
-        activeSources.clear();
-      },
-      _debug: { ctx, activeSources, bufferCache }
-    };
+    /* original SfxManager definition removed */
 
     // expose
     window.SfxManager = SfxManager;
@@ -5806,7 +5913,6 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     } catch(e){ console.warn('[SfxManager] failed to patch playSfx', e); }
 
-    console.info('[SfxManager] installed: WebAudio-based SFX playback with voice limiting.');
   }
 })();
 </script>
@@ -5851,10 +5957,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (list && list.length) {
         try {
           window.SfxManager.preload(list);
-          console.info('[SfxManager] Preloading sfxCache URLs:', list);
         } catch(e) { console.warn('[SfxManager] preload failed', e); }
       } else {
-        console.info('[SfxManager] No sfxCache URLs found to preload.');
       }
     } catch(e){ console.warn('[SfxManager] tryPreload error', e); }
   }
@@ -5898,7 +6002,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // dedupe
       const dedup = Array.from(new Set(urls));
       if (dedup.length) {
-        console.info('[SfxManager] (watcher) Preloading sfxCache URLs:', dedup);
+/* console.info('[SfxManager] (watcher) Preloading sfxCache URLs:', dedup); */
         window.SfxManager.preload(dedup);
         return true;
       }
@@ -5923,7 +6027,6 @@ document.addEventListener('DOMContentLoaded', function () {
           tryPreloadNow();
         });
         mo.observe(document.documentElement || document.body, { childList: true, subtree: true });
-        console.info('[SfxManager] watcher: fallback MutationObserver installed to detect late-added audio elements.');
       } catch(e){ console.warn('[SfxManager] watcher: could not install MutationObserver', e); }
     }
   }, 250);
@@ -5938,7 +6041,6 @@ document.addEventListener('DOMContentLoaded', function () {
         get() { return _val; },
         set(v) { _val = v; tryPreloadNow(); return _val; }
       });
-      console.info('[SfxManager] watcher: installed sfxCache setter hook to detect late assignment.');
     }
   } catch(e){ /* ignore if not allowed */ }
 })();
@@ -5958,7 +6060,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if(window.SfxManager && typeof window.SfxManager.preload === 'function'){
       const resolved = explicit.map(resolve).filter(Boolean);
       if(resolved.length){
-        console.info('[SfxManager] explicit preloading URLs:', resolved);
         try{ window.SfxManager.preload(resolved); }catch(e){console.warn(e);} 
       }
       return true;
@@ -6000,6 +6101,609 @@ window.assistantFaceDiagnostics = (function() {
 })();
 console.info('[AssistantPatch] assistantFaceDiagnostics available. Use assistantFaceDiagnostics.show("neutral"), .show("worried"), etc.');
 </script>
+
+
+<!-- Modal inert management for accessibility -->
+<script>
+(function(){
+  function setInertForModal(modal, inert) {
+    if (!modal) return;
+    var bodyChildren = Array.from(document.body.children);
+    bodyChildren.forEach(function(el){
+      if (el === modal) return;
+      // don't inert script/style elements
+      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') return;
+      try {
+        if (inert) el.setAttribute('inert','');
+        else el.removeAttribute('inert');
+      } catch(e) {
+        // some browsers may not support inert; fallback to aria-hidden
+        if (inert) el.setAttribute('aria-hidden','true');
+        else el.removeAttribute('aria-hidden');
+      }
+    });
+    // ensure focus is inside modal when opening
+    if (inert) {
+      try {
+        var focusable = modal.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusable) focusable.focus();
+      } catch(e){}
+    }
+  }
+
+  function observeModal(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    var prevVisible = null;
+    var check = function(){
+      var visible = (modal.offsetParent !== null) || (getComputedStyle(modal).display !== 'none' && !modal.classList.contains('hidden'));
+      if (visible === prevVisible) return;
+      prevVisible = visible;
+      setInertForModal(modal, visible);
+    };
+    // initial check after DOM ready
+    setTimeout(check, 50);
+    // observe attribute changes
+    var mo = new MutationObserver(check);
+    mo.observe(modal, { attributes: true, attributeFilter: ['style','class','aria-hidden'] });
+    // also check on window resize and focus changes
+    window.addEventListener('resize', check);
+    document.addEventListener('focusin', check);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    observeModal('startModal');
+    observeModal('gameOverPopup');
+    observeModal('level-complete');
+  });
+})();
+</script>
+
+
+
+
+
+
+
+
+<script>
+(function(){
+  function ensureOriginal(){
+    if (!window._originalAssistant) {
+      // save any existing Assistant API
+      window._originalAssistant = window.Assistant || { emit:function(){}, on:function(){}, off:function(){} };
+    }
+  }
+  
+function setAssistantEnabled(val) {
+  try {
+    window.enableAssistant = !!val;
+    try { localStorage.setItem('assistantEnabled', window.enableAssistant ? 'true' : 'false'); } catch(e){}
+    if (window.enableAssistant) {
+      try { if (window.Assistant && typeof window.Assistant.init === 'function') window.Assistant.init(); } catch(e){}
+      document.body.classList.remove('assistant-disabled');
+    } else {
+      try { if (window.Assistant && typeof window.Assistant.destroy === 'function') window.Assistant.destroy(); } catch(e){}
+      document.body.classList.add('assistant-disabled');
+    }
+  } catch(e) { console.warn('setAssistantEnabled error', e); }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  try { ensureOriginal(); } catch(e){}
+  var cb = document.getElementById('assistantToggle');
+  var span = document.querySelector('.assistant-toggle-switch');
+  var initial = true;
+  try { initial = localStorage.getItem('assistantEnabled') !== 'false'; } catch(e){ initial = true; }
+  if (cb){
+    cb.checked = initial;
+    setAssistantEnabled(cb.checked);
+    cb.addEventListener('change', function(){ setAssistantEnabled(cb.checked); });
+  } else {
+    setAssistantEnabled(initial);
+  }
+  if (span && cb){
+    span.addEventListener('click', function(e){ e.preventDefault(); cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); });
+  }
+});
+})();
+</script>
+
+<!-- Modal Manager injected -->
+<script>
+(function(){
+  // Utility: find focusable elements
+  function focusableElements(container) {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'))
+      .filter(function(el){ return el.offsetParent !== null || getComputedStyle(el).visibility !== 'hidden'; });
+  }
+
+  // Inert management: set inert/aria-hidden on everything except modal
+  function setInertForModal(modal, inert) {
+    if (!modal) return;
+    var bodyChildren = Array.from(document.body.children);
+    bodyChildren.forEach(function(el){
+      if (el === modal) return;
+      // skip scripts/styles/our injected manager
+      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') return;
+      try {
+        if (inert) el.setAttribute('inert','');
+        else el.removeAttribute('inert');
+      } catch(e) {
+        if (inert) el.setAttribute('aria-hidden','true');
+        else el.removeAttribute('aria-hidden');
+      }
+    });
+    if (inert) {
+      try {
+        var focusable = focusableElements(modal)[0];
+        if (focusable) focusable.focus();
+      } catch(e){}
+    }
+  }
+
+  // Show modal by id
+  window.showModal = function(id) {
+    try {
+      var modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.add('open');
+      modal.style.display = '';
+      modal.removeAttribute('aria-hidden');
+      setInertForModal(modal, true);
+      // dispatch event
+      modal.dispatchEvent(new CustomEvent('modal:open', {bubbles:true}));
+    } catch(e) { console.error('showModal error', e); }
+  };
+
+  // Hide modal by id
+  window.hideModal = function(id) {
+    try {
+      var modal = document.getElementById(id);
+      if (!modal) return;
+      modal.classList.remove('open');
+      // try to hide visually but don't remove from DOM
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden','true');
+      setInertForModal(modal, false);
+      modal.dispatchEvent(new CustomEvent('modal:close', {bubbles:true}));
+    } catch(e) { console.error('hideModal error', e); }
+  };
+
+  // Toggle
+  window.toggleModal = function(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    if (modal.classList.contains('open')) window.hideModal(id); else window.showModal(id);
+  };
+
+  // Close handlers for elements with data-modal-close or buttons with class 'btn' inside modals
+  document.addEventListener('click', function(e){
+    var el = e.target;
+    // data-modal-open
+    var openAttr = el.closest('[data-modal-open]');
+    if (openAttr) {
+      var target = openAttr.getAttribute('data-modal-open');
+      if (target) { e.preventDefault(); window.showModal(target); return; }
+    }
+    // data-modal-close
+    var closeAttr = el.closest('[data-modal-close]');
+    if (closeAttr) {
+      var target = closeAttr.getAttribute('data-modal-close');
+      if (target) { e.preventDefault(); window.hideModal(target); return; }
+    }
+    // elements with data-modal-target to toggle
+    var toggleAttr = el.closest('[data-modal-toggle]');
+    if (toggleAttr) {
+      var target = toggleAttr.getAttribute('data-modal-toggle');
+      if (target) { e.preventDefault(); window.toggleModal(target); return; }
+    }
+    // fallback: buttons with id audioClose, startModalClose, gameOverClose etc.
+    if (el.id === 'audioClose') { window.hideModal('audioPopup'); return; }
+    if (el.id === 'startModalClose') { window.hideModal('startModal'); return; }
+    if (el.id === 'gameOverClose') { window.hideModal('gameOverPopup'); return; }
+  });
+
+  // Close on Escape
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      // close topmost open modal
+      var open = document.querySelector('.open');
+      if (open) {
+        var id = open.id;
+        if (id) window.hideModal(id);
+      }
+    }
+  });
+
+  // On DOM ready: wire known triggers and show startModal if present and not previously dismissed
+  document.addEventListener('DOMContentLoaded', function(){
+    // wire any elements with data-modal-open to ensure they exist (no-op)
+    // Show startModal at startup if present and not dismissed by user (localStorage)
+    try {
+      var start = document.getElementById('startModal');
+      if (start) {
+        var seen = false;
+        try { seen = localStorage.getItem('startModalDismissed') === 'true'; } catch(e){}
+        if (!seen) {
+          window.showModal('startModal');
+        } else {
+          // ensure it's hidden
+          start.style.display = 'none';
+          start.setAttribute('aria-hidden','true');
+        }
+      }
+    } catch(e){}
+    // ensure audioPopup hidden by default unless opened
+    var audio = document.getElementById('audioPopup') || document.getElementById('audio-popup');
+    if (audio) {
+      audio.style.display = 'none';
+      audio.setAttribute('aria-hidden','true');
+    }
+    // ensure gameOverPopup hidden
+    var gp = document.getElementById('gameOverPopup');
+    if (gp) { gp.style.display = 'none'; gp.setAttribute('aria-hidden','true'); }
+  });
+
+})();
+</script>
+
+
+
+
+
+
+<!-- Assistant Modular Wrapper inserted (fallback always) -->
+<script>
+(function(){
+  var preExisting = (window.Assistant && window.Assistant.__original) ? window.Assistant.__original : window.Assistant || null;
+  function createEmitter(){ var handlers = Object.create(null); return { on: function(evt, fn){ if (typeof fn !== 'function') return; (handlers[evt] || (handlers[evt]=[])).push(fn); }, off: function(evt, fn){ if (!handlers[evt]) return; if (!fn) { delete handlers[evt]; return; } handlers[evt]=handlers[evt].filter(f=>f!==fn); }, emit: function(evt){ var args = Array.prototype.slice.call(arguments,1); var list = (handlers[evt] || []).slice(); for(var i=0;i<list.length;i++){ try{ list[i].apply(null, args); }catch(e){ console.warn('assistant handler error',e);} } } }; }
+  var emitter = createEmitter();
+  var inProxyCall = false;
+  
+  function ensureBubbleRoot(){
+    var root = document.getElementById('assistant-bubble-root');
+    if (root) return root;
+    root = document.createElement('div');
+    root.id = 'assistant-bubble-root';
+    /* Use fixed positioning and a very high z-index to avoid being clipped by other stacking contexts */
+    root.style.position = 'fixed';
+    root.style.right = '20px';
+    root.style.bottom = '120px';
+    root.style.zIndex = '2147483647';
+    root.style.pointerEvents = 'none';
+    /* prevent accidental clipping */
+    root.style.maxWidth = '40vw';
+    root.style.display = 'block';
+    document.body.appendChild(root);
+    try { console.log('[Assistant][module] fallback bubble root created', root); } catch(e){}
+    return root;
+  }
+
+  
+  
+  
+  
+  function showFallbackBubble(text, opts){
+    opts = opts || {};
+    try {
+      // Ensure style exists
+      if (!document.getElementById('assistant-fallback-style')) {
+        var style = document.createElement('style');
+        style.id = 'assistant-fallback-style';
+        style.textContent = `
+#assistant-bubble-root { position: fixed !important; right: 20px !important; bottom: 120px !important; z-index: 2147483647 !important; pointer-events: none !important; max-width: 40vw !important; display:block !important; }
+.assistant-fallback-bubble {
+  pointer-events: auto !important;
+  max-width: 40vw !important;
+  padding: 12px 14px !important;
+  background: rgba(255,250,230,0.98) !important;
+  color: #0b1220 !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(10,10,10,0.06) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  opacity: 0 !important;
+  transition: opacity 220ms ease !important;
+  position: relative !important;
+  text-align: left !important;
+}
+.assistant-fallback-bubble.sticky {
+  background: rgba(255,245,230,1) !important;
+}
+`;
+        (document.head||document.documentElement).appendChild(style);
+      }
+      var root = ensureBubbleRoot();
+      // clear existing content
+      root.innerHTML = '';
+      var b = document.createElement('div');
+      b.className = 'assistant-fallback-bubble';
+      if (opts.sticky) b.classList.add('sticky');
+      b.setAttribute('data-debug','1');
+      b.style.opacity = '0';
+      b.textContent = (typeof text === 'string') ? text : (text && text.message) || JSON.stringify(text);
+      // append root to documentElement to avoid body clipping
+      (document.documentElement || document.body).appendChild(root);
+      root.appendChild(b);
+      try { console.log('[Assistant][module] fallback bubble shown', b); } catch(e){}
+      // show
+      requestAnimationFrame(function(){ b.style.opacity = '1'; });
+      // auto-hide unless sticky
+      if (!opts.sticky) {
+        setTimeout(function(){
+          try {
+            b.style.opacity = '0';
+            setTimeout(function(){ if (b.parentNode) b.parentNode.removeChild(b); }, 240);
+          } catch(e){}
+        }, typeof opts.timeout === 'number' ? opts.timeout : 4000);
+      } else {
+        // if sticky, allow click to dismiss
+        b.style.cursor = 'pointer';
+        b.addEventListener('click', function(){ try{ b.style.opacity='0'; setTimeout(function(){ if (b.parentNode) b.parentNode.removeChild(b); }, 180); }catch(e){} }, {passive:true});
+      }
+    } catch(e){ console.warn('showFallbackBubble error', e); }
+  }
+
+`;
+        (document.head||document.documentElement).appendChild(style);
+      }
+      var root = ensureBubbleRoot();
+      root.innerHTML = '';
+      var b = document.createElement('div');
+      b.className = 'assistant-fallback-bubble';
+      b.setAttribute('data-debug','1');
+      /* removed setting opacity 0 */
+      b.textContent = (typeof text === 'string') ? text : (text && text.message) || JSON.stringify(text);
+      // append to documentElement to avoid body clipping
+      (document.documentElement || document.body).appendChild(root);
+      root.appendChild(b);
+      try { console.log('[Assistant][module] fallback bubble shown (persistent)', b); } catch(e){}
+      // show (persistent - no auto-hide)
+      requestAnimationFrame(function(){ b.style.opacity = '1'; });
+      // expose a close helper on the root for debugging: click to remove
+      root.addEventListener('click', function(){ try{ /* removed setting opacity 0 */ setTimeout(function(){ if (b.parentNode) b.parentNode.removeChild(b); }, 180); }catch(e){} }, {passive:true});
+    } catch(e){ console.warn('showFallbackBubble error', e); }
+  }
+
+  var internal = {
+    _inited: false,
+    _timers: [],
+    init: function(opts){
+      if (this._inited) return;
+      this._inited = true;
+      try {
+        console.log('[Assistant][module] init() preExisting=', !!preExisting);
+        if (preExisting && typeof preExisting.init === 'function') {
+          preExisting.init(opts);
+        } else {
+          var badge = document.getElementById('assist-badge') || document.querySelector('.assist-badge');
+          if (badge) badge.style.display = '';
+        }
+        emitter.on('show', function(text, meta){
+          try {
+            // ALWAYS show fallback bubble (non-intrusive). If the preExisting also shows one, it may overlap.
+            showFallbackBubble(text, (meta && meta.opts) || {});
+          } catch(e){ console.warn('fallback show handler error', e); }
+        });
+      } catch(e){ console.warn('Assistant.init error', e); }
+    },
+    show: function(){
+      var args = arguments;
+      try {
+        console.log('[Assistant][module] show() called; preExisting=', !!preExisting, 'inProxyCall=', inProxyCall, 'args=', args);
+        try { emitter.emit.apply(emitter, ['show'].concat(Array.prototype.slice.call(args))); } catch(e){}
+        if (preExisting && typeof preExisting.show === 'function' && !inProxyCall) {
+          inProxyCall = true;
+          try { preExisting.show.apply(preExisting, args); } catch(e){ console.warn('preExisting.show error', e); }
+          inProxyCall = false;
+        } else if (preExisting && typeof preExisting.show === 'function' && inProxyCall) {
+          console.log('[Assistant][module] show() skipped proxy to avoid recursion');
+        }
+      } catch(e){ console.warn('Assistant.show error', e); }
+    },
+    emit: function(){
+      var args = Array.prototype.slice.call(arguments);
+      try { console.log('[Assistant][module] emit() called; event=', args[0], 'preExisting=', !!preExisting, 'inProxyCall=', inProxyCall, 'args=', args.slice(1)); } catch(e){}
+      try { emitter.emit.apply(emitter, args); } catch(e){ console.warn('assistant local emit error', e); }
+      try{
+        if (preExisting && typeof preExisting.emit === 'function' && !inProxyCall){
+          inProxyCall = true;
+          try { preExisting.emit.apply(preExisting, args); } catch(e){ console.warn('preExisting.emit error', e); }
+          inProxyCall = false;
+        } else if (preExisting && typeof preExisting.emit === 'function' && inProxyCall) {
+          console.log('[Assistant][module] skipping proxy emit to avoid recursion');
+        }
+      } catch(e){ console.warn('Assistant.emit proxy error', e); }
+    },
+    on: function(evt, fn){ emitter.on(evt, fn); },
+    off: function(evt, fn){ emitter.off(evt, fn); },
+    destroy: function(){
+      if (!this._inited) return;
+      this._inited = false;
+      try {
+        console.log('[Assistant][module] destroy() preExisting=', !!preExisting);
+        if (preExisting && typeof preExisting.destroy === 'function') {
+          preExisting.destroy();
+        } else {
+          var badge = document.getElementById('assist-badge') || document.querySelector('.assist-badge');
+          if (badge) badge.style.display = 'none';
+        }
+        if (this._timers && this._timers.length) {
+          this._timers.forEach(function(t){ try { clearTimeout(t); clearInterval(t); } catch(e){} });
+          this._timers = [];
+        }
+        emitter = createEmitter();
+        try { var root=document.getElementById('assistant-bubble-root'); if (root && root.parentNode) root.parentNode.removeChild(root); } catch(e){}
+      } catch(e){ console.warn('Assistant.destroy error', e); }
+    }
+  };
+  var api = {
+    init: function(){ return internal.init.apply(internal, arguments); },
+    show: function(){ return internal.show.apply(internal, arguments); },
+    emit: function(){ return internal.emit.apply(internal, arguments); },
+    on: function(){ return internal.on.apply(internal, arguments); },
+    off: function(){ return internal.off.apply(internal, arguments); },
+    destroy: function(){ return internal.destroy.apply(internal, arguments); },
+    __original: preExisting
+  };
+  try { window.Assistant = api; } catch(e){ console.warn('install assistant api failed', e); }
+  try {
+    var enabledCheck = (typeof window.enableAssistant === 'boolean') ? window.enableAssistant : true;
+    if (document.readyState !== 'loading') {
+      if (enabledCheck) { api.init(); document.body.classList.remove('assistant-disabled'); }
+      else { api.destroy(); document.body.classList.add('assistant-disabled'); }
+    }
+  } catch(e) { console.warn('assistant immediate init check failed', e); }
+  document.addEventListener('DOMContentLoaded', function(){
+    try {
+      var enabled = (typeof window.enableAssistant === 'boolean') ? window.enableAssistant : true;
+      if (enabled) { api.init(); document.body.classList.remove('assistant-disabled'); }
+      else { api.destroy(); document.body.classList.add('assistant-disabled'); }
+    } catch(e) {}
+  });
+})();
+</script>
+
+
+
+
+
+
+<!-- Assistant fallback shim inserted -->
+<script>
+(function(){
+  function tryAttach(){
+    try{
+      // If showFallbackBubble exists, wrap known APIs to ensure bubble shows
+      if (typeof showFallbackBubble !== 'function') return false;
+      var patched = false;
+      // Patch global Assistant object if present
+      var g = window.Assistant || window.assistant || window.AssistantAPI || window.assistantAPI;
+      if (g && typeof g.show === 'function' && !g.__showPatched){
+        var orig = g.show.bind(g);
+        g.show = function(){
+          try { showFallbackBubble(arguments[0], arguments[1]||{}); } catch(e){}
+          return orig.apply(null, arguments);
+        };
+        g.__showPatched = true;
+        console.log('[AssistantPatch] wrapped global show()');
+        patched = true;
+      }
+      // If there's an emitter-style API with 'on', try to register
+      var em = (window.assistantEmitter || (g && g.emitter) || window.emitter);
+      if (em && typeof em.on === 'function' && !em.__onPatched){
+        try {
+          em.on('show', function(t,m){ try { showFallbackBubble(t,m||{}); } catch(e){} });
+          em.__onPatched = true;
+          console.log('[AssistantPatch] attached to emitter.on(show)');
+          patched = true;
+        } catch(e){}
+      }
+      return patched;
+    }catch(e){ return false; }
+  }
+  var tries = 0;
+  var id = setInterval(function(){
+    var ok = tryAttach();
+    tries++;
+    if (ok || tries>40) clearInterval(id);
+  }, 200);
+})();
+</script>
+<!-- End Assistant fallback shim -->
+
+
+<!-- Assistant debug overlay shim -->
+<script>
+(function(){
+  function debugEnsure(){
+    var root = document.getElementById('assistant-bubble-root');
+    if (!root){
+      root = document.createElement('div');
+      root.id = 'assistant-bubble-root';
+      document.documentElement.appendChild(root);
+    }
+    // strong, visible styles
+    root.style.position = 'fixed';
+    root.style.left = '50%';
+    root.style.top = '12%';
+    root.style.transform = 'translateX(-50%)';
+    root.style.zIndex = '9999999999';
+    root.style.pointerEvents = 'auto'; // allow clicks
+    root.style.display = 'block';
+    return root;
+  }
+
+  function debugShow(text, opts){
+    try{
+      var root = debugEnsure();
+      root.innerHTML = '';
+      var b = document.createElement('div');
+      b.className = 'assistant-fallback-bubble';
+      b.style.background = 'rgba(255,0,50,0.95)';
+      b.style.color = '#fff';
+      b.style.padding = '16px 20px';
+      b.style.borderRadius = '12px';
+      b.style.fontSize = '18px';
+      b.style.boxShadow = '0 18px 50px rgba(0,0,0,0.6)';
+      b.style.maxWidth = '70vw';
+      b.style.textAlign = 'center';
+      b.style.opacity = '1';
+      b.textContent = (typeof text === 'string') ? text : (text && text.message) || JSON.stringify(text);
+      root.appendChild(b);
+      // log computed style & rect
+      try {
+        var cs = window.getComputedStyle(b);
+        console.log('[AssistantDebug] bubble computed style:', {visibility: cs.visibility, display: cs.display, opacity: cs.opacity, zIndex: cs.zIndex});
+      } catch(e){ console.warn(e); }
+      try {
+        var r = b.getBoundingClientRect();
+        console.log('[AssistantDebug] bubble rect:', r);
+      } catch(e){ console.warn(e); }
+      // attach click to remove
+      b.addEventListener('click', function(){ if (b.parentNode) b.parentNode.removeChild(b); }, {passive:true});
+      return b;
+    }catch(e){
+      console.warn('debugShow error', e);
+    }
+  }
+
+  // Expose to window for manual test
+  window.__assistant_debug_show = debugShow;
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'b') debugShow('DEBUG: visible test bubble — press to dismiss');
+  });
+
+  // Patch existing showFallbackBubble if present
+  if (typeof showFallbackBubble === 'function'){
+    var orig = showFallbackBubble;
+    window.showFallbackBubble = function(text, opts){
+      try{ debugShow(text, opts); }catch(e){}
+      try{ return orig(text, opts); }catch(e){}
+    };
+    console.log('[AssistantDebug] patched showFallbackBubble to also show debug bubble');
+  } else {
+    // create a small poll to patch later
+    var tries = 0;
+    var id = setInterval(function(){
+      if (typeof showFallbackBubble === 'function'){
+        clearInterval(id);
+        var orig = showFallbackBubble;
+        window.showFallbackBubble = function(text, opts){
+          try{ debugShow(text, opts); }catch(e){};
+          try{ return orig(text, opts); }catch(e){};
+        };
+        console.log('[AssistantDebug] patched late showFallbackBubble');
+      }
+      tries++; if (tries>30) clearInterval(id);
+    }, 200);
+  }
+})();
+</script>
+<!-- End Assistant debug overlay shim -->
 
 </body>
 
