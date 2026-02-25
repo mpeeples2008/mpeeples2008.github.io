@@ -1084,6 +1084,11 @@ window.SfxManager = (function(){
 
             .audio-popup input[type="range"] {
                 flex: 1;
+                width: 100%;
+                min-height: 32px;
+                touch-action: pan-x;
+                -webkit-tap-highlight-color: transparent;
+                accent-color: #ffd166;
             }
 
             .audio-popup .controls {
@@ -2503,15 +2508,18 @@ function escapeHtmlAttr(str) {
             const ROWS = 6, COLS = 6, MAX_SIZE = 3, MAX_CLICKS = 20;
 
             // ---------- Render scheduling (prevents redundant reflows) ----------
+            const IS_MOBILE_COARSE = !!((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
             let renderQueued = false;
             function scheduleRender() {
                 if (renderQueued) return;
                 renderQueued = true;
-                // use setTimeout with 0 delay instead of RAF for faster perceived updates
-                setTimeout(() => {
+                const flushRender = () => {
                     try { render(); } catch (e) { console.warn('render failed', e); }
                     renderQueued = false;
-                }, 0);
+                };
+                // On mobile, align render with the display refresh for smoother scrolling/battery.
+                if (IS_MOBILE_COARSE && typeof requestAnimationFrame === 'function') requestAnimationFrame(flushRender);
+                else setTimeout(flushRender, 0);
             }
 
 
@@ -2901,6 +2909,14 @@ function escapeHtmlAttr(str) {
                 }
                 return el;
             }
+            const SHOW_SIZE_MIX_DEBUG = !!window.DEBUG_SIZE_MIX;
+            function updateSizeMixDebug(weights, levelNum) {
+                if (!SHOW_SIZE_MIX_DEBUG) return;
+                const el = ensureSizeMixDebugElement();
+                if (!el) return;
+                const pct = weights.map((w, i) => `s${i}:${Math.round(w * 100)}%`).join(' ');
+                el.textContent = `L${levelNum} ${pct}`;
+            }
 
             // Weighted sampler that adapts based on screensPassed (levels completed)
             function sampleSizeRandom() {
@@ -2934,8 +2950,8 @@ function escapeHtmlAttr(str) {
                 const sum = weights.reduce((a, b) => a + b, 0) || 1;
                 for (let i = 0; i < weights.length; i++) weights[i] = weights[i] / sum;
 
-                // Update debug HUD with current mix
-                try { updateSizeMixDebug(weights, (screensPassed || 0) + 1); } catch (e) { }
+                // Update debug HUD with current mix (disabled by default)
+                updateSizeMixDebug(weights, (screensPassed || 0) + 1);
 
                 // Weighted sample by cumulative weights
                 let r = Math.random();
@@ -3148,7 +3164,7 @@ function escapeHtmlAttr(str) {
                 if (!originCell) return;
 
                 // conservative cap to prevent accidental floods on low-end devices
-                const MAX_ACTIVE_PARTICLES = 20;
+                const MAX_ACTIVE_PARTICLES = IS_MOBILE_COARSE ? 12 : 20;
                 const activeCount = PARTICLE_POOL.filter(p => p && p._inUse).length;
                 if (activeCount >= MAX_ACTIVE_PARTICLES) return;
 
@@ -4442,6 +4458,104 @@ function escapeHtmlAttr(str) {
         })();
     </script>
     <!-- END AUDIO CONTROLS ENFORCER v3 -->
+    <!-- Mobile Safari audio slider compatibility patch -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                const audioPopup = document.getElementById('audioPopup');
+                const audioBtn = document.getElementById('audioBtn');
+                const musicSlider = document.getElementById('musicVol');
+                const sfxSlider = document.getElementById('sfxVol');
+                const musicVal = document.getElementById('musicVolVal');
+                const sfxVal = document.getElementById('sfxVolVal');
+                if (!musicSlider && !sfxSlider) return;
+
+                const clamp01 = (v) => Math.max(0, Math.min(1, Number(v) || 0));
+                const isMusicElement = (a) => {
+                    try {
+                        if (!a) return false;
+                        if (a.loop) return true;
+                        if (a.duration && !isNaN(a.duration) && a.duration > 8) return true;
+                        if (a.src && /music|bgm|_music|background|voltaic|robobozo/i.test(a.src)) return true;
+                    } catch (e) { }
+                    return false;
+                };
+
+                function applyMusicVolume(v) {
+                    const val = clamp01(v);
+                    window.musicVolume = val;
+                    if (musicVal) musicVal.textContent = Math.round(val * 100) + '%';
+                    try { if (window.musicAudio) window.musicAudio.volume = val; } catch (e) { }
+                    try {
+                        const aud = document.getElementsByTagName('audio');
+                        for (let i = 0; i < aud.length; i++) {
+                            if (isMusicElement(aud[i])) aud[i].volume = val;
+                        }
+                    } catch (e) { }
+                }
+
+                function applySfxVolume(v) {
+                    const val = clamp01(v);
+                    window.sfxVolume = val;
+                    if (sfxVal) sfxVal.textContent = Math.round(val * 100) + '%';
+                    try {
+                        const aud = document.getElementsByTagName('audio');
+                        for (let i = 0; i < aud.length; i++) {
+                            if (!isMusicElement(aud[i])) aud[i].volume = val;
+                        }
+                    } catch (e) { }
+                    try {
+                        if (window.sfxCache) {
+                            Object.values(window.sfxCache).forEach(function (a) {
+                                try { if (a) a.volume = val; } catch (e) { }
+                            });
+                        }
+                    } catch (e) { }
+                }
+
+                function syncSliderUI() {
+                    if (musicSlider) {
+                        const mv = clamp01(window.musicVolume ?? 0.2);
+                        musicSlider.value = String(mv);
+                        if (musicVal) musicVal.textContent = Math.round(mv * 100) + '%';
+                    }
+                    if (sfxSlider) {
+                        const sv = clamp01(window.sfxVolume ?? 0.5);
+                        sfxSlider.value = String(sv);
+                        if (sfxVal) sfxVal.textContent = Math.round(sv * 100) + '%';
+                    }
+                }
+
+                function bindRange(slider, applyFn) {
+                    if (!slider || slider.dataset.mobileBound === '1') return;
+                    slider.dataset.mobileBound = '1';
+                    slider.style.touchAction = 'pan-x';
+                    slider.style.webkitUserSelect = 'none';
+                    slider.style.userSelect = 'none';
+                    const updateFromSlider = () => applyFn(slider.value);
+                    ['input', 'change', 'touchend', 'mouseup', 'keyup'].forEach((evt) => {
+                        slider.addEventListener(evt, updateFromSlider, { passive: true });
+                    });
+                }
+
+                bindRange(musicSlider, applyMusicVolume);
+                bindRange(sfxSlider, applySfxVolume);
+
+                if (audioPopup && !audioPopup.dataset.mobileSyncBound) {
+                    audioPopup.dataset.mobileSyncBound = '1';
+                    audioPopup.addEventListener('modal:open', syncSliderUI);
+                }
+                if (audioBtn && !audioBtn.dataset.mobileSyncBound) {
+                    audioBtn.dataset.mobileSyncBound = '1';
+                    audioBtn.addEventListener('click', function () { setTimeout(syncSliderUI, 0); }, { passive: true });
+                }
+
+                syncSliderUI();
+            } catch (e) {
+                console.warn('[AudioPatch] mobile slider compatibility failed', e);
+            }
+        });
+    </script>
     <!-- HOW TO PLAY POPUP -->
     <div id="helpPopup" class="audio-popup" role="dialog" aria-modal="true"
         style="pointer-events:auto;">
