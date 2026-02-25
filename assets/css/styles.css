@@ -1,0 +1,2070 @@
+﻿
+/* Consolidated CSS - grouped by purpose (blocks preserved) */
+
+/* Modals */
+
+@font-face {
+            font-family: 'Press Start 2P';
+            src: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PressStart2P-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        :root {
+            --board-size: 720px
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            /* full-page background image, fixed centered - made to work in both narrow and wide configurations */
+            background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab.png') center center / cover no-repeat fixed;
+            color: #0b3d91;
+        }
+
+        /* Make wrap and board semi-transparent so background shows through
+        Layout behavior:
+        - Default (mobile / narrow): vertical stack — board above, hud spans full width at bottom.
+        - Wide screens (min-width:900px): horizontal layout — board on left, hud fixed-width column on right. */
+        .wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            box-sizing: border-box;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .board {
+            width: min(var(--board-size), 94vw);
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 12px;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 0;
+            box-sizing: border-box
+        }
+
+        /* HUD styling — responsive: full-width on narrow, right-column on wide, test on mobile and browser */
+        .hud {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.04));
+            border-radius: 12px;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+            border: 4px solid rgba(0, 0, 0, 0.25);
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.12), -6px -6px 0 rgba(255, 255, 255, 0.02);
+            font-family: 'Press Start 2P', monospace;
+            color: #ffd166;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
+        }
+
+        /* Unified Score + High Score box, fully left-justified */
+        .small.scorebox {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            /* stop flex centering */
+            text-align: left !important;
+            /* override .small center alignment */
+            line-height: 1.2;
+            width: 100%;
+            /* ensures text uses full box width */
+        }
+
+            .small.scorebox .score-line,
+            .small.scorebox .high-line {
+                width: 100%;
+                text-align: left !important;
+                /* force left alignment inside */
+            }
+
+            .small.scorebox .score-line {
+                font-size: 9px;
+                color: #ffd166;
+            }
+
+            .small.scorebox .high-line {
+                font-size: 8px;
+                opacity: 0.85;
+                color: #ffe9b0;
+                margin-top: 2px;
+                text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+            }
+
+                .small.scorebox .high-line span#highScoreValue {
+                    font-size: inherit;
+                }
+
+        .level-box {
+            font-size: 9px;
+            /* or whatever size you want */
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.04));
+            border-radius: 12px;
+            padding: 8px;
+            width: 50%;
+            box-sizing: border-box;
+            border: 4px solid rgba(0, 0, 0, 0.25);
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.12), -6px -6px 0 rgba(255, 255, 255, 0.02);
+            font-family: 'Press Start 2P', monospace;
+            color: #ffd166;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
+        }
+
+
+        /* On wide screens place HUD to the right at a fixed column width */
+        @media (min-width: 900px) {
+            .wrap {
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: center;
+                gap: 20px;
+                padding: 20px
+            }
+
+            .board {
+                order: 1;
+                width: calc(min(var(--board-size), 74vw));
+                max-width: calc(100% - 300px)
+            }
+
+            .hud {
+                order: 2;
+                width: 300px;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: flex-start;
+                padding: 18px 14px
+            }
+
+                .hud .small {
+                    align-self: stretch
+                }
+
+                .hud button {
+                    width: 100%
+                }
+        }
+
+        /* cell property style */
+        .cell {
+            background: transparent;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            overflow: visible;
+            padding: 0;
+            box-sizing: content-box;
+            width: 100%;
+            height: 100%
+        }
+
+        /* virus property sytle */
+        .virus {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+            box-sizing: content-box
+        }
+
+        /* Petri dish on each cell - property style */
+        .petri {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(1.2);
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            /* experimental */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center
+        }
+
+            .petri img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                display: block;
+                opacity: 1
+            }
+
+        /* virus face sprite: single centered image, only scaling changes */
+        .face-sprite {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            z-index: 3;
+            pointer-events: none;
+            /* experimental */
+            transform-origin: center center;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+            .face-sprite img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                pointer-events: none;
+                transform-origin: center center;
+                display: block
+            }
+
+        /* Animate size-3 viruses with gentle jitter/pulse - make it look like it's ready to burst! */
+        @keyframes jitter {
+
+            0%, 100% {
+                transform: scale(1) translate(0, 0);
+            }
+
+            25% {
+                transform: scale(1.03) translate(1px, -1px);
+            }
+
+            50% {
+                transform: scale(0.97) translate(-1px, 1px);
+            }
+
+            75% {
+                transform: scale(1.02) translate(-1px, -1px);
+            }
+        }
+
+        .virus--size-3 .face-sprite img {
+            animation: jitter 0.45s infinite ease-in-out;
+        }
+
+        /* Animate the splat/stain/burst when a virus pops */
+        .stain {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 28% 28%, rgba(110, 200, 40, 0.44), rgba(30, 100, 20, 0.24));
+            pointer-events: none;
+            opacity: 0;
+            z-index: 4
+        }
+
+            .stain.show {
+                animation: stainpop 520ms forwards
+            }
+
+        @keyframes stainpop {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0.95
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.08);
+                opacity: 0.7
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1.8);
+                opacity: 0
+            }
+        }
+
+        /* --- SPRITE-BASED PARTICLES + randomized rotation support --- */
+        .particle {
+            position: fixed;
+            z-index: 30000;
+            width: 35px;
+            /* small size as default */
+            height: 35px;
+            pointer-events: none;
+            transform-origin: center center;
+            transform: translate3d(0px, 0px, 0) translate(-50%, -50%) scale(1.5);
+            opacity: 1;
+            display: block;
+            filter: drop-shadow(0 4px 10px rgba(120, 40, 160, 0.12));
+            will-change: transform, opacity;
+            transition: transform 520ms cubic-bezier(.2, .8, .2, 1), opacity 300ms linear;
+        }
+
+            /* particle contains an <img> (raster sprite) */
+            .particle > img {
+                width: 100%;
+                height: 100%;
+                display: block;
+                pointer-events: none;
+                user-select: none;
+                -webkit-user-drag: none;
+            }
+
+
+        /* HUD child elements: retro 'panels' for each stat */
+        .hud .small {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.02));
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 4px solid rgba(0, 0, 0, 0.25);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.12);
+            min-width: 85px;
+            color: #ffd166;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
+        }
+
+        .hud-row {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            /* spacing between Level and Score */
+            align-items: center;
+        }
+
+        /* Make HUD buttons match retro badge look */
+        .hud button {
+            font-family: 'Press Start 2P', monospace;
+            background: linear-gradient(180deg, #ffffff, #e6e3ff);
+            color: #0b3d91;
+            border: 4px solid rgba(0, 0, 0, 0.18);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        /* small screens tweak */
+        @media (max-width:420px) {
+            .board {
+                width: 94vw
+            }
+
+            .hud .small {
+                min-width: 90px;
+                padding: 8px;
+                font-size: 10px
+            }
+        }
+
+        /* glowing burst at pop */
+        .glow {
+            position: fixed;
+            z-index: 25000;
+            pointer-events: none;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            filter: blur(10px);
+            opacity: 0.95;
+            background: radial-gradient(circle at 35% 30%, rgba(157, 0, 255, 0.95), rgba(130, 0, 150, 0.6) 40%, rgba(255, 90, 20, 0.15) 70%);
+        }
+
+        @keyframes glowPop {
+            0% {
+                transform: translate(-50%, -50%) scale(0.2);
+                opacity: 0.95
+            }
+
+            30% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.9
+            }
+
+            70% {
+                transform: translate(-50%, -50%) scale(1.6);
+                opacity: 0.45
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(2.4);
+                opacity: 0
+            }
+        }
+
+        /* Badge UI — retro styling using Press Start 2P */
+        .chain-badge {
+            position: fixed;
+            left: 50%;
+            top: 12%;
+            transform: translateX(-50%) translateY(-6px) scale(0.85);
+            z-index: 40000;
+            font-family: 'Press Start 2P', monospace;
+            background: linear-gradient(180deg, #0b3d91, #08306a);
+            /* default deep-blue base for retro look */
+            color: #ffd166;
+            /* warm pixel color for text */
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: 4px solid rgba(0, 0, 0, 0.45);
+            /* thick pixel-like border */
+            font-weight: 400;
+            font-size: 14px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            will-change: transform, opacity;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.65), 4px 4px 0 rgba(0, 0, 0, 0.45);
+            /* chunky pixel shadow */
+        }
+
+            .chain-badge .cb-icon {
+                width: 44px;
+                height: 36px;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+                background: rgba(0, 0, 0, 0.18);
+                box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.12), inset 6px 6px 0 rgba(255, 255, 255, 0.02);
+            }
+
+        @keyframes badgeIn {
+            0% {
+                transform: translateX(-50%) translateY(6px) scale(0.7);
+                opacity: 0;
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(-6px) scale(1.05);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateX(-50%) translateY(-18px) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes badgeOut {
+            0% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(-18px) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-28px) scale(0.9);
+            }
+        }
+
+        .chain-badge.show {
+            animation: badgeIn 360ms steps(2, end) forwards;
+        }
+
+        .chain-badge.hide {
+            animation: badgeOut 360ms ease forwards;
+        }
+
+        /* Retro color variants inspired by the attached image. These keep the pixel aesthetic while providing variety. */
+        .chain-badge.great {
+            background: linear-gradient(180deg, #0b5ea8, #083b6b);
+            color: #ffd166;
+            border-color: rgba(0, 0, 0, 0.6);
+        }
+
+        .chain-badge.amazing {
+            background: linear-gradient(180deg, #b33b2b, #8a1f14);
+            color: #ffd166;
+            border-color: rgba(0, 0, 0, 0.6);
+        }
+
+        .chain-badge.stupendous {
+            background: linear-gradient(180deg, #8a1f14, #6a0f0f);
+            color: #ffd166;
+            border-color: rgba(0, 0, 0, 0.6);
+        }
+
+        .chain-badge.incredible {
+            background: linear-gradient(180deg, #5b2b86, #381a5a);
+            color: #ffd166;
+            border-color: rgba(0, 0, 0, 0.6);
+        }
+
+            /* pixel 'bevel' effect by adding layered box-shadows — subtle and GPU-friendly */
+            .chain-badge.great .cb-icon,
+            .chain-badge.amazing .cb-icon,
+            .chain-badge.stupendous .cb-icon,
+            .chain-badge.incredible .cb-icon {
+                box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.12), 6px 6px 0 rgba(0, 0, 0, 0.12);
+            }
+
+        /* small responsive adjustment so badges aren't huge on mobile */
+        @media (max-width: 420px) {
+            .chain-badge {
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+
+                .chain-badge .cb-icon {
+                    width: 34px;
+                    height: 28px;
+                    font-size: 14px
+                }
+        }
+
+        /* container base (if you already have .level-complete, don't duplicate; merge the .visible transition bits) */
+        .level-complete {
+            position: fixed; /* likely you already use fixed/absolute; keep as needed */
+            left: 50%;
+            top: 50%; /* tweak vertical position to taste */
+            transform: translate(-50%, -50%);
+            width: min(90vw, 900px);
+            max-width: 100% fit-content 10px);
+            max-height: 92vh;
+            box-sizing: border-box;
+            z-index: 9999;
+            padding: 12px 14px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.86);
+            color: #fff;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: opacity .28s ease, transform .28s ease;
+            
+        }
+
+            /* visible state */
+            .level-complete.visible {
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateX(-50%) translateY(0);
+            }
+
+            /* title */
+            .level-complete .lc-title {
+                font-weight: 700;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 20px;
+                line-height: 1;
+            }
+
+            /* image container placed AFTER title (user requested) */
+            .level-complete .lc-image {
+                flex: 0 0 auto;
+                display: block;
+                width: 100%;
+                text-align: center;
+            }
+
+                /* the image itself: constrain to max-width: 360px but be responsive */
+                .level-complete .lc-image img {
+                    display: block;
+                    width: 100%;
+                    max-width: 900px; /* your requested maximum width */
+                    height: auto;
+                    max-height: calc(72vh - 120px);
+                    object-fit: contain; /* preserve aspect, center contents if needed */
+                    border-radius: 6px; /* optional */
+                    user-select: none;
+                    pointer-events: none;
+                }
+
+        /* tweak for small screens so it doesn't look huge */
+        @media (max-width: 600px) {
+            .level-complete .lc-title {
+                font-size: 18px;
+                word-break: break-word;
+            }
+
+            .level-complete .lc-image img {
+                max-height: calc(78vh - 100px);
+            }
+
+            F
+        }
+
+
+        /* ---------- Game Over popup ---------- */
+        .game-over-popup {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            z-index: 95000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            padding: 30px 40px;
+            border-radius: 14px;
+            border: 6px solid rgba(0, 0, 0, 0.55);
+            background: linear-gradient(180deg, #8a1f14, #6a0f0f);
+            color: #ffd166;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 20px;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+            /* Inner title and subtitle */
+            .game-over-popup .go-title {
+                font-size: 24px;
+                text-transform: uppercase;
+                text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+                letter-spacing: 0.04em;
+            }
+
+            .game-over-popup .go-sub {
+                font-size: 14px;
+                color: #ffe9b0;
+                text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+            }
+
+        @keyframes gameOverIn {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+
+            60% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @keyframes gameOverOut {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+        }
+
+        .game-over-popup.show {
+            animation: gameOverIn 400ms ease both;
+        }
+
+        .game-over-popup.hide {
+            animation: gameOverOut 400ms ease forwards;
+        }
+
+        /* Inner title larger and tightly tracked */
+        .level-complete .lc-title {
+            font-size: 20px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        /* subtle icon slot (optional) */
+        .level-complete .lc-icon {
+            width: 56px;
+            height: 56px;
+            flex: 0 0 auto;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.12);
+        }
+
+        /* Animations */
+        @keyframes levelIn {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8) rotate(-6deg);
+            }
+
+            60% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.03) rotate(2deg);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes levelOut {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.92);
+            }
+        }
+
+        /* helper classes to control lifecycle */
+        .level-complete.show {
+            animation: levelIn 420ms cubic-bezier(.2, .9, .2, 1) both;
+            pointer-events: none;
+        }
+
+        .level-complete.hide {
+            animation: levelOut 360ms ease forwards;
+            pointer-events: none;
+        }
+
+        /* Small fixed mute button at bottom-right */
+        .bottom-mute {
+            position: fixed;
+            right: 12px;
+            bottom: 12px;
+            z-index: 60000;
+            padding: 8px 10px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            border-radius: 8px;
+            border: 3px solid rgba(0, 0, 0, 0.18);
+            background: linear-gradient(180deg, #ffffff, #e6e3ff);
+            color: #0b3d91;
+            box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.12);
+        }
+
+        .bottom-controls {
+            position: fixed;
+            right: 12px;
+            bottom: 12px;
+            z-index: 60000;
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            /* space between buttons */
+        }
+
+            .bottom-controls .bottom-mute {
+                position: static;
+                /* remove the fixed positioning */
+            }
+
+        /* Meter styles (10-segment retro pixel bar) */
+        .meter {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.02));
+            border: 4px solid rgba(0, 0, 0, 0.25);
+            min-width: 140px
+        }
+
+        .meter-icon {
+            flex: 0 0 auto
+        }
+
+        .meter-segments {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            justify-content: center
+        }
+
+            .meter-segments .seg {
+                width: 12px;
+                height: 12px;
+                border: 2px solid #081426;
+                background: #2b2b2b;
+                box-shadow: inset -3px -3px 0 rgba(0, 0, 0, 0.18);
+                border-radius: 1px
+            }
+
+                .meter-segments .seg.filled {
+                    background: linear-gradient(180deg, #ffd166, #ffb84d);
+                    border-color: #081426;
+                    box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.18)
+                }
+
+        .meter-count {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: #ffd166;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55)
+        }
+
+        .seg.pop {
+            animation: segPop 220ms ease both
+        }
+
+        @keyframes segPop {
+            0% {
+                transform: scale(1)
+            }
+
+            50% {
+                transform: scale(1.06)
+            }
+
+            100% {
+                transform: scale(1)
+            }
+        }
+
+
+
+        /* High-score HUD styles (small, unobtrusive) */
+        #highScoreHud {
+            color: #ffe9b0;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+            opacity: 0.95;
+            user-select: none;
+        }
+
+            #highScoreHud strong {
+                font-weight: 700;
+                margin-right: 6px;
+                font-size: 11px;
+            }
+
+        #highScoreValue {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+        }
+
+        /* Assistant: low-click pulsing for clicks meter */
+        @keyframes assist-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 209, 102, 0.0);
+                transform: scale(1);
+            }
+
+            50% {
+                box-shadow: 0 0 12px 6px rgba(255, 209, 102, 0.18);
+                transform: scale(1.03);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 209, 102, 0.0);
+                transform: scale(1);
+            }
+        }
+
+        #clicksMeter.low-warning {
+            animation: assist-pulse 900ms ease-in-out infinite;
+            border-color: #ffd166;
+            transform-origin: center;
+        }
+
+            #clicksMeter.low-warning .segment {
+                /* optional: slightly brighten segments */
+                filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
+            }
+
+
+/* ------------ audio popup (matches badge/game-over styling but interactive) ------------- */
+        .audio-popup {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.98);
+            z-index: 98000;
+            width: min(520px, 86vw);
+            max-width: 92%;
+            padding: 18px 20px;
+            border-radius: 12px;
+            border: 6px solid rgba(0, 0, 0, 0.45);
+            background: linear-gradient(180deg, #0b3d91, #08306a);
+            color: #ffd166;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.25);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            text-align: left;
+            pointer-events: auto;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 220ms ease, transform 220ms ease, visibility 0ms 220ms;
+        }
+
+            /* shown */
+            .audio-popup.show {
+                opacity: 1;
+                visibility: visible;
+                transform: translate(-50%, -50%) scale(1);
+                transition: opacity 220ms ease, transform 220ms ease;
+            }
+
+            /* content rows */
+            .audio-popup .row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin: 10px 0;
+            }
+
+            .audio-popup label {
+                width: 130px;
+                font-size: 11px;
+                color: #ffe9b0;
+            }
+
+            .audio-popup input[type="range"] {
+                flex: 1;
+                width: 100%;
+                min-height: 32px;
+                touch-action: pan-x;
+                -webkit-tap-highlight-color: transparent;
+                accent-color: #ffd166;
+            }
+
+            .audio-popup .controls {
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+                margin-top: 12px;
+            }
+
+            /* popup small button */
+            .audio-popup .btn {
+                border-radius: 8px;
+                padding: 8px 12px;
+                font-size: 11px;
+                border: 4px solid rgba(0, 0, 0, 0.18);
+                background: linear-gradient(180deg, #ffffff, #e6e3ff);
+                color: #0b3d91;
+                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+                cursor: pointer;
+            }
+
+        /* the HUD gear button uses same small-ctrl style already present; optional slight tweak for icon */
+        .small-ctrl .gear-icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            color: inherit;
+        }
+
+        .restart-icon {
+            width: 24px;
+            height: 24px;
+            color: inherit;
+        }
+
+
+/* Ensure .wrap is a positioning context (safe to set again) */
+        .wrap {
+            position: relative;
+        }
+
+        /* Badge: always absolutely positioned relative to .wrap */
+        #assist-badge {
+            position: absolute !important;
+            right: 12px !important;
+            bottom: 12px !important;
+            width: 65px !important;
+            /* adjust size as desired */
+            height: 65px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border-radius: 8px !important;
+            padding: 0 !important;
+            /* remove internal padding that can shrink image */
+            box-sizing: border-box !important;
+            z-index: 9999 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Keep assistant speech bubble in viewport layer so it is never trapped under .wrap overlays */
+        #assist-bubble {
+            position: fixed !important;
+            left: 12px;
+            top: 12px;
+            right: auto;
+            bottom: auto;
+            /* badge bottom + badge height (52) + 4px gap */
+            max-width: min(78vw, 420px) !important;
+            min-width: 220px !important;
+            width: clamp(220px, 32vw, 380px) !important;
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
+            overflow-y: visible !important;
+            padding: 8px 12px !important;
+            border-radius: 10px !important;
+            box-sizing: border-box !important;
+            display: block !important;
+            font-size: 16px !important;
+            line-height: 1.35 !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            pointer-events: none !important;
+            z-index: 2147483646 !important;
+        }
+
+        #assist-text {
+            margin: 0 !important;
+            font-size: inherit !important;
+            line-height: inherit !important;
+        }
+
+            /* Show state unchanged */
+            #assist-bubble.show {
+                opacity: 1 !important;
+                transform: translateY(0) scale(1) !important;
+                pointer-events: auto !important;
+            }
+
+        /* Ensure the face image fills the badge container */
+        #assist-badge img {
+            width: 100% !important;
+            height: 100% !important;
+            display: block !important;
+            object-fit: contain !important;
+            /* preserve aspect but fill available space */
+            margin: 0 !important;
+            padding: 0 !important;
+            border-radius: inherit !important;
+        }
+
+        /* Assistant face expression & speaking animation */
+        #assistant-face {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* only one mouth visible at a time; controlled by JS via classes on #assistant-badge */
+        .mouth-shape {
+            transition: opacity 160ms linear, transform 160ms ease;
+        }
+
+        /* expression helpers when we set a class on #assist-badge (e.g., .expr-smile) */
+        #assist-badge.expr-neutral .mouth-shape.neutral {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #assist-badge.expr-neutral .mouth-shape.smile {
+            opacity: 0;
+        }
+
+        #assist-badge.expr-neutral .mouth-shape.talk {
+            opacity: 0;
+        }
+
+        #assist-badge.expr-neutral .mouth-shape.worried {
+            opacity: 0;
+        }
+
+        #assist-badge.expr-smile .mouth-shape.smile {
+            opacity: 1;
+        }
+
+        #assist-badge.expr-worried .mouth-shape.worried {
+            opacity: 1;
+        }
+
+        #assist-badge.expr-talk .mouth-shape.talk {
+            opacity: 1;
+        }
+
+        /* speaking jiggle for the whole badge (subtle) */
+        @keyframes assist-jiggle {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            25% {
+                transform: translateY(-1px) rotate(-1deg);
+            }
+
+            50% {
+                transform: translateY(0) rotate(0.6deg);
+            }
+
+            75% {
+                transform: translateY(-0.6px) rotate(-0.8deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+        }
+
+        /* mouth wobble for the talk mouth (applies to polyline) */
+        @keyframes mouth-wobble {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-1px) rotate(2deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(-1deg);
+            }
+        }
+
+        /* when the assistant is speaking, add subtle badge jiggle + mouth wobble */
+        #assist-badge.speaking {
+            animation: assist-jiggle 420ms ease-in-out infinite;
+            transform-origin: center center;
+        }
+
+            #assist-badge.speaking .mouth-shape.talk {
+                animation: mouth-wobble 320ms ease-in-out infinite;
+            }
+
+        /* Eyebrow styling & expression rules */
+        #brow-left,
+        #brow-right {
+            transition: opacity 140ms linear, transform 140ms ease;
+            transform-origin: center;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            /* soft shadow if you like (optional) */
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
+        }
+
+        /* Neutral: hidden or subtle */
+        #assist-badge.expr-neutral #brow-left,
+        #assist-badge.expr-neutral #brow-right {
+            opacity: 0;
+            transform: translateY(0) rotate(0deg);
+        }
+
+        /* Smile: slight raised relaxed brows */
+        #assist-badge.expr-smile #brow-left,
+        #assist-badge.expr-smile #brow-right {
+            opacity: 1;
+            transform: translateY(-1px) rotate(-2deg);
+            stroke-width: 1.3;
+            stroke: #ffb08a;
+            /* optional softer color for smile */
+        }
+
+        /* Worried / gameOver: inward furrow */
+        #assist-badge.expr-worried #brow-left {
+            opacity: 1;
+            transform: translateY(0.6px) rotate(10deg);
+            stroke: #ffb08a;
+            stroke-width: 1.6;
+        }
+
+        #assist-badge.expr-worried #brow-right {
+            opacity: 1;
+            transform: translateY(0.6px) rotate(-10deg);
+            stroke: #ffb08a;
+            stroke-width: 1.6;
+        }
+
+        /* Talk: quick little twitch while speaking */
+        @keyframes brow-twitch {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            30% {
+                transform: translateY(-1px) rotate(-2deg);
+            }
+
+            60% {
+                transform: translateY(1px) rotate(2deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+        }
+
+        #assist-badge.expr-talk.speaking #brow-left,
+        #assist-badge.expr-talk.speaking #brow-right {
+            opacity: 1;
+            animation: brow-twitch 420ms ease-in-out infinite;
+            stroke: #ffd166;
+            stroke-width: 1.4;
+        }
+
+        /* Optional: high-anger or surprise variants */
+        #assist-badge.expr-surprised #brow-left,
+        #assist-badge.expr-surprised #brow-right {
+            opacity: 1;
+            transform: translateY(-3px) rotate(-6deg);
+            stroke: #ffffff;
+            stroke-width: 1.6;
+        }
+
+        /* one-off strong flick when .brow-flick is present */
+        @keyframes brow-flick {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            40% {
+                transform: translateY(-3px) rotate(-8deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+        }
+
+        #assist-badge.brow-flick #brow-left,
+        #assist-badge.brow-flick #brow-right {
+            opacity: 1;
+            animation: brow-flick 160ms ease-out 1;
+        }
+
+        /* hide all mouths by default */
+        .mouth-shape {
+            opacity: 0;
+            transition: opacity 140ms linear, transform 160ms ease;
+        }
+
+        /* show only the neutral mouth when idle */
+        #assist-badge.expr-neutral .mouth-shape.neutral {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* show smile when appropriate */
+        #assist-badge.expr-smile .mouth-shape.smile {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* show zig-zag talk mouth while talking */
+        #assist-badge.expr-talk .mouth-shape.talk {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* show worried / frown */
+        #assist-badge.expr-worried .mouth-shape.worried {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ensure talk mouth can wobble while speaking */
+        #assist-badge.speaking .mouth-shape.talk {
+            /* animation applied elsewhere if desired */
+        }
+
+        /* Retro monitor styling for small assistant badge */
+        .retro-monitor {
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+            /* interaction remains at badge level */
+        }
+
+        /* screen outer/inner visuals (applied to the wrapper, not SVG internal) */
+        .retro-screen {
+            /* scanlines and subtle CRT curvature via SVG shapes, but we add a CSS overlay for scanlines glow */
+            background-image: linear-gradient(transparent, rgba(0, 0, 0, 0.06)), repeating-linear-gradient(transparent 0 2px, rgba(0, 0, 0, 0.035) 2px 3px);
+            background-blend-mode: overlay;
+            mix-blend-mode: normal;
+        }
+
+        /* small glow when speaking */
+        #assist-badge.speaking .retro-screen {
+            box-shadow: 0 6px 18px rgba(255, 210, 100, 0.12), inset 0 0 12px rgba(255, 210, 100, 0.03);
+            transform: translateZ(0);
+            transition: box-shadow 180ms ease;
+        }
+
+        /* bezel / body style (optional fallback for non-SVG parts) */
+        .retro-bezel {
+            border-radius: 6px;
+            overflow: visible;
+        }
+
+        /* make the tiny power LED pulse */
+        .retro-led {
+            transition: opacity 180ms ease, transform 180ms ease;
+        }
+
+        #assist-badge.speaking .retro-led {
+            transform: scale(1.08);
+            opacity: 1;
+        }
+
+        /* === Eyebrow visibility overrides for retro monitor SVG ===
+           Place this after your other assistant CSS in <head>.
+        */
+
+        /* default: hide (keeps initial behavior) */
+        #assist-badge .retro-monitor #brow-left,
+        #assist-badge .retro-monitor #brow-right {
+            opacity: 1 !important;
+            transition: opacity 140ms linear, transform 140ms ease;
+            transform-origin: center;
+        }
+
+        /* smile: slightly raised relaxed brows */
+        #assist-badge.expr-smile .retro-monitor #brow-left,
+        #assist-badge.expr-smile .retro-monitor #brow-right {
+            opacity: 1 !important;
+            transform: translateY(-1px) rotate(-2deg);
+            stroke-width: 1.3;
+            stroke: #bde58a;
+        }
+
+        /* worried / gameOver: inward furrow */
+        #assist-badge.expr-worried .retro-monitor #brow-left {
+            opacity: 1 !important;
+            transform: translateY(0.6px) rotate(10deg);
+            stroke: #ffb08a;
+            stroke-width: 1.6;
+        }
+
+        #assist-badge.expr-worried .retro-monitor #brow-right {
+            opacity: 1 !important;
+            transform: translateY(0.6px) rotate(-10deg);
+            stroke: #ffb08a;
+            stroke-width: 1.6;
+        }
+
+        /* talk: quick twitch while speaking */
+        #assist-badge.expr-talk.speaking .retro-monitor #brow-left,
+        #assist-badge.expr-talk.speaking .retro-monitor #brow-right {
+            opacity: 1 !important;
+            animation: brow-twitch 420ms ease-in-out infinite;
+            stroke: #ffd166;
+            stroke-width: 1.4;
+        }
+
+        @keyframes brow-twitch {
+            0% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            30% {
+                transform: translateY(-1px) rotate(-2deg);
+            }
+
+            60% {
+                transform: translateY(1px) rotate(2deg);
+            }
+
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+        }
+
+        /* === AI intro overlay === */
+        .ai-intro-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(10, 10, 30, 0.95), rgba(0, 0, 0, 0.98));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 120000;
+            /* above everything else */
+            color: #ffd166;
+        }
+
+        .ai-intro-content {
+            text-align: center;
+            max-width: 80vw;
+        }
+
+        .ai-face-slot {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .ai-intro-text {
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55);
+        }
+
+        .ai-start-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            padding: 14px 28px;
+            background: linear-gradient(180deg, #ffffff, #e6e3ff);
+            color: #0b3d91;
+            border: 4px solid rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.25);
+            cursor: pointer;
+            transition: transform 120ms ease;
+        }
+
+            .ai-start-btn:hover {
+                transform: scale(1.05);
+            }
+
+        .ai-intro-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 600ms ease;
+        }
+
+        button.ctrl {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .btn-icon {
+            width: 33px; /* same as your SVG size */
+            height: 33px;
+            user-select: none;
+            pointer-events: none; /* keeps clicks handled by the button */
+        }
+    
+/* Assistant: added expressions - ensure neutral mouth is only visible when expr-neutral is present */
+#assist-badge.expr-neutral .mouth-shape.neutral { opacity: 1 !important; transform: translateY(0); }
+#assist-badge:not(.expr-neutral) .mouth-shape.neutral { opacity: 0 !important; }
+
+/* New expression: wink (half-closed eye implied by brow tilt and wink mouth) */
+#assist-badge.expr-wink .mouth-shape.wink { opacity: 1; transform: translateY(0); }
+#assist-badge.expr-wink #brow-left { opacity: 0.9; transform: translateY(-1px) rotate(-6deg); stroke: #ffd166; stroke-width: 1.2; }
+
+/* New expression: angry (furrowed brow + red angry mouth) */
+#assist-badge.expr-angry .mouth-shape.angry { opacity: 1; transform: translateY(0) scaleY(1); }
+#assist-badge.expr-angry #brow-left, #assist-badge.expr-angry #brow-right {
+    opacity: 1;
+    transform-origin: center;
+    transform: translateY(1px) rotate(12deg);
+    stroke: #ff6b6b;
+    stroke-width: 1.8;
+}
+
+/* Ensure other expression rules do not accidentally enable neutral mouth */
+#assist-badge.expr-smile .mouth-shape.neutral,
+#assist-badge.expr-worried .mouth-shape.neutral,
+#assist-badge.expr-talk .mouth-shape.neutral,
+#assist-badge.expr-surprised .mouth-shape.neutral,
+#assist-badge.speaking .mouth-shape.neutral {
+    opacity: 0 !important;
+}
+
+/* make talk mouth animate only when speaking */
+#assist-badge.expr-talk.speaking .mouth-shape.talk { animation: mouth-wobble 320ms ease-in-out infinite; }
+
+/* small visual tweak: angry mouth color override */
+#assist-badge.expr-angry .mouth-shape.angry { stroke: #ff6b6b; }
+
+
+/* START-MISSION modal */
+        #startModal {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.98);
+            z-index: 130000;
+            width: min(720px, 88vw);
+            max-width: 92%;
+            padding: 20px 20px 28px 20px;
+            border-radius: 12px;
+            border: 6px solid rgba(0, 0, 0, 0.6);
+            background: #000;
+            /* solid black background requested */
+            color: #ffd166;
+            /* requested text color */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            font-family: "Lucida Console", "Courier New", Courier, monospace;
+            /* requested font + fallbacks */
+            font-size: 14px;
+            line-height: 1.45;
+            display: none;
+            gap: 12px;
+        }
+
+            /* visible state */
+            #startModal.show {
+                display: block;
+                animation: modalIn 260ms ease both;
+            }
+
+            /* inner layout: text left, small image anchored bottom-right inside modal */
+            #startModal .inner {
+                position: relative;
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                min-height: 140px;
+            }
+
+            /* text column takes remaining width, left aligned */
+            #startModal .modal-text {
+                padding-right: 8px;
+                flex: 1 1 auto;
+                text-align: left;
+                white-space: pre-line;
+                color: #ffd166;
+                font-size: 14px;
+                text-indent: 0;
+            }
+
+            /* small image anchored bottom-right inside the modal */
+            /* small image placed as a flex item to avoid overlapping text */
+            #startModal .modal-img {
+                position: static;
+                right: auto;
+                bottom: auto;
+                width: 84px;
+                height: auto;
+                display: block;
+                object-fit: contain;
+                border-radius: 6px;
+                pointer-events: none;
+                image-rendering: -webkit-optimize-contrast;
+                flex: 0 0 84px;
+                margin-left: 12px;
+                align-self: flex-end;
+            }
+
+            /* Close button */
+            #startModal .close-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin-top: 12px;
+                padding: 10px 12px;
+                border-radius: 8px;
+                border: 4px solid rgba(0, 0, 0, 0.28);
+                background: linear-gradient(180deg, #111, #333);
+                color: #ffd166;
+                cursor: pointer;
+                font-family: "Lucida Console", "Courier New", Courier, monospace;
+                font-size: 12px;
+            }
+
+        /* entry animation */
+        @keyframes modalIn {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.96);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* responsive: allow image to shrink on narrow screens */
+        @media (max-width: 420px) {
+            #startModal .modal-img {
+                width: 56px;
+                right: 8px;
+                bottom: 8px;
+            }
+
+            #startModal {
+                padding: 16px;
+            }
+        }
+
+
+/* Assistant toggle styles */
+.assistant-control { width:100%; box-sizing: border-box; }
+
+/* Hide native checkbox but keep it accessible */
+.assistant-toggle-input {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+/* custom switch */
+.assistant-toggle-switch {
+  display:inline-block;
+  width:46px;
+  height:26px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 999px;
+  position: relative;
+  transition: background .18s ease;
+  vertical-align: middle;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.4);
+}
+.assistant-toggle-switch::after{
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: transform .18s ease;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.25);
+}
+
+/* checked state */
+.assistant-toggle-input:checked + .assistant-toggle-switch{
+  background: linear-gradient(90deg, #34d399, #06b6d4);
+}
+.assistant-toggle-input:checked + .assistant-toggle-switch::after{
+  transform: translateX(20px);
+}
+
+/* audio popup sizing */
+.audio-popup { min-width: 420px; max-width: 90vw; padding: 14px; box-sizing: border-box; }
+
+
+/* Assistant & AI UI */
+
+/* Ensure AI assistant elements sit above all popups without altering layout */
+        #assist-badge,
+        .ai-assistant-bubble,
+        .ai-intro-overlay,
+        .assistant-bubble,
+        .ai-face-slot,
+        .ai-intro-content {
+            z-index: 97000 !important;
+        }
+
+
+/* Added expressions: pout, grin, bigsurprised, smirk - use neutral stroke #ffd166 */
+#assist-badge .mouth-shape.pout { transition: opacity 140ms linear, transform 160ms ease; }
+#assist-badge.expr-pout .mouth-shape.pout { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+
+#assist-badge .mouth-shape.grin { transition: opacity 140ms linear, transform 160ms ease; }
+#assist-badge.expr-grin .mouth-shape.grin { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+
+#assist-badge .mouth-shape.bigsurprised { transition: opacity 140ms linear, transform 160ms ease; }
+#assist-badge.expr-bigsurprised .mouth-shape.bigsurprised { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+
+#assist-badge .mouth-shape.smirk { transition: opacity 140ms linear, transform 160ms ease; }
+#assist-badge.expr-smirk .mouth-shape.smirk { opacity: 1 !important; stroke: #ffd166; transform: translateY(0) !important; }
+
+/* Ensure all mouth shapes use the neutral stroke color by default */
+#assist-badge .mouth-shape { stroke: #ffd166 !important; }
+
+/* Ensure eyebrow strokes follow neutral color; target common eyebrow ids/classes if present */
+#assist-badge #brow-left, #assist-badge #brow-right, #assist-badge .brow { stroke: #ffd166 !important; }
+
+/* Defensive: neutral mouth only visible when expr-neutral */
+#assist-badge:not(.expr-neutral) .mouth-shape.neutral { opacity: 0 !important; }
+#assist-badge.expr-neutral .mouth-shape.neutral { opacity: 1 !important; stroke: #ffd166; }
+
+
+/* Assistant disabled helper */
+body.assistant-disabled #assist-badge,
+body.assistant-disabled .assist-bubble,
+body.assistant-disabled .assistant-face,
+body.assistant-disabled #assistant-bubble-root,
+body.assistant-disabled .assistant-fallback-bubble,
+html.assistant-disabled #assist-badge,
+html.assistant-disabled .assist-bubble,
+html.assistant-disabled .assistant-face,
+html.assistant-disabled #assistant-bubble-root,
+html.assistant-disabled .assistant-fallback-bubble {
+  display: none !important;
+  opacity: 1 !important;
+  pointer-events: none !important;
+}
+
+
+/* Minimal, mobile-first assistant styles */
+        .assist-badge {
+            position: fixed;
+            right: 12px;
+            bottom: 72px;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+            touch-action: manipulation;
+            transform: scale(1.15);
+        }
+
+        .assist-badge img {
+            width: 28px;
+            height: 28px;
+            display: block;
+        }
+
+        .assist-bubble {
+            position: fixed;
+            right: 12px;
+            bottom: 40px;
+            max-width: 72vw;
+            min-width: 160px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #111, #222);
+            color: #ffd166;
+            font-family: monospace, 'Press Start 2P', sans-serif;
+            font-size: 16px;
+            z-index: 999999;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(6px) scale(0.98);
+            transition: opacity 180ms ease, transform 200ms ease;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        }
+
+        .assist-bubble.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+
+        .assist-badge.notif {
+            box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.08), 0 4px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        @media (max-width:420px) {
+            .assist-bubble {
+                max-width: 86vw;
+                font-size: 13px;
+                bottom: 110px;
+            }
+        }
+
+
+/* HUD / Badge / Game UI */
+
+/* Control trio: compact square buttons in HUD */
+        .control-trio {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+            .control-trio .ctrl {
+                width: 48px;
+                height: 40px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 12px;
+                border-radius: 6px;
+                border: 4px solid rgba(0, 0, 0, 0.18);
+                background: linear-gradient(180deg, #ffffff, #e6e3ff);
+                color: #0b3d91;
+                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+                cursor: pointer;
+                padding: 6px;
+            }
+
+        /* Slightly smaller on narrow screens */
+        @media (max-width:420px) {
+            .control-trio .ctrl {
+                width: 40px;
+                height: 36px;
+                font-size: 10px;
+            }
+        }
+
+
+/* Consolidated HUD small panel styles (base) */
+        .hud .small {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(255,255,255,0.02));
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 4px solid rgba(0, 0, 0, 0.25);
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.12);
+            min-width: 85px;
+            color: #ffd166;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.55);
+            box-sizing: border-box;
+        }
+
+        /* Scorebox variant uses left-justified stacking */
+        .small.scorebox {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: flex-start;
+            text-align: left !important;
+            line-height: 1.2;
+            width: 100%;
+        }
+
+            /* Score lines inside scorebox */
+            .small.scorebox .score-line,
+            .small.scorebox .high-line {
+                width: 100%;
+                text-align: left !important;
+            }
+
+            .small.scorebox .score-line {
+                font-size: 9px;
+                color: #ffd166;
+            }
+
+            .small.scorebox .high-line {
+                font-size: 8px;
+                opacity: 0.85;
+                color: #ffe9b0;
+                margin-top: 2px;
+                text-shadow: 1px 1px 0 rgba(0,0,0,0.55);
+            }
+
+        /* HUD button baseline */
+        .hud button {
+            font-family: 'Press Start 2P', monospace;
+            background: linear-gradient(180deg, #ffffff, #e6e3ff);
+            color: #0b3d91;
+            border: 4px solid rgba(0,0,0,0.18);
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.12);
+            cursor: pointer;
+            font-size: 11px;
+            box-sizing: border-box;
+        }
+
+        /* Ensure board and wrap sizing predictable and prevent overflow from transient particles */
+        .wrap {
+            box-sizing: border-box;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .board {
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Keep .cell overflow hidden within cell (prevents per-cell overflow) */
+        .cell {
+            overflow: hidden;
+        }
+
+        /* Small screens tweak preserved */
+        @media (max-width:420px) {
+            .board {
+                width: 94vw;
+            }
+        }
+
+
+/* Animations / Confetti / Particles */
+
+@keyframes breathe {
+            0% {
+                transform: scale(0.985);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(0.985);
+            }
+        }
+
+        .virus--size-0 .face-sprite {
+            animation: breathe var(--breathe-duration, 5.5s) ease-in-out infinite alternate;
+            transform-origin: center;
+            will-change: transform;
+        }
+
+        .virus--size-1 .face-sprite {
+            animation: breathe var(--breathe-duration, 4.0s) ease-in-out infinite alternate;
+            transform-origin: center;
+            will-change: transform;
+        }
+
+        .virus--size-2 .face-sprite {
+            animation: breathe var(--breathe-duration, 3.2s) ease-in-out infinite alternate;
+            transform-origin: center;
+            will-change: transform;
+        }
+
+
+/* Misc */
+
+.small-ctrl {
+            width: 100px;
+            height: 40px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            border: 4px solid rgba(0, 0, 0, 0.18);
+            background: linear-gradient(180deg, #fff, #e6e3ff);
+            color: #0b3d91;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
+        }
+
+        @media (max-width:420px) {
+            .small-ctrl {
+                width: 40px;
+                height: 36px;
+                font-size: 10px;
+            }
+        }
+
+
+.level-complete .lc-hint {
+            margin-top: 8px;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.85);
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0.9;
+            text-align: center;
+            pointer-events: none;
+        }
+
+/* Board-locked level popup: same size and position as the game board */
+.level-complete.level-complete--board {
+            position: fixed !important;
+            transform: none !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            display: grid !important;
+            grid-template-rows: auto 1fr auto;
+            gap: 10px;
+            padding: 12px !important;
+            overflow: hidden !important;
+        }
+
+.level-complete.level-complete--board .lc-title {
+            margin: 0;
+            font-size: clamp(12px, 2.1vmin, 22px);
+            line-height: 1.1;
+            text-align: center;
+            white-space: normal;
+        }
+
+.level-complete.level-complete--board .lc-image {
+            min-height: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+.level-complete.level-complete--board .lc-image img {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+.level-complete.level-complete--board .lc-hint {
+            margin: 0;
+            font-size: clamp(8px, 1.15vmin, 11px);
+            line-height: 1.2;
+            text-align: center;
+        }
+
+@keyframes levelInBoard {
+            0% {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+@keyframes levelOutBoard {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.97);
+            }
+        }
+
+.level-complete.level-complete--board.show {
+            animation: levelInBoard 260ms ease both !important;
+            pointer-events: auto !important;
+        }
+
+.level-complete.level-complete--board.hide {
+            animation: levelOutBoard 220ms ease both !important;
+            pointer-events: none !important;
+        }
+
+
+
+
