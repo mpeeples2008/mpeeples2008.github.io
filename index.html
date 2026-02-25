@@ -1836,7 +1836,14 @@ window.SfxManager = (function(){
 /* Assistant disabled helper */
 body.assistant-disabled #assist-badge,
 body.assistant-disabled .assist-bubble,
-body.assistant-disabled .assistant-face {
+body.assistant-disabled .assistant-face,
+body.assistant-disabled #assistant-bubble-root,
+body.assistant-disabled .assistant-fallback-bubble,
+html.assistant-disabled #assist-badge,
+html.assistant-disabled .assist-bubble,
+html.assistant-disabled .assistant-face,
+html.assistant-disabled #assistant-bubble-root,
+html.assistant-disabled .assistant-fallback-bubble {
   display: none !important;
   opacity: 1 !important;
   pointer-events: none !important;
@@ -4529,13 +4536,40 @@ function escapeHtmlAttr(str) {
                 function bindRange(slider, applyFn) {
                     if (!slider || slider.dataset.mobileBound === '1') return;
                     slider.dataset.mobileBound = '1';
-                    slider.style.touchAction = 'pan-x';
+                    slider.style.touchAction = 'none';
                     slider.style.webkitUserSelect = 'none';
                     slider.style.userSelect = 'none';
                     const updateFromSlider = () => applyFn(slider.value);
-                    ['input', 'change', 'touchend', 'mouseup', 'keyup'].forEach((evt) => {
+                    const updateFromClientX = (clientX) => {
+                        try {
+                            const rect = slider.getBoundingClientRect();
+                            if (!rect || !rect.width) return;
+                            const min = Number(slider.min || 0);
+                            const max = Number(slider.max || 1);
+                            const step = Number(slider.step || 0.01);
+                            let ratio = (clientX - rect.left) / rect.width;
+                            ratio = Math.max(0, Math.min(1, ratio));
+                            let value = min + (max - min) * ratio;
+                            if (isFinite(step) && step > 0) value = Math.round(value / step) * step;
+                            value = Math.max(min, Math.min(max, value));
+                            slider.value = String(value);
+                            applyFn(slider.value);
+                        } catch (e) { }
+                    };
+                    const updateFromTouch = (ev) => {
+                        const t = (ev.touches && ev.touches[0]) || (ev.changedTouches && ev.changedTouches[0]);
+                        if (!t) return;
+                        updateFromClientX(t.clientX);
+                    };
+                    ['input', 'change', 'touchend', 'mouseup', 'keyup', 'pointerup'].forEach((evt) => {
                         slider.addEventListener(evt, updateFromSlider, { passive: true });
                     });
+                    slider.addEventListener('touchstart', updateFromTouch, { passive: true });
+                    slider.addEventListener('touchmove', updateFromTouch, { passive: true });
+                    slider.addEventListener('pointerdown', (ev) => updateFromClientX(ev.clientX), { passive: true });
+                    slider.addEventListener('pointermove', (ev) => {
+                        if (ev.buttons === 1) updateFromClientX(ev.clientX);
+                    }, { passive: true });
                 }
 
                 bindRange(musicSlider, applyMusicVolume);
@@ -4678,7 +4712,22 @@ function escapeHtmlAttr(str) {
             let busy = false;
             let lastShown = 0;
             const MIN_GAP = 1200; // ms between non-priority messages
+            let activeTimer = null;
+            let queuedTimer = null;
             window.assistantMuted = window.assistantMuted || false;
+            function isAssistantActive() {
+                try {
+                    return !window.assistantMuted && !(document.body && document.body.classList.contains('assistant-disabled'));
+                } catch (e) { return !window.assistantMuted; }
+            }
+            function clear() {
+                try { if (activeTimer) { clearTimeout(activeTimer); activeTimer = null; } } catch (e) { }
+                try { if (queuedTimer) { clearTimeout(queuedTimer); queuedTimer = null; } } catch (e) { }
+                try { queue = []; } catch (e) { }
+                busy = false;
+                try { if (bubble) bubble.classList.remove('show'); } catch (e) { }
+                try { if (badge) badge.classList.remove('notif'); } catch (e) { }
+            }
             function positionBubbleNearBadge() {
                 if (!badge || !bubble) return;
                 try {
@@ -4705,7 +4754,7 @@ function escapeHtmlAttr(str) {
             }
 
             function show(text, opts) {
-                opts = opts || {}; if (window.assistantMuted) return;
+                opts = opts || {}; if (!isAssistantActive()) return;
                 // ensure short text
                 if (typeof text !== 'string') text = String(text);
                 if (text.length > 240) text = text.slice(0, 237) + '...';
@@ -4715,13 +4764,19 @@ function escapeHtmlAttr(str) {
             }
 
             function process() {
+                if (!isAssistantActive()) { clear(); return; }
                 if (busy) return;
                 if (!queue.length) return;
                 const msg = queue.shift();
+                if (!isAssistantActive()) { clear(); return; }
                 const now = Date.now();
                 if (now - lastShown < MIN_GAP && !(msg.opts && msg.opts.priority > 0)) {
                     // requeue slightly later
-                    setTimeout(process, MIN_GAP - (now - lastShown));
+                    try { if (queuedTimer) clearTimeout(queuedTimer); } catch (e) { }
+                    queuedTimer = setTimeout(function () {
+                        queuedTimer = null;
+                        process();
+                    }, MIN_GAP - (now - lastShown));
                     queue.unshift(msg);
                     return;
                 }
@@ -4734,31 +4789,52 @@ function escapeHtmlAttr(str) {
                 badge.classList.add('notif');
 
                 const duration = msg.opts && msg.opts.sticky ? 4200 : Math.max(1500, Math.min(5000, msg.text.length * 60));
-                setTimeout(() => {
+                try { if (activeTimer) clearTimeout(activeTimer); } catch (e) { }
+                activeTimer = setTimeout(() => {
+                    activeTimer = null;
+                    if (!isAssistantActive()) { clear(); return; }
                     bubble.classList.remove('show');
                     badge.classList.remove('notif');
                     busy = false;
                     // small delay then next
-                    setTimeout(process, 120);
+                    try { if (queuedTimer) clearTimeout(queuedTimer); } catch (e) { }
+                    queuedTimer = setTimeout(function () {
+                        queuedTimer = null;
+                        process();
+                    }, 120);
                 }, duration);
             }
 
-            // tap the badge to show a short line or toggle
-            badge.addEventListener('click', function (e) {
-                // if long-press or multi-touch, do nothing
+            function onBadgeClick(e) {
                 if (e.detail && e.detail > 1) return;
+                if (!isAssistantActive()) return;
+                if (!bubble || !bubble.classList) return;
                 if (bubble.classList.contains('show')) {
                     bubble.classList.remove('show');
                 } else {
                     show("Alright, fine. I'm watching. Try not to break containment.", { priority: 1, sticky: true });
                 }
-            });
-            window.addEventListener('resize', () => requestAnimationFrame(positionBubbleNearBadge), { passive: true });
-            window.addEventListener('orientationchange', () => requestAnimationFrame(positionBubbleNearBadge), { passive: true });
+            }
+
+            function onResizeOrRotate() {
+                requestAnimationFrame(positionBubbleNearBadge);
+            }
+
+            function destroy() {
+                clear();
+                try { if (badge) badge.removeEventListener('click', onBadgeClick); } catch (e) { }
+                try { window.removeEventListener('resize', onResizeOrRotate); } catch (e) { }
+                try { window.removeEventListener('orientationchange', onResizeOrRotate); } catch (e) { }
+            }
+
+            // tap the badge to show a short line or toggle
+            if (badge) badge.addEventListener('click', onBadgeClick);
+            window.addEventListener('resize', onResizeOrRotate, { passive: true });
+            window.addEventListener('orientationchange', onResizeOrRotate, { passive: true });
             requestAnimationFrame(positionBubbleNearBadge);
 
             // expose to window for game integration
-            window.Assistant = { show };
+            window.Assistant = { show, clear, destroy };
         })();
     </script>
 
@@ -6456,17 +6532,43 @@ console.info('[AssistantPatch] assistantFaceDiagnostics available. Use assistant
       window._originalAssistant = window.Assistant || { emit:function(){}, on:function(){}, off:function(){} };
     }
   }
+
+  function clearAssistantVisuals() {
+    try {
+      var bubbles = Array.from(document.querySelectorAll('.assist-bubble, #assist-bubble'));
+      bubbles.forEach(function(b){
+        try {
+          b.classList.remove('show');
+          b.style.removeProperty('opacity');
+          b.style.removeProperty('pointer-events');
+        } catch(e){}
+      });
+      var fallbackRoot = document.getElementById('assistant-bubble-root');
+      if (fallbackRoot) {
+        try { fallbackRoot.innerHTML = ''; } catch(e){}
+        try { fallbackRoot.remove(); } catch(e){}
+      }
+      var fallbackBubbles = Array.from(document.querySelectorAll('.assistant-fallback-bubble'));
+      fallbackBubbles.forEach(function(b){ try { b.remove(); } catch(e){} });
+    } catch(e){}
+  }
   
 function setAssistantEnabled(val) {
   try {
     window.enableAssistant = !!val;
+    // hard gate for all assistant message paths
+    window.assistantMuted = !window.enableAssistant;
     try { localStorage.setItem('assistantEnabled', window.enableAssistant ? 'true' : 'false'); } catch(e){}
     if (window.enableAssistant) {
       try { if (window.Assistant && typeof window.Assistant.init === 'function') window.Assistant.init(); } catch(e){}
       document.body.classList.remove('assistant-disabled');
+      try { document.documentElement.classList.remove('assistant-disabled'); } catch(e){}
     } else {
+      try { if (window.Assistant && typeof window.Assistant.clear === 'function') window.Assistant.clear(); } catch(e){}
       try { if (window.Assistant && typeof window.Assistant.destroy === 'function') window.Assistant.destroy(); } catch(e){}
       document.body.classList.add('assistant-disabled');
+      try { document.documentElement.classList.add('assistant-disabled'); } catch(e){}
+      clearAssistantVisuals();
     }
   } catch(e) { console.warn('setAssistantEnabled error', e); }
 }
@@ -6639,10 +6741,22 @@ document.addEventListener('DOMContentLoaded', function(){
 <!-- Assistant Modular Wrapper inserted (fallback always) -->
 <script>
 (function(){
+  // Disabled this wrapper because it duplicates the primary Assistant API
+  // and can create fallback bubbles via extra event paths.
+  return;
   var preExisting = (window.Assistant && window.Assistant.__original) ? window.Assistant.__original : window.Assistant || null;
   function createEmitter(){ var handlers = Object.create(null); return { on: function(evt, fn){ if (typeof fn !== 'function') return; (handlers[evt] || (handlers[evt]=[])).push(fn); }, off: function(evt, fn){ if (!handlers[evt]) return; if (!fn) { delete handlers[evt]; return; } handlers[evt]=handlers[evt].filter(f=>f!==fn); }, emit: function(evt){ var args = Array.prototype.slice.call(arguments,1); var list = (handlers[evt] || []).slice(); for(var i=0;i<list.length;i++){ try{ list[i].apply(null, args); }catch(e){ console.warn('assistant handler error',e);} } } }; }
   var emitter = createEmitter();
   var inProxyCall = false;
+  function assistantEnabledNow(){
+    try {
+      if (window.assistantMuted) return false;
+      if (window.enableAssistant === false) return false;
+      if (document.body && document.body.classList.contains('assistant-disabled')) return false;
+      if (document.documentElement && document.documentElement.classList.contains('assistant-disabled')) return false;
+      return true;
+    } catch(e){ return !window.assistantMuted; }
+  }
   
   function ensureBubbleRoot(){
     var root = document.getElementById('assistant-bubble-root');
@@ -6669,6 +6783,7 @@ document.addEventListener('DOMContentLoaded', function(){
   
   function showFallbackBubble(text, opts){
     opts = opts || {};
+    if (!assistantEnabledNow()) return;
     try {
       // Ensure style exists
       if (!document.getElementById('assistant-fallback-style')) {
@@ -6775,6 +6890,7 @@ document.addEventListener('DOMContentLoaded', function(){
       } catch(e){ console.warn('Assistant.init error', e); }
     },
     show: function(){
+      if (!assistantEnabledNow()) return;
       var args = arguments;
       try {
         console.log('[Assistant][module] show() called; preExisting=', !!preExisting, 'inProxyCall=', inProxyCall, 'args=', args);
@@ -6789,6 +6905,7 @@ document.addEventListener('DOMContentLoaded', function(){
       } catch(e){ console.warn('Assistant.show error', e); }
     },
     emit: function(){
+      if (!assistantEnabledNow()) return;
       var args = Array.prototype.slice.call(arguments);
       try { console.log('[Assistant][module] emit() called; event=', args[0], 'preExisting=', !!preExisting, 'inProxyCall=', inProxyCall, 'args=', args.slice(1)); } catch(e){}
       try { emitter.emit.apply(emitter, args); } catch(e){ console.warn('assistant local emit error', e); }
@@ -6809,6 +6926,7 @@ document.addEventListener('DOMContentLoaded', function(){
       this._inited = false;
       try {
         console.log('[Assistant][module] destroy() preExisting=', !!preExisting);
+        try { if (preExisting && typeof preExisting.clear === 'function') preExisting.clear(); } catch(e){}
         if (preExisting && typeof preExisting.destroy === 'function') {
           preExisting.destroy();
         } else {
