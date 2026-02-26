@@ -444,6 +444,16 @@
 
         </div>
 
+        <div class="settings-tutorial-row">
+            <label for="tutorialMode">Tutorial Hints</label>
+            <select id="tutorialMode" aria-label="Tutorial Hints">
+                <option value="full">Full</option>
+                <option value="minimal">Minimal</option>
+                <option value="off">Off</option>
+            </select>
+            <button id="replayTutorialBtn" class="btn" type="button">Replay</button>
+        </div>
+
         <div class="settings-reset-row">
             <button id="resetProgressBtn" class="btn" type="button">Reset Progress</button>
             <div class="settings-reset-note">Clears High Score and Achievements</div>
@@ -480,13 +490,81 @@
             <button id="helpClose" class="ctrl small-ctrl" aria-label="Close help">❌</button>
         </div>
 
-        <ul style="margin:6px 0 0 6px; color:#ffe9b0; font-size:10px; line-height:1.4;">
-            <li>You start with 10 nano-bots.</li>
-            <li>Use them by clicking on pathogens to make them grow and burst.</li>
-            <li>Bursting pathogens can create cascades and earn you additional nano-bots.</li>
-            <li>If you run out of nano-bots, it's game over.</li>
-            <li>How many levels can you beat?</li>
-        </ul>
+        <div class="howto-v2">
+            <section class="howto-card">
+                <h3>Core Loop</h3>
+                <p>Each tap spends 1 nano-bot. Grow viruses until they pop, trigger chain reactions, and clear the board to reach the next level.</p>
+                <div class="howto-step-row">
+                    <div class="howto-step">
+                        <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Test_pixel.png" alt="Small virus">
+                        <span>Tap to Grow</span>
+                    </div>
+                    <div class="howto-arrow">→</div>
+                    <div class="howto-step">
+                        <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png" alt="Larger virus">
+                        <span>Reach Critical</span>
+                    </div>
+                    <div class="howto-arrow">→</div>
+                    <div class="howto-step">
+                        <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png" alt="Popped virus">
+                        <span>Pop + Chain</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="howto-card">
+                <h3>Virus Sizes</h3>
+                <p>Viruses increase one size per tap. At max size, the next growth causes a pop.</p>
+                <div class="howto-size-grid">
+                    <div><img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Test_pixel.png" alt="Size 1"><span>S1</span></div>
+                    <div><img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus2.png" alt="Size 2"><span>S2</span></div>
+                    <div><img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png" alt="Size 3"><span>S3</span></div>
+                    <div><img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png" alt="Size 4"><span>S4</span></div>
+                </div>
+            </section>
+
+            <section class="howto-card">
+                <h3>Special Viruses</h3>
+                <p><strong>Armored:</strong> First growth hit breaks the shell. The next growth behaves normally.</p>
+                <div class="howto-inline-note">Tip: clear armored viruses early when they block chains.</div>
+            </section>
+
+            <section class="howto-card">
+                <h3>Nano Storm</h3>
+                <p>Build a long chain (20+) to charge Nano Storm. Tap the battery button, then tap a target virus.</p>
+                <div class="howto-storm-meter-row" aria-hidden="true">
+                    <div class="howto-storm-meter-card">
+                        <div class="howto-storm-meter howto-storm-meter-charging">
+                            <span style="--fill:0.6;"></span>
+                        </div>
+                        <div class="howto-storm-meter-label">Charging</div>
+                    </div>
+                    <div class="howto-storm-meter-card">
+                        <div class="howto-storm-meter howto-storm-meter-full">
+                            <span style="--fill:1;"></span>
+                        </div>
+                        <div class="howto-storm-meter-label">Full / Ready</div>
+                    </div>
+                </div>
+                <p class="howto-caption">Refill rule: complete one chain of 20+ pops in a single cascade.</p>
+                <div class="howto-storm-grid" aria-hidden="true">
+                    <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
+                    <span class="n">◍</span><span class="c">◎</span><span class="n">◍</span>
+                    <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
+                </div>
+                <p class="howto-caption">Center gets 2 hits. Orthogonal + diagonal neighbors get 1 hit.</p>
+            </section>
+
+            <section class="howto-card">
+                <h3>Scoring and Survival</h3>
+                <ul>
+                    <li>Longer chains score more and improve recovery.</li>
+                    <li>Clear every virus to complete a level and gain 1 click.</li>
+                    <li>If clicks reach 0, it is game over.</li>
+                    <li>Use Nano Storm on crowded clusters or armored pressure zones.</li>
+                </ul>
+            </section>
+        </div>
     </div>
     <!-- END HOW TO PLAY POPUP -->
 
@@ -575,8 +653,9 @@
                 alt="Assistant">
         </div>
 
-        <div style="text-align:left;">
+        <div style="display:flex; gap:10px; align-items:center; justify-content:flex-start;">
             <button id="startModalClose" class="close-btn" aria-label="Close briefing">OK</button>
+            <button id="startModalHowTo" class="close-btn" aria-label="Open how to play">How to Play</button>
         </div>
     </div>
     <!-- END START MISSION modal -->

@@ -17,10 +17,25 @@
                 m.setAttribute('aria-hidden', 'true');
             }
 
+            function showHowToPopup() {
+                const helpPopup = document.getElementById('helpPopup');
+                if (!helpPopup) return;
+                helpPopup.classList.add('show');
+                helpPopup.setAttribute('aria-hidden', 'false');
+            }
+
             // wire close button + escape
             document.addEventListener('DOMContentLoaded', function () {
                 const close = document.getElementById('startModalClose');
+                const howTo = document.getElementById('startModalHowTo');
                 if (close) close.addEventListener('click', hideStartModal);
+                if (howTo) {
+                    howTo.addEventListener('click', function (e) {
+                        try { e.preventDefault(); e.stopPropagation(); } catch (err) { }
+                        hideStartModal();
+                        setTimeout(showHowToPopup, 0);
+                    });
+                }
                 document.addEventListener('keydown', function (e) {
                     if (e.key === 'Escape') hideStartModal();
                 });

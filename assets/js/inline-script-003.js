@@ -433,6 +433,155 @@ function escapeHtmlAttr(str) {
             const achievementToastQueue = [];
             let achievementToastActive = false;
             let runUnlockedAchievementIds = new Set();
+            const TUTORIAL_MODE_KEY = 'goneViral_tutorialMode_v1';
+            const TUTORIAL_SEEN_KEY = 'goneViral_tutorialSeen_v1';
+            const TUTORIAL_MODES = { full: 'full', minimal: 'minimal', off: 'off' };
+            let tutorialMode = TUTORIAL_MODES.full;
+            let tutorialRunState = { introShownThisRun: false };
+            let tutorialGateState = { startPressed: false, briefingAcknowledged: false };
+
+            function createDefaultTutorialSeen() {
+                return {
+                    firstTap: false,
+                    firstChain: false,
+                    firstLevelClear: false,
+                    firstStormReady: false,
+                    firstStormUse: false,
+                    firstArmoredSeen: false
+                };
+            }
+
+            let tutorialSeen = createDefaultTutorialSeen();
+
+            function loadTutorialMode() {
+                try {
+                    const raw = String(localStorage.getItem(TUTORIAL_MODE_KEY) || '').toLowerCase();
+                    if (raw === TUTORIAL_MODES.minimal || raw === TUTORIAL_MODES.off || raw === TUTORIAL_MODES.full) return raw;
+                } catch (e) { }
+                return TUTORIAL_MODES.full;
+            }
+
+            function saveTutorialMode() {
+                try { localStorage.setItem(TUTORIAL_MODE_KEY, tutorialMode); } catch (e) { }
+            }
+
+            function loadTutorialSeen() {
+                const base = createDefaultTutorialSeen();
+                try {
+                    const raw = localStorage.getItem(TUTORIAL_SEEN_KEY);
+                    if (!raw) return base;
+                    const parsed = JSON.parse(raw);
+                    if (!parsed || typeof parsed !== 'object') return base;
+                    Object.keys(base).forEach((k) => { base[k] = !!parsed[k]; });
+                    return base;
+                } catch (e) {
+                    return base;
+                }
+            }
+
+            function saveTutorialSeen() {
+                try { localStorage.setItem(TUTORIAL_SEEN_KEY, JSON.stringify(tutorialSeen)); } catch (e) { }
+            }
+
+            function tutorialVoiceEnabled() {
+                try {
+                    if (tutorialMode === TUTORIAL_MODES.off) return false;
+                    if (window.assistantMuted) return false;
+                    if (document.body && document.body.classList.contains('assistant-disabled')) return false;
+                    return !!(window.Assistant && typeof Assistant.show === 'function');
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function isTutorialGateReady() {
+                return !!(tutorialGateState.startPressed && tutorialGateState.briefingAcknowledged);
+            }
+
+            function syncTutorialGateFromDom() {
+                try {
+                    const startBtn = document.getElementById('aiStartBtn');
+                    const closeBtn = document.getElementById('startModalClose');
+                    if (!startBtn) tutorialGateState.startPressed = true;
+                    if (!closeBtn) tutorialGateState.briefingAcknowledged = true;
+                } catch (e) { }
+            }
+
+            function tutorialSay(text, opts = {}) {
+                if (!tutorialVoiceEnabled()) return false;
+                try {
+                    Assistant.show(String(text || ''), {
+                        priority: Number.isFinite(opts.priority) ? opts.priority : 2,
+                        sticky: !!opts.sticky
+                    });
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function markTutorialSeen(key) {
+                if (!key || tutorialSeen[key]) return false;
+                tutorialSeen[key] = true;
+                saveTutorialSeen();
+                return true;
+            }
+
+            function maybeShowTutorialIntro(force = false) {
+                if (!force && !isTutorialGateReady()) return;
+                if (!force) {
+                    if (tutorialMode !== TUTORIAL_MODES.full) return;
+                    if (tutorialSeen.firstTap) return;
+                    if (tutorialRunState.introShownThisRun) return;
+                }
+                if (tutorialSay('PIXEL tip: tap a virus to grow it. Overgrown viruses pop and can chain into neighbors.', { priority: 3, sticky: true })) {
+                    tutorialRunState.introShownThisRun = true;
+                }
+            }
+
+            function tutorialEvent(key) {
+                if (!key || tutorialMode === TUTORIAL_MODES.off) return;
+                if (!isTutorialGateReady()) return;
+                if (tutorialSeen[key]) return;
+                const isMinimal = tutorialMode === TUTORIAL_MODES.minimal;
+                let line = '';
+                let sticky = false;
+                if (key === 'firstTap') {
+                    line = 'Great start. Build chains to clear faster and earn extra nano-bots.';
+                    sticky = true;
+                } else if (key === 'firstChain') {
+                    if (isMinimal) return;
+                    line = 'Nice chain. Longer chains are the safest way to recover clicks.';
+                } else if (key === 'firstLevelClear') {
+                    line = 'Level clear. You gain a click between levels, so efficiency matters.';
+                } else if (key === 'firstStormReady') {
+                    line = 'Nano Storm ready. Tap the battery button, then tap a target virus.';
+                    sticky = true;
+                } else if (key === 'firstStormUse') {
+                    if (isMinimal) return;
+                    line = 'Storm used. Save it for crowded clusters or armored pressure turns.';
+                } else if (key === 'firstArmoredSeen') {
+                    line = 'New threat: armored virus. The shell blocks one growth hit before breaking.';
+                    sticky = true;
+                } else {
+                    return;
+                }
+                if (tutorialSay(line, { priority: 3, sticky: sticky })) {
+                    markTutorialSeen(key);
+                }
+            }
+
+            function replayTutorialNow() {
+                tutorialSeen = createDefaultTutorialSeen();
+                saveTutorialSeen();
+                tutorialRunState.introShownThisRun = false;
+                if (tutorialMode === TUTORIAL_MODES.off) {
+                    tutorialMode = TUTORIAL_MODES.minimal;
+                    saveTutorialMode();
+                }
+                syncTutorialControls();
+                maybeShowTutorialIntro(true);
+            }
 
             function createDefaultAchievementState() {
                 const stats = {};
@@ -498,6 +647,8 @@ function escapeHtmlAttr(str) {
             if (Object.prototype.hasOwnProperty.call(runAchievementStats, 'runLevelReached')) {
                 runAchievementStats.runLevelReached = 1;
             }
+            tutorialMode = loadTutorialMode();
+            tutorialSeen = loadTutorialSeen();
 
             function saveAchievementStateNow() {
                 try {
@@ -762,12 +913,56 @@ function escapeHtmlAttr(str) {
             const screensEl = document.getElementById('screens');
             const scoreEl = document.getElementById('score');
             const stormBtn = document.getElementById('stormBtn');
+            const aiStartBtn = document.getElementById('aiStartBtn');
+            const startModalCloseBtn = document.getElementById('startModalClose');
+            syncTutorialGateFromDom();
+            if (aiStartBtn) {
+                aiStartBtn.addEventListener('click', () => {
+                    tutorialGateState.startPressed = true;
+                });
+            }
+            if (startModalCloseBtn) {
+                startModalCloseBtn.addEventListener('click', () => {
+                    tutorialGateState.briefingAcknowledged = true;
+                    maybeShowTutorialIntro(false);
+                });
+            }
 
 
             // High-score persistence (localStorage)
             const highScoreKey = 'goneViral_highScore';
             let highScore = Number(localStorage.getItem(highScoreKey) || 0);
             let highScoreEl = null;
+
+            function syncTutorialControls() {
+                const modeSelect = document.getElementById('tutorialMode');
+                if (modeSelect) modeSelect.value = tutorialMode;
+            }
+
+            try {
+                window.Tutorial = {
+                    getMode: function () { return tutorialMode; },
+                    setMode: function (mode) {
+                        const m = String(mode || '').toLowerCase();
+                        if (!TUTORIAL_MODES[m]) return tutorialMode;
+                        tutorialMode = m;
+                        saveTutorialMode();
+                        syncTutorialControls();
+                        return tutorialMode;
+                    },
+                    replay: function () {
+                        replayTutorialNow();
+                        return { mode: tutorialMode, seen: Object.assign({}, tutorialSeen) };
+                    },
+                    resetSeen: function () {
+                        tutorialSeen = createDefaultTutorialSeen();
+                        saveTutorialSeen();
+                        tutorialRunState.introShownThisRun = false;
+                        return Object.assign({}, tutorialSeen);
+                    },
+                    getSeen: function () { return Object.assign({}, tutorialSeen); }
+                };
+            } catch (e) { }
 
             function resetProgressWithConfirm() {
                 let confirmed = false;
@@ -1416,6 +1611,7 @@ function escapeHtmlAttr(str) {
                     setStormArmed(false);
                     resetStormChainIndicator();
                     resetRunAchievementStats(getCurrentLevelNumber());
+                    tutorialRunState.introShownThisRun = false;
                 }
                 const total = ROWS * COLS;
                 const levelNum = getCurrentLevelNumber();
@@ -1432,6 +1628,9 @@ function escapeHtmlAttr(str) {
                 }
                 scheduleRender();
                 updateHUD();
+                if (!preserveClicks) {
+                    setTimeout(() => { maybeShowTutorialIntro(false); }, 280);
+                }
             }
 
             function findNextBubble(index, dr, dc) { let r = Math.floor(index / COLS), c = index % COLS; while (true) { r += dr; c += dc; if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null; const i = r * COLS + c; if (state[i] !== null) return i; } }
@@ -1490,6 +1689,14 @@ function escapeHtmlAttr(str) {
                     boardEl.appendChild(gridCell);
                 }
                 updateHUD();
+                if (!tutorialSeen.firstArmoredSeen) {
+                    for (let i = 0; i < specialState.length; i++) {
+                        if (specialState[i] === 'armored') {
+                            tutorialEvent('firstArmoredSeen');
+                            break;
+                        }
+                    }
+                }
                 if (stormArmed && Number.isFinite(stormHoverIndex)) applyStormPreview(stormHoverIndex);
                 else clearStormPreview();
                 const remaining = state.filter(x => x !== null).length;
@@ -1503,6 +1710,7 @@ function escapeHtmlAttr(str) {
                     incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
                     setAchievementBest('runLevelReached', screensPassed + 1, 'run');
                     updateHUD();
+                    tutorialEvent('firstLevelClear');
 
                     try { showLevelComplete({ title: 'LEVEL COMPLETE', duration: 4500 }); } catch (e) { }
 
@@ -1882,6 +2090,7 @@ function escapeHtmlAttr(str) {
                     try { playSfx('fill'); } catch (e) { }
                     flashStormChargeGain();
                     updateStormUI();
+                    tutorialEvent('firstStormReady');
                     return true;
                 }
                 updateStormUI();
@@ -2138,6 +2347,7 @@ function escapeHtmlAttr(str) {
                         console.log('[Badge] final tracker.pops =', count);
                         setAchievementBest('runBestChain', count, 'run');
                         if (count >= 20) incrementAchievementStat('chain20LifetimeCount', 1, 'lifetime');
+                        if (count >= 4) tutorialEvent('firstChain');
                         updateStormChainProgress(count);
                         grantStormChargeFromChain(count);
                         scheduleStormChainReset();
@@ -2209,6 +2419,7 @@ function escapeHtmlAttr(str) {
                         hitSet: new Set()
                     };
                     resetStormChainIndicator();
+                    tutorialEvent('firstTap');
 
 
                     // show badge after short delay (existing behavior)
@@ -2358,6 +2569,7 @@ function escapeHtmlAttr(str) {
                 clicksLeft--;
                 stormCharges = Math.max(0, stormCharges - 1);
                 incrementAchievementStat('runNanoStormUses', 1, 'run');
+                tutorialEvent('firstStormUse');
                 setStormArmed(false);
                 updateHUD();
                 const executeStormImpact = () => {
@@ -2439,7 +2651,26 @@ function escapeHtmlAttr(str) {
             evaluateAchievements({ emitUnlock: false });
             scheduleAchievementsUIRender();
             const audioBtn = document.getElementById('audioBtn');
-            if (audioBtn) audioBtn.addEventListener('click', () => { scheduleAchievementsUIRender(); });
+            if (audioBtn) audioBtn.addEventListener('click', () => { scheduleAchievementsUIRender(); syncTutorialControls(); });
+            const tutorialModeSelect = document.getElementById('tutorialMode');
+            const replayTutorialBtn = document.getElementById('replayTutorialBtn');
+            syncTutorialControls();
+            if (tutorialModeSelect) {
+                tutorialModeSelect.addEventListener('change', (ev) => {
+                    const nextMode = String((ev && ev.target && ev.target.value) || '').toLowerCase();
+                    if (!TUTORIAL_MODES[nextMode]) return;
+                    tutorialMode = nextMode;
+                    saveTutorialMode();
+                    syncTutorialControls();
+                    if (tutorialMode !== TUTORIAL_MODES.off) maybeShowTutorialIntro(false);
+                });
+            }
+            if (replayTutorialBtn) {
+                replayTutorialBtn.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    replayTutorialNow();
+                });
+            }
             const resetProgressBtn = document.getElementById('resetProgressBtn');
             if (resetProgressBtn) {
                 resetProgressBtn.addEventListener('click', (ev) => {
