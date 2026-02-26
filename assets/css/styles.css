@@ -1858,22 +1858,60 @@
                 margin-top: 6px;
             }
 
+            #helpPopup {
+                width: min(700px, 94vw);
+                max-width: 94vw;
+                max-height: 90vh;
+                font-size: 13px;
+            }
+
+            .audio-popup .howto-carousel {
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                gap: 8px;
+                align-items: stretch;
+            }
+
+            .audio-popup .howto-nav {
+                align-self: center;
+                padding: 8px 10px;
+                min-width: 40px;
+                font-size: 12px;
+                line-height: 1;
+            }
+
+            .audio-popup .howto-carousel-meta {
+                margin-top: 6px;
+                text-align: center;
+                font-size: 8px;
+                color: #cfe4ff;
+                opacity: 0.95;
+            }
+
             .audio-popup .howto-card {
                 border: 2px solid rgba(255, 255, 255, 0.16);
                 border-radius: 8px;
                 background: rgba(0, 0, 0, 0.18);
-                padding: 8px;
+                padding: 12px;
+            }
+
+            .audio-popup #howtoSlides .howto-card {
+                display: none;
+            }
+
+            .audio-popup #howtoSlides .howto-card.active {
+                display: block;
             }
 
             .audio-popup .howto-card h3 {
                 margin: 0 0 6px 0;
-                font-size: 10px;
+                font-size: 13px;
                 color: #ffe9b0;
             }
 
             .audio-popup .howto-card p {
                 margin: 0 0 6px 0;
-                font-size: 8px;
+                font-size: 10px;
                 line-height: 1.45;
                 color: #d8ebff;
             }
@@ -1885,7 +1923,7 @@
             }
 
             .audio-popup .howto-card li {
-                font-size: 8px;
+                font-size: 10px;
                 line-height: 1.45;
                 margin: 0 0 4px 0;
             }
@@ -1907,24 +1945,24 @@
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.14);
                 border-radius: 6px;
-                padding: 6px 4px;
+                padding: 10px 6px;
             }
 
             .audio-popup .howto-step img {
-                width: 30px;
-                height: 30px;
+                width: 44px;
+                height: 44px;
                 object-fit: contain;
                 image-rendering: pixelated;
             }
 
             .audio-popup .howto-step span {
-                font-size: 7px;
+                font-size: 9px;
                 line-height: 1.3;
                 color: #fff3ce;
             }
 
             .audio-popup .howto-arrow {
-                font-size: 11px;
+                font-size: 16px;
                 color: #ffd166;
                 opacity: 0.9;
                 text-align: center;
@@ -1941,27 +1979,74 @@
                 flex-direction: column;
                 align-items: center;
                 gap: 4px;
-                padding: 6px 4px;
+                padding: 10px 6px;
                 border: 1px solid rgba(255, 255, 255, 0.14);
                 border-radius: 6px;
                 background: rgba(255, 255, 255, 0.05);
             }
 
             .audio-popup .howto-size-grid img {
-                width: 28px;
-                height: 28px;
+                width: 40px;
+                height: 40px;
                 object-fit: contain;
                 image-rendering: pixelated;
             }
 
             .audio-popup .howto-size-grid span {
-                font-size: 7px;
+                font-size: 9px;
                 color: #fff3ce;
             }
 
             .audio-popup .howto-inline-note {
-                font-size: 8px;
+                font-size: 10px;
                 color: #67e8f9;
+            }
+
+            .audio-popup .howto-armored-visual {
+                display: flex;
+                justify-content: center;
+                margin: 6px 0;
+            }
+
+            .audio-popup .howto-armored-preview {
+                position: relative;
+                width: 82px;
+                height: 82px;
+                border-radius: 999px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02));
+            }
+
+            .audio-popup .howto-armored-preview::before {
+                content: '';
+                position: absolute;
+                inset: 3px;
+                border-radius: 999px;
+                background:
+                    repeating-linear-gradient(60deg, rgba(255, 241, 176, 0.2) 0 2px, transparent 2px 7px),
+                    repeating-linear-gradient(-60deg, rgba(255, 241, 176, 0.18) 0 2px, transparent 2px 7px);
+                opacity: 0.85;
+                pointer-events: none;
+            }
+
+            .audio-popup .howto-armored-preview::after {
+                content: '';
+                position: absolute;
+                inset: 2px;
+                border-radius: 999px;
+                border: 2px solid rgba(255, 238, 176, 0.92);
+                box-shadow: 0 0 10px rgba(255, 222, 140, 0.62), inset 0 0 8px rgba(255, 238, 176, 0.2);
+                pointer-events: none;
+            }
+
+            .audio-popup .howto-armored-preview img {
+                width: 62px;
+                height: 62px;
+                object-fit: contain;
+                image-rendering: pixelated;
+                z-index: 1;
             }
 
             .audio-popup .howto-storm-meter-row {
@@ -1984,8 +2069,8 @@
 
             .audio-popup .howto-storm-meter {
                 position: relative;
-                width: 62px;
-                height: 28px;
+                width: 86px;
+                height: 38px;
                 border-radius: 7px;
                 border: 2px solid #0f2b3d;
                 background: linear-gradient(180deg, #132b3d, #0b1823);
@@ -1995,10 +2080,10 @@
             .audio-popup .howto-storm-meter::before {
                 content: '';
                 position: absolute;
-                right: -6px;
+                right: -7px;
                 top: 50%;
-                width: 5px;
-                height: 11px;
+                width: 6px;
+                height: 14px;
                 transform: translateY(-50%);
                 border-radius: 2px;
                 border: 2px solid #0f2b3d;
@@ -2025,15 +2110,15 @@
             }
 
             .audio-popup .howto-storm-meter-label {
-                font-size: 7px;
+                font-size: 9px;
                 color: #fff3ce;
             }
 
             .audio-popup .howto-storm-grid {
                 display: grid;
                 grid-template-columns: repeat(3, 1fr);
-                gap: 4px;
-                max-width: 180px;
+                gap: 6px;
+                max-width: 240px;
                 margin: 6px auto;
                 text-align: center;
             }
@@ -2042,11 +2127,11 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                height: 30px;
+                height: 40px;
                 border-radius: 6px;
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.14);
-                font-size: 15px;
+                font-size: 20px;
             }
 
             .audio-popup .howto-storm-grid .c {
@@ -2066,13 +2151,21 @@
 
             .audio-popup .howto-caption {
                 margin-top: 2px;
-                font-size: 7px;
+                font-size: 9px;
                 text-align: center;
                 color: #cfe4ff;
                 opacity: 0.95;
             }
 
             @media (max-width: 560px) {
+                .audio-popup .howto-carousel {
+                    grid-template-columns: 1fr;
+                }
+
+                .audio-popup .howto-nav {
+                    justify-self: center;
+                }
+
                 .audio-popup .howto-step-row {
                     grid-template-columns: 1fr;
                 }

@@ -413,6 +413,7 @@ function escapeHtmlAttr(str) {
             let mobileStormPointerId = null;
             let mobileStormCandidateIndex = null;
             const MOBILE_STORM_HOLD_MS = 120;
+            let boardGeneration = 0;
             let gameOverVignetteEl = null;
             let gameOverMusicRestoreTimer = null;
             let gameOverPrevMusicVolume = null;
@@ -1606,6 +1607,7 @@ function escapeHtmlAttr(str) {
 
 
             function randomizeBoard(preserveClicks = false) {
+                boardGeneration += 1;
                 state.fill(null);
                 specialState.fill(null);
                 specialMetaState.fill(null);
@@ -1888,6 +1890,7 @@ function escapeHtmlAttr(str) {
             function emitDirectionalParticles(cellIndex, tracker) {
                 const originCell = boardEl.querySelector(`[data-index='${cellIndex}']`);
                 if (!originCell) return;
+                const sourceBoardGeneration = boardGeneration;
 
                 // conservative cap to prevent accidental floods on low-end devices
                 const MAX_ACTIVE_PARTICLES = IS_MOBILE_COARSE ? 12 : 20;
@@ -1948,6 +1951,7 @@ function escapeHtmlAttr(str) {
                             const dur = 400 + Math.random() * 600 + dirIdx * 20;
                             animateParticleTo(p, sx + jitterX, sy + jitterY, tx, ty, dur, () => {
                                 try {
+                                    if (sourceBoardGeneration !== boardGeneration) return;
                                     if (!hitTargets.has(next)) {
                                         hitTargets.add(next);
                                         handleClick(next, false, tracker);

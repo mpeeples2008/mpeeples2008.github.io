@@ -490,8 +490,10 @@
             <button id="helpClose" class="ctrl small-ctrl" aria-label="Close help">❌</button>
         </div>
 
-        <div class="howto-v2">
-            <section class="howto-card">
+        <div class="howto-carousel">
+            <button id="helpPrev" class="btn howto-nav" type="button" aria-label="Previous section">◀</button>
+            <div class="howto-v2" id="howtoSlides">
+            <section class="howto-card active">
                 <h3>Core Loop</h3>
                 <p>Each tap spends 1 nano-bot. Grow viruses until they pop, trigger chain reactions, and clear the board to reach the next level.</p>
                 <div class="howto-step-row">
@@ -526,6 +528,11 @@
             <section class="howto-card">
                 <h3>Special Viruses</h3>
                 <p><strong>Armored:</strong> First growth hit breaks the shell. The next growth behaves normally.</p>
+                <div class="howto-armored-visual" aria-hidden="true">
+                    <div class="howto-armored-preview">
+                        <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png" alt="Armored virus example">
+                    </div>
+                </div>
                 <div class="howto-inline-note">Tip: clear armored viruses early when they block chains.</div>
             </section>
 
@@ -564,7 +571,10 @@
                     <li>Use Nano Storm on crowded clusters or armored pressure zones.</li>
                 </ul>
             </section>
+            </div>
+            <button id="helpNext" class="btn howto-nav" type="button" aria-label="Next section">▶</button>
         </div>
+        <div class="howto-carousel-meta"><span id="helpPage">1 / 5</span></div>
     </div>
     <!-- END HOW TO PLAY POPUP -->
 
