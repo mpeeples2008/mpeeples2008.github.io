@@ -30,13 +30,19 @@
                     // fade out intro
                     intro.classList.add('fade-out');
 
+                    const musicAllowed = (window.musicEnabled !== false);
+                    if (!musicAllowed) {
+                        if (typeof startGame === 'function') startGame();
+                        return;
+                    }
+
                     // start music (replace with your own playMusic() or audio element)
                     if (window.musicAudio) {
                         window.musicAudio.play().catch(() => { });
                     } else {
                         const bg = new Audio("https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Robobozo.mp3");
                         bg.loop = true;
-                        bg.volume = 0.4;
+                        bg.volume = Number(window.musicVolume) || 0.2;
                         window.musicAudio = bg;
                         bg.play().catch(() => { });
                     }

@@ -1625,6 +1625,11 @@
                 accent-color: #ffd166;
             }
 
+            .audio-popup input[type="range"]:disabled {
+                opacity: 0.45;
+                filter: grayscale(0.25);
+            }
+
             .audio-popup .controls {
                 display: flex;
                 gap: 10px;
@@ -1826,6 +1831,19 @@
                 align-items: center;
                 gap: 10px;
                 margin-top: 10px;
+            }
+
+            .audio-popup .settings-audio-toggle-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-top: 8px;
+            }
+
+            .audio-popup .settings-audio-toggle-row label {
+                width: auto;
+                margin: 0;
             }
 
             .audio-popup .settings-tutorial-row label {
@@ -2821,7 +2839,8 @@
 .assistant-control { width:100%; box-sizing: border-box; }
 
 /* Hide native checkbox but keep it accessible */
-.assistant-toggle-input {
+.assistant-toggle-input,
+.audio-toggle-input {
   position: absolute;
   left: -9999px;
   width: 1px;
@@ -2830,7 +2849,8 @@
 }
 
 /* custom switch */
-.assistant-toggle-switch {
+.assistant-toggle-switch,
+.audio-toggle-switch {
   display:inline-block;
   width:46px;
   height:26px;
@@ -2841,7 +2861,8 @@
   vertical-align: middle;
   box-shadow: 0 2px 6px rgba(2,6,23,0.4);
 }
-.assistant-toggle-switch::after{
+.assistant-toggle-switch::after,
+.audio-toggle-switch::after{
   content: "";
   position: absolute;
   left: 4px;
@@ -2855,10 +2876,12 @@
 }
 
 /* checked state */
-.assistant-toggle-input:checked + .assistant-toggle-switch{
+.assistant-toggle-input:checked + .assistant-toggle-switch,
+.audio-toggle-input:checked + .audio-toggle-switch{
   background: linear-gradient(90deg, #34d399, #06b6d4);
 }
-.assistant-toggle-input:checked + .assistant-toggle-switch::after{
+.assistant-toggle-input:checked + .assistant-toggle-switch::after,
+.audio-toggle-input:checked + .audio-toggle-switch::after{
   transform: translateX(20px);
 }
 

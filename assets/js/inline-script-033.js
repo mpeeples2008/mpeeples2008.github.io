@@ -50,7 +50,7 @@ function setAssistantEnabled(val) {
 document.addEventListener('DOMContentLoaded', function(){
   try { ensureOriginal(); } catch(e){}
   var cb = document.getElementById('assistantToggle');
-  var span = document.querySelector('.assistant-toggle-switch');
+  var span = (cb && cb.parentElement) ? cb.parentElement.querySelector('.assistant-toggle-switch') : null;
   var initial = true;
   try { initial = localStorage.getItem('assistantEnabled') !== 'false'; } catch(e){ initial = true; }
   if (cb){

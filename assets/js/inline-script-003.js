@@ -209,12 +209,34 @@ function escapeHtmlAttr(str) {
             let musicIndex = 0;
             let musicAudio = null;
             let musicSilenceMs = 2000; // 2 seconds silence between tracks
-            let musicEnabled = true;
+            const AUDIO_PREF_MUSIC_ENABLED_KEY = 'goneViral_musicEnabled_v1';
+            const AUDIO_PREF_SFX_ENABLED_KEY = 'goneViral_sfxEnabled_v1';
+            let audioUserInteracted = false;
+            function loadAudioEnabledPref(key, fallback = true) {
+                try {
+                    const raw = localStorage.getItem(key);
+                    if (raw == null) return !!fallback;
+                    return raw !== 'false';
+                } catch (e) {
+                    return !!fallback;
+                }
+            }
+            function saveAudioEnabledPref(key, val) {
+                try { localStorage.setItem(key, val ? 'true' : 'false'); } catch (e) { }
+            }
+            let musicEnabled = loadAudioEnabledPref(AUDIO_PREF_MUSIC_ENABLED_KEY, true);
+            let sfxEnabled = loadAudioEnabledPref(AUDIO_PREF_SFX_ENABLED_KEY, true);
+            window.musicEnabled = musicEnabled;
+            window.sfxEnabled = sfxEnabled;
 
             let sfxCache = {};
             function createSfx(key) { const url = SFX_URLS[key]; if (!url) return null; try { const a = new Audio(url); a.preload = 'auto'; a.volume = 0.5; a.crossOrigin = 'anonymous'; sfxCache[key] = a; return a; } catch (e) { return null; } }
             function getSfx(key) { return sfxCache[key] || createSfx(key); }
-            function playSfx(key) { try { const a = getSfx(key); if (!a) return; a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
+            function playSfx(key) {
+                if (!sfxEnabled) return;
+                try { if (window.allMuted) return; } catch (e) { }
+                try { const a = getSfx(key); if (!a) return; a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => { }); } catch (e) { }
+            }
 
             function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
             function prepareMusicOrder() { musicOrder = MUSIC_PLAYLIST.slice(); shuffleArray(musicOrder); musicIndex = 0; }
@@ -924,6 +946,7 @@ function escapeHtmlAttr(str) {
             syncTutorialGateFromDom();
             if (aiStartBtn) {
                 aiStartBtn.addEventListener('click', () => {
+                    markAudioUserInteracted();
                     tutorialGateState.startPressed = true;
                 });
             }
@@ -933,12 +956,65 @@ function escapeHtmlAttr(str) {
                     maybeShowTutorialIntro(false);
                 });
             }
+            try {
+                const onFirstInteraction = () => {
+                    markAudioUserInteracted();
+                    document.removeEventListener('pointerdown', onFirstInteraction, true);
+                    document.removeEventListener('keydown', onFirstInteraction, true);
+                };
+                document.addEventListener('pointerdown', onFirstInteraction, { capture: true, passive: true });
+                document.addEventListener('keydown', onFirstInteraction, { capture: true });
+            } catch (e) { }
 
 
             // High-score persistence (localStorage)
             const highScoreKey = 'goneViral_highScore';
             let highScore = Number(localStorage.getItem(highScoreKey) || 0);
             let highScoreEl = null;
+
+            function markAudioUserInteracted() {
+                const wasInteracted = audioUserInteracted;
+                audioUserInteracted = true;
+                if (!wasInteracted && musicEnabled) {
+                    try {
+                        const hasMusic = !!(musicAudio || window.musicAudio);
+                        if (!hasMusic) startBackgroundMusic();
+                    } catch (e) { }
+                }
+            }
+
+            function syncAudioSettingsUI() {
+                const musicToggle = document.getElementById('musicEnabledToggle');
+                const sfxToggle = document.getElementById('sfxEnabledToggle');
+                const musicSlider = document.getElementById('musicVol');
+                const sfxSlider = document.getElementById('sfxVol');
+                if (musicToggle) musicToggle.checked = !!musicEnabled;
+                if (sfxToggle) sfxToggle.checked = !!sfxEnabled;
+                if (musicSlider) musicSlider.disabled = !musicEnabled;
+                if (sfxSlider) sfxSlider.disabled = !sfxEnabled;
+            }
+
+            function applyMusicEnabledState(fromUserAction = false) {
+                window.musicEnabled = !!musicEnabled;
+                saveAudioEnabledPref(AUDIO_PREF_MUSIC_ENABLED_KEY, !!musicEnabled);
+                if (!musicEnabled) {
+                    stopBackgroundMusic();
+                } else if (fromUserAction || audioUserInteracted) {
+                    startBackgroundMusic();
+                }
+                syncAudioSettingsUI();
+            }
+
+            function applySfxEnabledState() {
+                window.sfxEnabled = !!sfxEnabled;
+                saveAudioEnabledPref(AUDIO_PREF_SFX_ENABLED_KEY, !!sfxEnabled);
+                try {
+                    Object.values(sfxCache).forEach((a) => {
+                        try { if (a) a.muted = (!sfxEnabled) || !!window.allMuted; } catch (e) { }
+                    });
+                } catch (e) { }
+                syncAudioSettingsUI();
+            }
 
             function syncTutorialControls() {
                 const modeSelect = document.getElementById('tutorialMode');
@@ -2723,7 +2799,40 @@ function escapeHtmlAttr(str) {
             evaluateAchievements({ emitUnlock: false });
             scheduleAchievementsUIRender();
             const audioBtn = document.getElementById('audioBtn');
-            if (audioBtn) audioBtn.addEventListener('click', () => { scheduleAchievementsUIRender(); syncTutorialControls(); });
+            if (audioBtn) audioBtn.addEventListener('click', () => { scheduleAchievementsUIRender(); syncTutorialControls(); syncAudioSettingsUI(); });
+            const musicEnabledToggle = document.getElementById('musicEnabledToggle');
+            const sfxEnabledToggle = document.getElementById('sfxEnabledToggle');
+            const musicToggleSwitch = document.querySelector('#musicEnabledToggle + .audio-toggle-switch');
+            const sfxToggleSwitch = document.querySelector('#sfxEnabledToggle + .audio-toggle-switch');
+            if (musicEnabledToggle) {
+                musicEnabledToggle.addEventListener('change', () => {
+                    markAudioUserInteracted();
+                    musicEnabled = !!musicEnabledToggle.checked;
+                    applyMusicEnabledState(true);
+                });
+            }
+            if (sfxEnabledToggle) {
+                sfxEnabledToggle.addEventListener('change', () => {
+                    sfxEnabled = !!sfxEnabledToggle.checked;
+                    applySfxEnabledState();
+                });
+            }
+            if (musicToggleSwitch && musicEnabledToggle) {
+                musicToggleSwitch.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    musicEnabledToggle.checked = !musicEnabledToggle.checked;
+                    musicEnabledToggle.dispatchEvent(new Event('change'));
+                });
+            }
+            if (sfxToggleSwitch && sfxEnabledToggle) {
+                sfxToggleSwitch.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    sfxEnabledToggle.checked = !sfxEnabledToggle.checked;
+                    sfxEnabledToggle.dispatchEvent(new Event('change'));
+                });
+            }
+            applyMusicEnabledState(false);
+            applySfxEnabledState();
             const tutorialModeSelect = document.getElementById('tutorialMode');
             const replayTutorialBtn = document.getElementById('replayTutorialBtn');
             syncTutorialControls();
@@ -2760,65 +2869,10 @@ function escapeHtmlAttr(str) {
             const muteBtn = document.getElementById('mute');
             if (muteBtn) { muteBtn.addEventListener('click', () => { sfxMuted = !sfxMuted; muteBtn.textContent = sfxMuted ? 'M' : 'M'; Object.values(sfxCache).forEach(a => { try { a.muted = sfxMuted; } catch (e) { } }); if (typeof musicAudio !== 'undefined' && musicAudio) try { musicAudio.muted = sfxMuted; } catch (e) { } }); }
 
-            // --- START BUTTON: keep SVG intact and toggle state via class instead of overwriting content ---
-            function setStartBtnPlaying(isPlaying) {
-                try {
-                    // prefer boolean
-                    isPlaying = !!isPlaying;
-                    // ensure startBtn exists
-                    if (!startBtn) startBtn = document.getElementById('startBtn');
-                    if (!startBtn) return;
-                    // Toggle a class for styling; do not change innerHTML so SVG stays
-                    startBtn.classList.toggle('playing', isPlaying);
-                    // Keep an accessible label
-                    startBtn.setAttribute('aria-pressed', String(isPlaying));
-                    startBtn.setAttribute('title', isPlaying ? 'Stop music' : 'Start music');
-                } catch (e) { /* ignore */ }
-            }
-
-            // initial state: prefer to show SVG, not text
-            try {
-                setStartBtnPlaying(!!(typeof musicAudio !== 'undefined' && musicAudio && !musicAudio.paused));
-            } catch (e) { setStartBtnPlaying(false); }
-
+            // Practical V1: remove HUD music toggle; audio lives in Settings.
             if (startBtn) {
-                startBtn.addEventListener('click', async () => {
-                    // Ensure SFX are primed (same as before)
-                    Object.keys(SFX_URLS).forEach(k => { try { createSfx(k); } catch (e) { } });
-
-                // helper: get the one canonical music audio instance (either local musicAudio or window.musicAudio)
-                function _getMusicAudio() {
-                    try {
-                        if (typeof musicAudio !== 'undefined' && musicAudio) return musicAudio;
-                        if (window.musicAudio) return window.musicAudio;
-                        return null;
-                    } catch (e) { return (window.musicAudio || null); }
-                }
-
-                const ma = _getMusicAudio();
-
-                // If music is playing -> stop it
-                if (ma && !ma.paused) {
-                    try {
-                        stopBackgroundMusic(); // will pause & clear both refs
-                    } catch (e) { /* ignore */ }
-                    setStartBtnPlaying(false);
-                    return;
-                }
-
-                // Otherwise start music
-                try {
-                    startBackgroundMusic();
-                    // set state to playing after a short delay; we check again for the canonical audio
-                    setTimeout(() => {
-                        const nowMa = _getMusicAudio();
-                        setStartBtnPlaying(!!(nowMa && !nowMa.paused));
-                    }, 60);
-                } catch (e) {
-                    console.warn('startBackgroundMusic failed', e);
-                    setStartBtnPlaying(false);
-                }
-                });
+                startBtn.style.display = 'none';
+                startBtn.setAttribute('aria-hidden', 'true');
             }
 
 
