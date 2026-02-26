@@ -111,9 +111,52 @@ function escapeHtmlAttr(str) {
   return String(str).replace(/"/g, '&quot;').replace(/&/g, '&amp;');
 }
 
-        // Difficulty tuning: base density and growth per screen (fraction 0..1)
-        const BASE_DENSITY = 0.60;       // fraction of cells initially filled (0..1)
-        const DENSITY_GROWTH = 0.0;   // fraction added each screenPassed;   // fraction added each screenPassed
+        // Difficulty profile (single source of truth for balance tuning)
+        // Edit `bands` to tune progression without touching gameplay logic.
+        const DIFFICULTY_PROFILE = {
+            defaults: {
+                baseDensity: 0.60,
+                densityGrowth: 0.0,
+                sizeMixStart: [0.05, 0.20, 0.35, 0.40],
+                sizeMixEven: [0.15, 0.25, 0.30, 0.30],
+                sizeMixEnd: [0.32, 0.33, 0.23, 0.12],
+                sizeMixLevelsToEven: 6,
+                sizeMixLevelsToEnd: 12,
+                stormRechargeChainMin: 21, // >20 pops in one chain
+                stormNearThreshold: 16,
+                specialVirusBaseChance: 0.05,
+                specialVirusLevelBonus: 0.003,
+                specialVirusMaxChance: 0.20,
+                chainClickBonusStartPop: 3,
+                chainClickBonusEvery: 2,
+                chainScoreStep: 0.5,
+                levelScoreScaleStep: 0.1
+            },
+            bands: [
+                {
+                    minLevel: 1,
+                    maxLevel: 3,
+                    values: {
+                        baseDensity: 0.58
+                    }
+                },
+                {
+                    minLevel: 4,
+                    maxLevel: 8,
+                    values: {
+                        baseDensity: 0.60
+                    }
+                },
+                {
+                    minLevel: 9,
+                    maxLevel: null,
+                    values: {
+                        baseDensity: 0.62,
+                        specialVirusMaxChance: 0.24
+                    }
+                }
+            ]
+        };
 
         // Wrap everything that queries DOM in DOMContentLoaded so elements exist before we attach listeners
         document.addEventListener('DOMContentLoaded', () => {
@@ -297,13 +340,6 @@ function escapeHtmlAttr(str) {
             let specialMetaState = new Array(ROWS * COLS).fill(null);
             let inputLocked = false;
             const MAX_STORM_CHARGES = 1;
-            const STORM_RECHARGE_CHAIN_MIN = 21; // must exceed 20 in one chain
-            const STORM_NEAR_THRESHOLD = 16;
-            const SPECIAL_VIRUS_SETTINGS = {
-                baseChance: 0.22,
-                levelBonus: 0.01,
-                maxChance: 0.42
-            };
             // Modular special-virus registry:
             // - set `unlockLevel` per type to gate by progression
             // - tune `spawnWeight` to bias frequency among unlocked types
@@ -315,7 +351,7 @@ function escapeHtmlAttr(str) {
                     badge: 'A',
                     className: 'special-armored',
                     enabled: true,
-                    unlockLevel: 1,
+                    unlockLevel: 4,
                     spawnWeight: 1.0,
                     hooks: {
                         onBeforeGrow: specialHookArmoredBeforeGrow
@@ -360,7 +396,9 @@ function escapeHtmlAttr(str) {
             };
             try {
                 window.SpecialVirusConfig = SPECIAL_VIRUS_TYPES;
-                window.SpecialVirusSettings = SPECIAL_VIRUS_SETTINGS;
+                window.DifficultyProfile = DIFFICULTY_PROFILE;
+                window.getDifficultyForLevel = getDifficultyForLevel;
+                window.getCurrentDifficulty = getCurrentDifficulty;
             } catch (e) { }
             let stormCharges = 1;
             let stormArmed = false;
@@ -562,16 +600,6 @@ function escapeHtmlAttr(str) {
 
             function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
 
-            // ---------- Level-adaptive size-mix (two-phase) ----------
-            // Start / middle / end mixes. Arrays should sum to 1 but code will normalize defensively.
-            const SIZE_MIX_START = [0.10, 0.25, 0.30, 0.35]; // early levels: favor large (size 3)
-            const SIZE_MIX_EVEN = [0.25, 0.25, 0.25, 0.25]; // middle: even distribution
-            const SIZE_MIX_END = [0.35, 0.30, 0.25, 0.10]; // late: favor small (size 0)
-
-            // Levels controlling the interpolation durations
-            const LEVELS_TO_EVEN = 5;   // START -> EVEN over these many levels
-            const LEVELS_TO_END = 12;  // EVEN -> END over these many levels (after the above)
-
             // Helper: linear interpolation between two arrays
             function lerpArrays(a, b, t) {
                 const out = new Array(Math.max(a.length, b.length));
@@ -622,20 +650,25 @@ function escapeHtmlAttr(str) {
                     while (out.length < dims) out.push(0);
                     return out;
                 }
-                const S = ensureLen(SIZE_MIX_START);
-                const M = ensureLen(SIZE_MIX_EVEN);
-                const E = ensureLen(SIZE_MIX_END);
+                const levelNum = getCurrentLevelNumber();
+                const difficulty = getDifficultyForLevel(levelNum);
+                const S = ensureLen(Array.isArray(difficulty.sizeMixStart) ? difficulty.sizeMixStart : [0.05, 0.20, 0.35, 0.40]);
+                const M = ensureLen(Array.isArray(difficulty.sizeMixEven) ? difficulty.sizeMixEven : [0.15, 0.25, 0.30, 0.30]);
+                const E = ensureLen(Array.isArray(difficulty.sizeMixEnd) ? difficulty.sizeMixEnd : [0.32, 0.33, 0.23, 0.12]);
+                const levelsToEven = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToEven) || 6));
+                const levelsToEnd = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToEnd) || 12));
+                const completed = Math.max(0, Number(screensPassed) || 0);
 
                 let weights;
                 if (typeof screensPassed === 'undefined') {
                     // fallback to uniform if screensPassed not yet defined
                     weights = new Array(dims).fill(1 / dims);
-                } else if (screensPassed <= LEVELS_TO_EVEN) {
-                    const t1 = LEVELS_TO_EVEN === 0 ? 1 : (screensPassed / LEVELS_TO_EVEN);
+                } else if (completed <= levelsToEven) {
+                    const t1 = levelsToEven === 0 ? 1 : (completed / levelsToEven);
                     weights = lerpArrays(S, M, t1);
-                } else if (screensPassed <= LEVELS_TO_EVEN + LEVELS_TO_END) {
-                    const local = screensPassed - LEVELS_TO_EVEN;
-                    const t2 = LEVELS_TO_END === 0 ? 1 : (local / LEVELS_TO_END);
+                } else if (completed <= levelsToEven + levelsToEnd) {
+                    const local = completed - levelsToEven;
+                    const t2 = levelsToEnd === 0 ? 1 : (local / levelsToEnd);
                     weights = lerpArrays(M, E, t2);
                 } else {
                     weights = E.slice();
@@ -646,7 +679,7 @@ function escapeHtmlAttr(str) {
                 for (let i = 0; i < weights.length; i++) weights[i] = weights[i] / sum;
 
                 // Update debug HUD with current mix (disabled by default)
-                updateSizeMixDebug(weights, (screensPassed || 0) + 1);
+                updateSizeMixDebug(weights, levelNum);
 
                 // Weighted sample by cumulative weights
                 let r = Math.random();
@@ -659,6 +692,44 @@ function escapeHtmlAttr(str) {
 
             function getCurrentLevelNumber() {
                 return Math.max(1, (Number(screensPassed) || 0) + 1);
+            }
+
+            function getDifficultyForLevel(levelNum = getCurrentLevelNumber()) {
+                const level = Math.max(1, Number(levelNum) || 1);
+                const base = Object.assign({}, DIFFICULTY_PROFILE.defaults || {});
+                const bands = Array.isArray(DIFFICULTY_PROFILE.bands) ? DIFFICULTY_PROFILE.bands : [];
+                for (let i = 0; i < bands.length; i++) {
+                    const b = bands[i] || {};
+                    const min = Math.max(1, Number(b.minLevel) || 1);
+                    const max = (b.maxLevel == null) ? Infinity : Math.max(min, Number(b.maxLevel) || min);
+                    if (level >= min && level <= max) Object.assign(base, b.values || {});
+                }
+                return base;
+            }
+
+            function getCurrentDifficulty() {
+                return getDifficultyForLevel(getCurrentLevelNumber());
+            }
+
+            function getStormRechargeChainMin(levelNum = getCurrentLevelNumber()) {
+                const d = getDifficultyForLevel(levelNum);
+                return Math.max(1, Math.floor(Number(d.stormRechargeChainMin) || 21));
+            }
+
+            function getStormNearThreshold(levelNum = getCurrentLevelNumber()) {
+                const recharge = getStormRechargeChainMin(levelNum);
+                const d = getDifficultyForLevel(levelNum);
+                const near = Math.max(0, Math.floor(Number(d.stormNearThreshold) || 16));
+                return Math.min(Math.max(0, recharge - 1), near);
+            }
+
+            function shouldAwardChainClick(popCount, levelNum = getCurrentLevelNumber()) {
+                const d = getDifficultyForLevel(levelNum);
+                const start = Math.max(1, Math.floor(Number(d.chainClickBonusStartPop) || 3));
+                const every = Math.max(1, Math.floor(Number(d.chainClickBonusEvery) || 2));
+                const count = Math.max(0, Math.floor(Number(popCount) || 0));
+                if (count < start) return false;
+                return ((count - start) % every) === 0;
             }
 
             function getSpecialTypeDef(typeId) {
@@ -702,10 +773,16 @@ function escapeHtmlAttr(str) {
                 const active = getActiveSpecialTypes(levelNum);
                 if (!active.length) return null;
                 const level = Math.max(1, Number(levelNum) || 1);
-                const base = Math.max(0, Math.min(1, Number(SPECIAL_VIRUS_SETTINGS.baseChance) || 0));
-                const levelBonus = Math.max(0, Number(SPECIAL_VIRUS_SETTINGS.levelBonus) || 0);
-                const maxChance = Math.max(0, Math.min(1, Number(SPECIAL_VIRUS_SETTINGS.maxChance) || 1));
-                const chance = Math.min(maxChance, base + ((level - 1) * levelBonus));
+                const d = getDifficultyForLevel(level);
+                const base = Math.max(0, Math.min(1, Number(d.specialVirusBaseChance) || 0));
+                const levelBonus = Math.max(0, Number(d.specialVirusLevelBonus) || 0);
+                const maxChance = Math.max(0, Math.min(1, Number(d.specialVirusMaxChance) || 1));
+                const unlockFloor = active.reduce((min, def) => {
+                    const unlock = Math.max(1, Number(def && def.unlockLevel) || 1);
+                    return Math.min(min, unlock);
+                }, Infinity);
+                const growthLevels = Math.max(0, level - (Number.isFinite(unlockFloor) ? unlockFloor : level));
+                const chance = Math.min(maxChance, base + (growthLevels * levelBonus));
                 if (Math.random() > chance) return null;
                 const totalWeight = active.reduce((sum, def) => sum + Math.max(0, Number(def.spawnWeight) || 0), 0);
                 if (totalWeight <= 0) return null;
@@ -854,7 +931,10 @@ function escapeHtmlAttr(str) {
                 }
                 const total = ROWS * COLS;
                 const levelNum = getCurrentLevelNumber();
-                const target = Math.round(total * Math.min(0.95, BASE_DENSITY + screensPassed * DENSITY_GROWTH));
+                const difficulty = getDifficultyForLevel(levelNum);
+                const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
+                const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
+                const target = Math.round(total * Math.min(0.95, baseDensity + screensPassed * densityGrowth));
                 const idx = Array.from({ length: total }, (_, i) => i);
                 shuffle(idx);
                 for (let k = 0; k < target; k++) {
@@ -1206,13 +1286,16 @@ function escapeHtmlAttr(str) {
                         tracker.pops = (tracker.pops || 0) + 1;
                         updateStormChainProgress(tracker.pops);
 
-                        // Only award an extra click on every *odd* pop after the second one (3rd, 5th, 7th.)
-                        if (tracker.pops > 2 && (tracker.pops % 2) === 1) {
+                        // Chain click rewards are profile-driven (start pop + cadence).
+                        const difficulty = getCurrentDifficulty();
+                        if (shouldAwardChainClick(tracker.pops)) {
                             clicksLeft = Math.min(MAX_CLICKS, clicksLeft + 1);
                             playSfx('fill');
                         }
-                        const chainMultiplier = 1 + (tracker.pops - 1) * 0.5;
-                        const earned = Math.round(10 * chainMultiplier * (1 + screensPassed * 0.1));
+                        const chainScoreStep = Math.max(0, Number(difficulty.chainScoreStep) || 0.5);
+                        const levelScoreScaleStep = Math.max(0, Number(difficulty.levelScoreScaleStep) || 0.1);
+                        const chainMultiplier = 1 + (tracker.pops - 1) * chainScoreStep;
+                        const earned = Math.round(10 * chainMultiplier * (1 + screensPassed * levelScoreScaleStep));
                         totalScore += earned;
                         updateHUD();
                         try { if (window.Assistant && (tracker.pops || 0) > 10) Assistant.emit && Assistant.emit('cascade', { pops: tracker.pops }); } catch (e) { }
@@ -1246,17 +1329,19 @@ function escapeHtmlAttr(str) {
             function syncStormChainIndicator() {
                 if (!stormBtn) return;
                 const count = Math.max(0, Number(stormChainPops) || 0);
+                const rechargeTarget = getStormRechargeChainMin();
+                const nearThreshold = getStormNearThreshold();
                 const isCharged = stormCharges > 0;
-                const visualCount = isCharged ? STORM_RECHARGE_CHAIN_MIN : count;
-                const ratio = Math.max(0, Math.min(1, visualCount / STORM_RECHARGE_CHAIN_MIN));
+                const visualCount = isCharged ? rechargeTarget : count;
+                const ratio = Math.max(0, Math.min(1, visualCount / rechargeTarget));
                 stormBtn.style.setProperty('--storm-combo-ratio', String(ratio));
-                stormBtn.dataset.chain = String(Math.min(visualCount, STORM_RECHARGE_CHAIN_MIN));
+                stormBtn.dataset.chain = String(Math.min(visualCount, rechargeTarget));
                 stormBtn.classList.toggle('charged', isCharged);
                 stormBtn.classList.toggle('combo-tracking', !isCharged && visualCount > 0);
-                stormBtn.classList.toggle('combo-near', !isCharged && visualCount >= STORM_NEAR_THRESHOLD && visualCount < STORM_RECHARGE_CHAIN_MIN);
-                stormBtn.classList.toggle('combo-hot', !isCharged && visualCount >= (STORM_RECHARGE_CHAIN_MIN - 1));
+                stormBtn.classList.toggle('combo-near', !isCharged && visualCount >= nearThreshold && visualCount < rechargeTarget);
+                stormBtn.classList.toggle('combo-hot', !isCharged && visualCount >= (rechargeTarget - 1));
                 const baseTitle = stormArmed ? 'Nano Storm armed' : (isCharged ? 'Nano Storm ready' : 'Nano Storm charging');
-                const chainTitle = (!isCharged && visualCount > 0) ? (' | chain ' + visualCount + '/' + STORM_RECHARGE_CHAIN_MIN) : '';
+                const chainTitle = (!isCharged && visualCount > 0) ? (' | chain ' + visualCount + '/' + rechargeTarget) : '';
                 stormBtn.setAttribute('title', baseTitle + chainTitle);
             }
 
@@ -1295,7 +1380,8 @@ function escapeHtmlAttr(str) {
 
             function grantStormChargeFromChain(popCount) {
                 const count = Math.max(0, Number(popCount) || 0);
-                if (count <= 20) return false;
+                const rechargeTarget = getStormRechargeChainMin();
+                if (count < rechargeTarget) return false;
                 const before = stormCharges;
                 stormCharges = Math.min(MAX_STORM_CHARGES, stormCharges + 1);
                 if (stormCharges > before) {
