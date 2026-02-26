@@ -293,17 +293,24 @@ function escapeHtmlAttr(str) {
             let outOfClicksShown = false;
             let state = new Array(ROWS * COLS).fill(null);
             let inputLocked = false;
+            const MAX_STORM_CHARGES = 2;
+            const STORM_RECHARGE_CHAIN_MIN = 21; // must exceed 20 in one chain
+            const STORM_NEAR_THRESHOLD = 16;
+            let stormCharges = 1;
+            let stormArmed = false;
+            let stormHoverIndex = null;
+            let stormResolving = false;
+            let stormChainPops = 0;
+            let stormChainResetTimer = null;
+            let stormChargeFlashTimer = null;
 
             // Move DOM element lookups inside DOMContentLoaded
             const boardEl = document.getElementById('board');
             const clicksEl = document.getElementById('clicks');
             const screensEl = document.getElementById('screens');
             const scoreEl = document.getElementById('score');
-            const comboMeterEl = document.getElementById('comboMeter');
-            const comboTrackEl = document.getElementById('comboTrack');
-            const comboFillEl = document.getElementById('comboFill');
-            const comboCountEl = document.getElementById('comboCount');
-            let comboAwardTimer = null;
+            const stormBtn = document.getElementById('stormBtn');
+            const stormCountEl = document.getElementById('stormCount');
 
 
             // High-score persistence (localStorage)
@@ -365,6 +372,7 @@ function escapeHtmlAttr(str) {
 
                 // update pixel meter visualization (10 segments)
                 try { updateClicksMeter(clicksLeft); } catch (e) { }
+                try { updateStormUI(); } catch (e) { }
             }
 
             // Unified reset used by the Game Over persistent popup and restart wiring
@@ -586,9 +594,16 @@ function escapeHtmlAttr(str) {
 
 
             function randomizeBoard(preserveClicks = false) {
-                state.fill(null); if (!preserveClicks) clicksLeft = 10; const total = ROWS * COLS;
+                state.fill(null);
+                if (!preserveClicks) {
+                    clicksLeft = 10;
+                    stormResolving = false;
+                    stormCharges = 1;
+                    setStormArmed(false);
+                    resetStormChainIndicator();
+                }
+                const total = ROWS * COLS;
                 const target = Math.round(total * Math.min(0.95, BASE_DENSITY + screensPassed * DENSITY_GROWTH)); const idx = Array.from({ length: total }, (_, i) => i); shuffle(idx); for (let k = 0; k < target; k++) { state[idx[k]] = sampleSizeRandom(); } scheduleRender(); updateHUD();
-                try { resetComboMeter(); } catch (e) { }
             }
 
             function findNextBubble(index, dr, dc) { let r = Math.floor(index / COLS), c = index % COLS; while (true) { r += dr; c += dc; if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null; const i = r * COLS + c; if (state[i] !== null) return i; } }
@@ -605,6 +620,8 @@ function escapeHtmlAttr(str) {
                     boardEl.appendChild(gridCell);
                 }
                 updateHUD();
+                if (stormArmed && Number.isFinite(stormHoverIndex)) applyStormPreview(stormHoverIndex);
+                else clearStormPreview();
                 const remaining = state.filter(x => x !== null).length;
 
                 if (remaining === 0) {
@@ -886,15 +903,7 @@ function escapeHtmlAttr(str) {
                     if (!tracker.poppedSet.has(index)) {
                         tracker.poppedSet.add(index);
                         tracker.pops = (tracker.pops || 0) + 1;
-                        if (!tracker.comboMilestones) tracker.comboMilestones = new Set();
-                        const unlocked = COMBO_RULES_ASC.filter(r => tracker.pops >= r.min && !tracker.comboMilestones.has(r.min));
-                        let latestMilestone = null;
-                        if (unlocked.length) {
-                            unlocked.forEach((r) => tracker.comboMilestones.add(r.min));
-                            latestMilestone = unlocked[unlocked.length - 1];
-                        }
-                        if (latestMilestone) showComboMilestone(latestMilestone, tracker.pops);
-                        else updateComboMeter(tracker.pops);
+                        updateStormChainProgress(tracker.pops);
 
                         // Only award an extra click on every *odd* pop after the second one (3rd, 5th, 7th.)
                         if (tracker.pops > 2 && (tracker.pops % 2) === 1) {
@@ -932,64 +941,198 @@ function escapeHtmlAttr(str) {
                 { min: 14, title: 'AMAZING', icon: 'spark', scoreBonus: 70, extraClicks: 2, className: 'amazing' },
                 { min: 10, title: 'GREAT', icon: 'pixel-star', scoreBonus: 30, extraClicks: 1, className: 'great' },
             ];
-            const COMBO_RULES_ASC = BADGE_RULES.slice().sort((a, b) => a.min - b.min);
 
-            function getComboMaxTarget() {
-                return COMBO_RULES_ASC.length ? COMBO_RULES_ASC[COMBO_RULES_ASC.length - 1].min : 1;
+            function syncStormChainIndicator() {
+                if (!stormBtn) return;
+                const count = Math.max(0, Number(stormChainPops) || 0);
+                const canGain = stormCharges < MAX_STORM_CHARGES;
+                const visualCount = canGain ? count : 0;
+                const ratio = Math.max(0, Math.min(1, visualCount / STORM_RECHARGE_CHAIN_MIN));
+                stormBtn.style.setProperty('--storm-combo-ratio', String(ratio));
+                stormBtn.dataset.chain = String(Math.min(visualCount, STORM_RECHARGE_CHAIN_MIN));
+                stormBtn.classList.toggle('combo-tracking', visualCount > 0);
+                stormBtn.classList.toggle('combo-near', visualCount >= STORM_NEAR_THRESHOLD && visualCount < STORM_RECHARGE_CHAIN_MIN);
+                stormBtn.classList.toggle('combo-hot', visualCount >= (STORM_RECHARGE_CHAIN_MIN - 1));
+                const baseTitle = stormArmed ? 'Nano Storm armed' : 'Nano Storm';
+                const chainTitle = visualCount > 0 ? (' | chain ' + visualCount + '/' + STORM_RECHARGE_CHAIN_MIN) : '';
+                stormBtn.setAttribute('title', baseTitle + chainTitle);
             }
 
-            function getComboHighestRule(popCount) {
-                let best = null;
-                for (let i = 0; i < COMBO_RULES_ASC.length; i++) {
-                    if (popCount >= COMBO_RULES_ASC[i].min) best = COMBO_RULES_ASC[i];
-                }
-                return best;
+            function flashStormChargeGain() {
+                if (!stormBtn) return;
+                stormBtn.classList.remove('charge-gained');
+                void stormBtn.offsetWidth;
+                stormBtn.classList.add('charge-gained');
+                try { if (stormChargeFlashTimer) clearTimeout(stormChargeFlashTimer); } catch (e) { }
+                stormChargeFlashTimer = setTimeout(() => {
+                    stormChargeFlashTimer = null;
+                    try { stormBtn.classList.remove('charge-gained'); } catch (e) { }
+                }, 520);
             }
 
-            function getComboNextRule(popCount) {
-                for (let i = 0; i < COMBO_RULES_ASC.length; i++) {
-                    if (popCount < COMBO_RULES_ASC[i].min) return COMBO_RULES_ASC[i];
-                }
-                return null;
+            function updateStormChainProgress(popCount) {
+                stormChainPops = Math.max(0, Number(popCount) || 0);
+                syncStormChainIndicator();
             }
 
-            function updateComboMeter(popCount) {
-                if (!comboMeterEl || !comboFillEl || !comboCountEl) return;
+            function scheduleStormChainReset(delayMs = 700) {
+                try { if (stormChainResetTimer) clearTimeout(stormChainResetTimer); } catch (e) { }
+                stormChainResetTimer = setTimeout(() => {
+                    stormChainResetTimer = null;
+                    stormChainPops = 0;
+                    syncStormChainIndicator();
+                }, Math.max(0, Number(delayMs) || 0));
+            }
+
+            function resetStormChainIndicator() {
+                try { if (stormChainResetTimer) clearTimeout(stormChainResetTimer); } catch (e) { }
+                stormChainResetTimer = null;
+                stormChainPops = 0;
+                syncStormChainIndicator();
+            }
+
+            function grantStormChargeFromChain(popCount) {
                 const count = Math.max(0, Number(popCount) || 0);
-                const maxTarget = getComboMaxTarget();
-                const ratio = Math.max(0, Math.min(1, count / maxTarget));
-                comboFillEl.style.width = Math.round(ratio * 100) + '%';
-                comboCountEl.textContent = 'x' + count;
-                comboMeterEl.classList.toggle('active', count > 0);
-                comboMeterEl.classList.remove('tier-great', 'tier-amazing', 'tier-stupendous', 'tier-incredible');
-                const highest = getComboHighestRule(count);
-                if (highest) comboMeterEl.classList.add('tier-' + highest.className);
-                if (comboTrackEl) {
-                    comboTrackEl.setAttribute('aria-valuemax', String(maxTarget));
-                    comboTrackEl.setAttribute('aria-valuenow', String(Math.min(count, maxTarget)));
+                if (count <= 20) return false;
+                const before = stormCharges;
+                stormCharges = Math.min(MAX_STORM_CHARGES, stormCharges + 1);
+                if (stormCharges > before) {
+                    try { playSfx('fill'); } catch (e) { }
+                    flashStormChargeGain();
+                    updateStormUI();
+                    return true;
                 }
+                updateStormUI();
+                return false;
             }
 
-            function showComboMilestone(rule, popCount) {
-                if (!comboMeterEl) return;
-                updateComboMeter(popCount);
-                try { comboMeterEl.setAttribute('title', rule.title + ' unlocked'); } catch (e) { }
-                comboMeterEl.classList.remove('award-pop');
-                void comboMeterEl.offsetWidth;
-                comboMeterEl.classList.add('award-pop');
-                try { if (comboAwardTimer) clearTimeout(comboAwardTimer); } catch (e) { }
-                comboAwardTimer = setTimeout(() => {
-                    comboAwardTimer = null;
-                    comboMeterEl.classList.remove('award-pop');
-                    updateComboMeter(popCount);
-                }, 900);
+            function updateStormUI() {
+                if (!stormBtn || !stormCountEl) return;
+                if (stormCharges <= 0 && stormArmed) stormArmed = false;
+                stormCountEl.textContent = 'x' + Math.max(0, stormCharges);
+                stormBtn.classList.remove('ready', 'armed', 'empty');
+                if (stormCharges <= 0) stormBtn.classList.add('empty');
+                else if (stormArmed) stormBtn.classList.add('armed');
+                else stormBtn.classList.add('ready');
+                stormBtn.disabled = stormCharges <= 0;
+                stormBtn.setAttribute('aria-pressed', String(!!stormArmed));
+                syncStormChainIndicator();
             }
 
-            function resetComboMeter() {
-                try { if (comboAwardTimer) clearTimeout(comboAwardTimer); } catch (e) { }
-                comboAwardTimer = null;
-                if (comboMeterEl) comboMeterEl.classList.remove('award-pop');
-                updateComboMeter(0);
+            function getStormTargets(centerIndex) {
+                const idx = Number(centerIndex);
+                if (!Number.isFinite(idx)) return [];
+                const r = Math.floor(idx / COLS);
+                const c = idx % COLS;
+                const out = [idx];
+                const cardinal = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                const diagonal = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                cardinal.forEach(([dr, dc]) => {
+                    const nr = r + dr;
+                    const nc = c + dc;
+                    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) out.push(nr * COLS + nc);
+                });
+                diagonal.forEach(([dr, dc]) => {
+                    const nr = r + dr;
+                    const nc = c + dc;
+                    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) out.push(nr * COLS + nc);
+                });
+                return out;
+            }
+
+            function clearStormPreview() {
+                if (!boardEl || !boardEl.querySelectorAll) return;
+                const marked = boardEl.querySelectorAll('.storm-preview-center, .storm-preview-neighbor, .storm-preview-diagonal');
+                marked.forEach((el) => {
+                    try {
+                        el.classList.remove('storm-preview-center');
+                        el.classList.remove('storm-preview-neighbor');
+                        el.classList.remove('storm-preview-diagonal');
+                    } catch (e) { }
+                });
+            }
+
+            function applyStormPreview(centerIndex) {
+                if (!stormArmed || !boardEl) return;
+                stormHoverIndex = Number(centerIndex);
+                clearStormPreview();
+                const ids = getStormTargets(stormHoverIndex);
+                const centerRow = Math.floor(stormHoverIndex / COLS);
+                const centerCol = stormHoverIndex % COLS;
+                ids.forEach((id, i) => {
+                    const cell = boardEl.querySelector(`[data-index='${id}']`);
+                    if (!cell) return;
+                    if (i === 0) {
+                        cell.classList.add('storm-preview-center');
+                        return;
+                    }
+                    const row = Math.floor(id / COLS);
+                    const col = id % COLS;
+                    const isDiagonal = Math.abs(row - centerRow) === 1 && Math.abs(col - centerCol) === 1;
+                    cell.classList.add(isDiagonal ? 'storm-preview-diagonal' : 'storm-preview-neighbor');
+                });
+            }
+
+            function setStormArmed(val) {
+                stormArmed = !!val && stormCharges > 0;
+                if (!stormArmed) {
+                    stormHoverIndex = null;
+                    clearStormPreview();
+                } else if (Number.isFinite(stormHoverIndex)) {
+                    applyStormPreview(stormHoverIndex);
+                }
+                updateStormUI();
+            }
+
+            function playStormBurst(centerIndex, targets) {
+                if (!boardEl) return;
+                const centerCell = boardEl.querySelector(`[data-index='${centerIndex}']`);
+                if (centerCell) {
+                    try {
+                        const r = centerCell.getBoundingClientRect();
+                        const cx = Math.round(r.left + (r.width / 2));
+                        const cy = Math.round(r.top + (r.height / 2));
+                        const addRing = (cls, delayMs = 0) => {
+                            setTimeout(() => {
+                                try {
+                                    const ring = document.createElement('div');
+                                    ring.className = 'storm-ring ' + cls;
+                                    ring.style.left = cx + 'px';
+                                    ring.style.top = cy + 'px';
+                                    document.body.appendChild(ring);
+                                    setTimeout(() => { try { ring.remove(); } catch (e) { } }, 420);
+                                } catch (e) { }
+                            }, delayMs);
+                        };
+                        addRing('storm-ring-inner', 0);
+                        addRing('storm-ring-outer', 60);
+                    } catch (e) { }
+                }
+                const centerRow = Math.floor(centerIndex / COLS);
+                const centerCol = centerIndex % COLS;
+                targets.forEach((id, i) => {
+                    const cell = boardEl.querySelector(`[data-index='${id}']`);
+                    if (!cell) return;
+                    const row = Math.floor(id / COLS);
+                    const col = id % COLS;
+                    const isCenter = i === 0;
+                    const isDiagonal = !isCenter && Math.abs(row - centerRow) === 1 && Math.abs(col - centerCol) === 1;
+                    const hitCls = isCenter ? 'storm-hit-center' : (isDiagonal ? 'storm-hit-diagonal' : 'storm-hit-neighbor');
+                    const afterCls = isCenter ? 'storm-afterglow-center' : (isDiagonal ? 'storm-afterglow-diagonal' : 'storm-afterglow-neighbor');
+                    cell.classList.remove('storm-hit-center', 'storm-hit-neighbor', 'storm-hit-diagonal');
+                    cell.classList.remove('storm-afterglow-center', 'storm-afterglow-neighbor', 'storm-afterglow-diagonal');
+                    void cell.offsetWidth;
+                    cell.classList.add(hitCls);
+                    setTimeout(() => {
+                        try {
+                            cell.classList.remove(hitCls);
+                            cell.classList.add(afterCls);
+                            setTimeout(() => {
+                                try { cell.classList.remove(afterCls); } catch (e) { }
+                            }, 440);
+                        } catch (e) { }
+                    }, 200);
+                });
             }
 
             function particlesActive() { try { if (PARTICLE_POOL.some(p => p && p._inUse)) return true; if (document.querySelectorAll && document.querySelectorAll('.particle.animate').length > 0) return true; } catch (e) { } return false; }
@@ -1048,6 +1191,9 @@ function escapeHtmlAttr(str) {
                     try {
                         const count = tracker.pops || 0;
                         console.log('[Badge] final tracker.pops =', count);
+                        updateStormChainProgress(count);
+                        grantStormChargeFromChain(count);
+                        scheduleStormChainReset();
                         const rule = BADGE_RULES.find(r => count >= r.min);
                         if (!rule) return;
 
@@ -1094,7 +1240,7 @@ function escapeHtmlAttr(str) {
 
             // ----- Core interaction -----
             // ----- Core interaction -----
-            function handleClick(index, isUser = false, tracker = null) {
+            function handleClick(index, isUser = false, tracker = null, suppressFinalize = false) {
                 if (isUser) {
                     // block clicks if game is locked or already out of clicks
                     if (inputLocked || clicksLeft <= 0) return;
@@ -1110,13 +1256,12 @@ function escapeHtmlAttr(str) {
                         pops: 0,
                         positions: [],
                         finalized: false,
-                        comboMilestones: new Set(),
                         // set of indices already popped during this chain (prevents double counting)
                         poppedSet: new Set(),
                         // (optional) set used by emitters to check whether a target was already hit
                         hitSet: new Set()
                     };
-                    resetComboMeter();
+                    resetStormChainIndicator();
 
 
                     // show badge after short delay (existing behavior)
@@ -1133,8 +1278,8 @@ function escapeHtmlAttr(str) {
                     if (isUser) {
                         state[index] = 0;
                         scheduleRender();
-                        resetComboMeter();
                     }
+                    if (suppressFinalize || stormResolving) return;
                     // unlock since nothing actually happened
                     inputLocked = false;
                     // If we just consumed the last click and there are no particles, check game over now
@@ -1153,7 +1298,7 @@ function escapeHtmlAttr(str) {
 
                 if (state[index] <= MAX_SIZE) {
                     scheduleRender();
-                    if (isUser && tracker && (tracker.pops || 0) === 0) resetComboMeter();
+                    if (suppressFinalize || stormResolving) return;
                     inputLocked = false;
                     // same immediate check as above
                     requestAnimationFrame(() => {
@@ -1169,6 +1314,7 @@ function escapeHtmlAttr(str) {
                 scheduleRender();
                 // single scheduled render; don't call render() directly here to avoid double-running level-complete
                 scheduleRender();
+                if (suppressFinalize || stormResolving) return;
 
 
                 // Define common callback for after chain/particle resolution
@@ -1188,17 +1334,93 @@ function escapeHtmlAttr(str) {
                     }
                 } catch (e) {
                     // In case helper functions are missing, fall back to immediate unlock + check
+                    if (!stormResolving) {
+                        inputLocked = false;
+                        if (clicksLeft <= 0) checkOutOfClicks();
+                    }
+                }
+            }
+
+            function useNanoStorm(centerIndex) {
+                if (inputLocked || clicksLeft <= 0 || stormCharges <= 0) return false;
+                const targets = getStormTargets(centerIndex);
+                if (!targets.length) return false;
+                const center = Number(centerIndex);
+                inputLocked = true;
+                stormResolving = true;
+                clicksLeft--;
+                stormCharges = Math.max(0, stormCharges - 1);
+                setStormArmed(false);
+                updateHUD();
+                playStormBurst(centerIndex, targets);
+                const tracker = {
+                    pops: 0,
+                    positions: [],
+                    finalized: false,
+                    poppedSet: new Set(),
+                    hitSet: new Set()
+                };
+                resetStormChainIndicator();
+                // Center gets two hits; if the first hit pops it, the second hit does nothing on empty.
+                try { handleClick(center, false, tracker, true); } catch (e) { }
+                try { handleClick(center, false, tracker, true); } catch (e) { }
+                for (let i = 0; i < targets.length; i++) {
+                    if (targets[i] === center) continue;
+                    try { handleClick(targets[i], false, tracker, true); } catch (e) { }
+                }
+                setTimeout(() => {
+                    try {
+                        tracker.finalized = true;
+                        showChainBadge(tracker);
+                    } catch (e) { }
+                }, 2200);
+                const afterStorm = () => {
+                    stormResolving = false;
                     inputLocked = false;
                     if (clicksLeft <= 0) checkOutOfClicks();
+                };
+                try {
+                    if (!particlesActive()) requestAnimationFrame(afterStorm);
+                    else waitForParticlesThenShow(tracker, afterStorm);
+                } catch (e) {
+                    afterStorm();
                 }
+                return true;
             }
 
 
 
             // Safe event wiring: check nodes exist before attaching
             if (boardEl) {
-                boardEl.addEventListener('pointerdown', (ev) => { const c = ev.target.closest('.cell'); if (!c) return; const i = Number(c.dataset.index); handleClick(i, true); });
+                boardEl.addEventListener('pointerdown', (ev) => {
+                    const c = ev.target.closest('.cell');
+                    if (!c) return;
+                    const i = Number(c.dataset.index);
+                    if (stormArmed && stormCharges > 0) {
+                        if (useNanoStorm(i)) return;
+                    }
+                    handleClick(i, true);
+                });
+                boardEl.addEventListener('pointermove', (ev) => {
+                    if (!stormArmed) return;
+                    const c = ev.target.closest('.cell');
+                    if (!c) return;
+                    const i = Number(c.dataset.index);
+                    if (Number.isFinite(i)) applyStormPreview(i);
+                });
+                boardEl.addEventListener('pointerleave', () => {
+                    stormHoverIndex = null;
+                    clearStormPreview();
+                });
             }
+            if (stormBtn) {
+                stormBtn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    if (stormCharges <= 0) return;
+                    setStormArmed(!stormArmed);
+                });
+            }
+            updateStormUI();
 
             const restartBtn = document.getElementById('restart');
             if (restartBtn) { restartBtn.addEventListener('click', () => { screensPassed = 0; totalScore = 0; randomizeBoard(false); }); }

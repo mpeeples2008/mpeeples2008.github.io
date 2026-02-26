@@ -98,16 +98,6 @@
                 <div class="meter-count"> <span id="clicks">10</span></div>
             </div>
 
-            <div class="small combo-meter" id="comboMeter" aria-live="polite" aria-atomic="true">
-                <div class="combo-head">
-                    <span class="combo-label">Combo</span>
-                    <span class="combo-count" id="comboCount">x0</span>
-                </div>
-                <div class="combo-track" id="comboTrack" role="progressbar" aria-label="Combo progress" aria-valuemin="0" aria-valuemax="22" aria-valuenow="0">
-                    <div class="combo-fill" id="comboFill"></div>
-                </div>
-            </div>
-
             <div class="control-trio" role="group" aria-label="Controls">
                 <button id="startBtn" class="ctrl small-ctrl" aria-label="S">
                     <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/start.png" alt="Start" class="btn-icon">
@@ -121,6 +111,10 @@
                 </button>
                 <button id="helpBtn" class="ctrl small-ctrl" aria-label="How to Play" title="How to Play">
                     <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/question.png" alt="Question" class="btn-icon">
+                </button>
+                <button id="stormBtn" class="ctrl storm-btn" aria-label="Nano Storm" aria-pressed="false" title="Nano Storm">
+                    <span class="storm-icon" aria-hidden="true">&#9889;</span>
+                    <span id="stormCount" class="storm-count">x1</span>
                 </button>
             </div>
 
