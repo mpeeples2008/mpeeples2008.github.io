@@ -1036,17 +1036,20 @@
             opacity: 1;
         }
 
-        body.game-over-fx .wrap {
+        body.game-over-fx #board {
             filter: saturate(0.4) contrast(1.08) brightness(0.84);
             transition: filter 220ms ease;
-        }
-
-        body.game-over-fx #board {
             animation: gameOverBoardShake 420ms cubic-bezier(0.22, 0.8, 0.24, 1) both;
         }
 
+        body.game-over-fx .title-sprite {
+            filter: saturate(0.55) brightness(0.88);
+            transition: filter 220ms ease;
+        }
+
         body.game-over-fx .hud {
-            animation: gameOverHudDrop 360ms ease-out both;
+            opacity: 0.96;
+            transition: opacity 220ms ease;
         }
 
             /* Inner title and subtitle */
