@@ -238,11 +238,15 @@ function escapeHtmlAttr(str) {
             const SFX_BURST_MAX = 6;
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
             const SFX_LAZY_KEYS = ['nanostorm', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
+            const IMAGE_PREFETCH_MAX = 10;
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
             let musicWasPlayingBeforeHide = false;
             const sfxLastPlayAt = Object.create(null);
             const sfxRecentPlays = [];
+            const prefetchedImages = new Set();
+            const prefetchingImages = new Set();
+            let likelyPrefetchQueued = false;
             function loadAudioEnabledPref(key, fallback = true) {
                 try {
                     const raw = localStorage.getItem(key);
@@ -381,6 +385,75 @@ function escapeHtmlAttr(str) {
                     setTimeout(lazyWarmup, 900);
                 }
             }
+            function prefetchImageUrl(url) {
+                const u = String(url || '');
+                if (!u || prefetchedImages.has(u) || prefetchingImages.has(u)) return;
+                if (prefetchedImages.size >= IMAGE_PREFETCH_MAX) return;
+                prefetchingImages.add(u);
+                try {
+                    const img = new Image();
+                    img.decoding = 'async';
+                    img.loading = 'eager';
+                    img.referrerPolicy = 'no-referrer';
+                    img.onload = img.onerror = function () {
+                        prefetchingImages.delete(u);
+                        prefetchedImages.add(u);
+                    };
+                    img.src = u;
+                } catch (e) {
+                    prefetchingImages.delete(u);
+                }
+            }
+            function buildLikelyAssetManifest(levelNum = getCurrentLevelNumber()) {
+                const level = Math.max(1, Number(levelNum) || 1);
+                const images = [];
+                const sfx = ['pop', 'grow', 'fill'];
+                if (Array.isArray(levelCompleteImages) && levelCompleteImages.length) {
+                    const base = ((level - 1) * 2) % levelCompleteImages.length;
+                    images.push(levelCompleteImages[base]);
+                    images.push(levelCompleteImages[(base + 1) % levelCompleteImages.length]);
+                }
+                if (PETRI_URL) images.push(PETRI_URL);
+                if (typeof PARTICLE_SPRITE !== 'undefined' && PARTICLE_SPRITE) images.push(PARTICLE_SPRITE);
+                if (level <= 4) {
+                    images.push(SPRITE_URLS[3], SPRITE_URLS[2]);
+                } else if (level <= 9) {
+                    images.push(SPRITE_URLS[2], SPRITE_URLS[1]);
+                } else {
+                    images.push(SPRITE_URLS[1], SPRITE_URLS[0]);
+                }
+                if (level >= 2) sfx.push('assistant_ai_' + (level % 7));
+                if (level >= 4) sfx.push('nanostorm');
+                if ((level % 3) === 0) sfx.push('win');
+                if ((level % 4) === 0) sfx.push('lose');
+                return {
+                    images: Array.from(new Set(images.filter(Boolean))).slice(0, 6),
+                    sfxKeys: Array.from(new Set(sfx)).slice(0, 6)
+                };
+            }
+            function prefetchLikelyAssets(levelNum = getCurrentLevelNumber(), reason = 'generic') {
+                if (!audioUserInteracted) return;
+                const manifest = buildLikelyAssetManifest(levelNum);
+                try { preloadSfxKeys(manifest.sfxKeys || []); } catch (e) { }
+                try { (manifest.images || []).forEach((u) => prefetchImageUrl(u)); } catch (e) { }
+            }
+            function queueLikelyAssetPrefetch(levelNum = getCurrentLevelNumber(), reason = 'generic') {
+                if (likelyPrefetchQueued) return;
+                likelyPrefetchQueued = true;
+                const run = () => {
+                    likelyPrefetchQueued = false;
+                    prefetchLikelyAssets(levelNum, reason);
+                };
+                try {
+                    if (typeof window.requestIdleCallback === 'function') {
+                        window.requestIdleCallback(run, { timeout: 1000 });
+                    } else {
+                        setTimeout(run, 220);
+                    }
+                } catch (e) {
+                    setTimeout(run, 220);
+                }
+            }
             function canPlaySfxNow(key) {
                 const now = Date.now();
                 while (sfxRecentPlays.length && (now - sfxRecentPlays[0]) > SFX_BURST_WINDOW_MS) {
@@ -427,6 +500,7 @@ function escapeHtmlAttr(str) {
             try {
                 window.playSfx = playSfx;
                 window.preloadSfxKeys = preloadSfxKeys;
+                window.prefetchLikelyAssets = prefetchLikelyAssets;
             } catch (e) { }
 
             function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
@@ -1170,7 +1244,10 @@ function escapeHtmlAttr(str) {
             function markAudioUserInteracted() {
                 const wasInteracted = audioUserInteracted;
                 audioUserInteracted = true;
-                if (!wasInteracted) startAudioWarmup();
+                if (!wasInteracted) {
+                    startAudioWarmup();
+                    queueLikelyAssetPrefetch(getCurrentLevelNumber(), 'first-interaction');
+                }
                 try {
                     if (HAS_WEB_AUDIO) {
                         const ctx = ensureSfxAudioContext();
@@ -1949,6 +2026,7 @@ function escapeHtmlAttr(str) {
                     state[cellIndex] = sampleSizeRandom();
                     setSpecialForCell(cellIndex, rollSpecialVirusType(levelNum));
                 }
+                queueLikelyAssetPrefetch(levelNum + 1, 'next-level');
                 scheduleRender();
                 updateHUD();
                 if (!preserveClicks) {
@@ -2048,6 +2126,52 @@ function escapeHtmlAttr(str) {
             const PARTICLE_POOL = [];
             // ---------- Sprite-based particle implementation (replacement) ----------
             const PARTICLE_SPRITE = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/antibody.png';
+            const GLOW_POOL = [];
+            const MAX_GLOW_POOL = IS_MOBILE_COARSE ? 8 : 14;
+
+            function getGlowFromPool() {
+                for (let i = 0; i < GLOW_POOL.length; i++) {
+                    const g = GLOW_POOL[i];
+                    if (!g._inUse) {
+                        g._inUse = true;
+                        return g;
+                    }
+                }
+                if (GLOW_POOL.length >= MAX_GLOW_POOL) return null;
+                const glow = document.createElement('div');
+                glow.className = 'glow';
+                glow._inUse = true;
+                glow._releaseTimeout = null;
+                GLOW_POOL.push(glow);
+                return glow;
+            }
+
+            function releaseGlowToPool(glow) {
+                if (!glow) return;
+                try {
+                    glow._inUse = false;
+                    glow.style.animation = 'none';
+                    glow.style.opacity = '0';
+                } catch (e) { }
+            }
+
+            function showPooledGlowAt(x, y) {
+                const glow = getGlowFromPool();
+                if (!glow) return;
+                try {
+                    glow.style.left = Math.round(x) + 'px';
+                    glow.style.top = Math.round(y) + 'px';
+                    glow.style.opacity = '0.95';
+                    if (!document.body.contains(glow)) document.body.appendChild(glow);
+                    glow.style.animation = 'none';
+                    void glow.offsetWidth;
+                    glow.style.animation = 'glowPop 520ms ease-out forwards';
+                    clearTimeout(glow._releaseTimeout);
+                    glow._releaseTimeout = setTimeout(() => releaseGlowToPool(glow), 620);
+                } catch (e) {
+                    releaseGlowToPool(glow);
+                }
+            }
 
             // Create a pooled particle element (an <img> inside a .particle wrapper)
             function makeAntibodyParticle(sizeVariant = 'normal', rotationDeg = 0) {
@@ -2294,7 +2418,27 @@ function escapeHtmlAttr(str) {
 
 
             function popAt(index, tracker) {
-                const cellEl = boardEl.querySelector(`[data-index='${index}']`); if (!cellEl) return; try { const r0 = cellEl.getBoundingClientRect(); const gx = r0.left + r0.width / 2; const gy = r0.top + r0.height / 2; const glow = document.createElement('div'); glow.className = 'glow'; glow.style.left = gx + 'px'; glow.style.top = gy + 'px'; document.body.appendChild(glow); glow.style.animation = 'glowPop 520ms ease-out forwards'; setTimeout(() => { try { glow.remove(); } catch (e) { } }, 600); } catch (e) { } const virus = cellEl.querySelector('.virus'); if (virus) { let stain = virus.querySelector('.stain'); if (!stain) { stain = document.createElement('div'); stain.className = 'stain'; virus.appendChild(stain); } stain.classList.remove('show'); void stain.offsetWidth; stain.classList.add('show'); } emitDirectionalParticles(index, tracker);
+                const cellEl = boardEl.querySelector(`[data-index='${index}']`);
+                if (!cellEl) return;
+                try {
+                    const r0 = cellEl.getBoundingClientRect();
+                    const gx = r0.left + r0.width / 2;
+                    const gy = r0.top + r0.height / 2;
+                    showPooledGlowAt(gx, gy);
+                } catch (e) { }
+                const virus = cellEl.querySelector('.virus');
+                if (virus) {
+                    let stain = virus.querySelector('.stain');
+                    if (!stain) {
+                        stain = document.createElement('div');
+                        stain.className = 'stain';
+                        virus.appendChild(stain);
+                    }
+                    stain.classList.remove('show');
+                    void stain.offsetWidth;
+                    stain.classList.add('show');
+                }
+                emitDirectionalParticles(index, tracker);
                 // record position for chain centroid (for responsive badge placement)
                 // make sure we only count each index once per chain
                 if (tracker) {
