@@ -411,10 +411,11 @@ function escapeHtmlAttr(str) {
             let gameOverVignetteEl = null;
             let gameOverMusicRestoreTimer = null;
             let gameOverPrevMusicVolume = null;
+            let specialTelegraphIndex = null;
             const ACHIEVEMENT_STORAGE_KEY = 'goneViral_achievements_v1';
             const ACHIEVEMENT_SCHEMA_VERSION = 1;
             const ACHIEVEMENT_DEFS = [
-                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 1,000 viruses in one run.', stat: 'runPops', target: 1000, scope: 'run' },
+                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 250 viruses in one run.', stat: 'runPops', target: 250, scope: 'run' },
                 { id: 'run_level_5', title: 'Containment I', description: 'Reach level 5 in one run.', stat: 'runLevelReached', target: 5, scope: 'run' },
                 { id: 'run_level_10', title: 'Containment II', description: 'Reach level 10 in one run.', stat: 'runLevelReached', target: 10, scope: 'run' },
                 { id: 'run_level_15', title: 'Containment III', description: 'Reach level 15 in one run.', stat: 'runLevelReached', target: 15, scope: 'run' },
@@ -422,15 +423,16 @@ function escapeHtmlAttr(str) {
                 { id: 'run_chain_20', title: 'Chain Master', description: 'Reach a 20+ chain in one run.', stat: 'runBestChain', target: 20, scope: 'run' },
                 { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 3 times in one run.', stat: 'runNanoStormUses', target: 3, scope: 'run' },
                 { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left.', stat: 'runClutchClears', target: 1, scope: 'run' },
-                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 10,000 viruses across runs.', stat: 'totalPopsLifetime', target: 10000, scope: 'lifetime' },
-                { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 10 chains of 20+ across runs.', stat: 'chain20LifetimeCount', target: 10, scope: 'lifetime' },
-                { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored shells across runs.', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
+                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,000 viruses across runs.', stat: 'totalPopsLifetime', target: 2000, scope: 'lifetime' },
+                { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs.', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
+                { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 100 armored viruses across runs.', stat: 'armoredShellsLifetime', target: 100, scope: 'lifetime' },
                 { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 100 levels across runs.', stat: 'levelsClearedLifetime', target: 100, scope: 'lifetime' }
             ];
             let achievementSaveTimer = null;
             let achievementUiQueued = false;
             const achievementToastQueue = [];
             let achievementToastActive = false;
+            let runUnlockedAchievementIds = new Set();
 
             function createDefaultAchievementState() {
                 const stats = {};
@@ -477,6 +479,7 @@ function escapeHtmlAttr(str) {
                 if (Object.prototype.hasOwnProperty.call(runAchievementStats, 'runLevelReached')) {
                     runAchievementStats.runLevelReached = Math.max(1, Number(levelNum) || 1);
                 }
+                runUnlockedAchievementIds = new Set();
                 scheduleAchievementsUIRender();
             }
 
@@ -530,6 +533,15 @@ function escapeHtmlAttr(str) {
                     if (achievementState.unlocked[ACHIEVEMENT_DEFS[i].id]) unlocked++;
                 }
                 return unlocked;
+            }
+
+            function getAchievementDefById(id) {
+                const key = String(id || '');
+                if (!key) return null;
+                for (let i = 0; i < ACHIEVEMENT_DEFS.length; i++) {
+                    if (ACHIEVEMENT_DEFS[i].id === key) return ACHIEVEMENT_DEFS[i];
+                }
+                return null;
             }
 
             function showNextAchievementToast() {
@@ -588,6 +600,7 @@ function escapeHtmlAttr(str) {
                         }
                     }));
                 } catch (e) { }
+                try { runUnlockedAchievementIds.add(def.id); } catch (e) { }
                 queueAchievementUnlockFeedback({
                     id: def.id,
                     title: def.title,
@@ -756,6 +769,33 @@ function escapeHtmlAttr(str) {
             let highScore = Number(localStorage.getItem(highScoreKey) || 0);
             let highScoreEl = null;
 
+            function resetProgressWithConfirm() {
+                let confirmed = false;
+                try {
+                    confirmed = window.confirm('Reset high score and all achievements? This cannot be undone.');
+                } catch (e) {
+                    confirmed = false;
+                }
+                if (!confirmed) return false;
+
+                try {
+                    highScore = 0;
+                    if (!highScoreEl) highScoreEl = document.getElementById('highScoreValue');
+                    if (highScoreEl) highScoreEl.textContent = '0';
+                    try { localStorage.removeItem(highScoreKey); } catch (e) { }
+                    try {
+                        if (window.Achievements && typeof window.Achievements.reset === 'function') {
+                            window.Achievements.reset();
+                        }
+                    } catch (e) { }
+                    scheduleAchievementsUIRender();
+                    try { playSfx('click'); } catch (e) { }
+                } catch (e) {
+                    console.warn('resetProgressWithConfirm failed', e);
+                }
+                return true;
+            }
+
             function updateHUD() {
 
                 // ensure high score element is available
@@ -837,7 +877,7 @@ function escapeHtmlAttr(str) {
                 }
             }
 
-            function duckMusicForGameOver(durationMs = 1700, duckRatio = 0.28) {
+            function duckMusicForGameOver(duckRatio = 0.28) {
                 const ma = getActiveMusicAudio();
                 if (!ma) return;
                 try {
@@ -847,10 +887,7 @@ function escapeHtmlAttr(str) {
                     ma.volume = Math.max(0.02, Math.min(1, base * Math.max(0.05, Math.min(1, Number(duckRatio) || 0.28))));
                 } catch (e) { }
                 try { if (gameOverMusicRestoreTimer) clearTimeout(gameOverMusicRestoreTimer); } catch (e) { }
-                gameOverMusicRestoreTimer = setTimeout(() => {
-                    gameOverMusicRestoreTimer = null;
-                    restoreMusicFromGameOverDuck(false);
-                }, Math.max(300, Number(durationMs) || 1700));
+                gameOverMusicRestoreTimer = null;
             }
 
             function restoreMusicFromGameOverDuck(clearStored = false) {
@@ -904,6 +941,37 @@ function escapeHtmlAttr(str) {
                 } catch (e) { console.warn('performGameReset failed', e); }
             }
 
+            function buildGameOverRecapHtml() {
+                const levelReached = Math.max(1, Number(runAchievementStats.runLevelReached) || getCurrentLevelNumber());
+                const pops = Math.max(0, Number(runAchievementStats.runPops) || 0);
+                const bestChain = Math.max(0, Number(runAchievementStats.runBestChain) || 0);
+                const storms = Math.max(0, Number(runAchievementStats.runNanoStormUses) || 0);
+                const unlockedIds = Array.from(runUnlockedAchievementIds || []);
+                const unlockedNames = unlockedIds.map((id) => {
+                    const def = getAchievementDefById(id);
+                    return def ? def.title : String(id);
+                });
+                const shownNames = unlockedNames.slice(0, 3);
+                const extraCount = Math.max(0, unlockedNames.length - shownNames.length);
+                const chips = shownNames.map((name) => `<span>${escapeHtml(name)}</span>`).join('');
+                const more = extraCount > 0 ? `<div class="go-recap-more">+${extraCount} more</div>` : '';
+                return `
+                    <div class="go-recap">
+                        <div class="go-recap-title">Run Recap</div>
+                        <div class="go-recap-grid">
+                            <span>Level</span><b>${levelReached}</b>
+                            <span>Score</span><b>${Math.max(0, Number(totalScore) || 0)}</b>
+                            <span>Viruses Destroyed</span><b>${pops}</b>
+                            <span>Best Chain</span><b>${bestChain}</b>
+                            <span>Nano Storm Uses</span><b>${storms}</b>
+                        </div>
+                        <div class="go-recap-achv">Achievements this run: <b>${unlockedNames.length}</b></div>
+                        ${chips ? `<div class="go-recap-list">${chips}</div>` : ''}
+                        ${more}
+                    </div>
+                `;
+            }
+
 
             // ---------- Level complete popup helper ----------
             
@@ -924,9 +992,11 @@ function escapeHtmlAttr(str) {
                     el.className = 'game-over-popup';
                     el.setAttribute('role', 'alert');
                     el.style.pointerEvents = persistent ? 'auto' : 'none';
+                    const recapHtml = buildGameOverRecapHtml();
                     el.innerHTML = `
                                                                                   <div class="go-title">${title}</div>
                                                                                   <div class="go-sub">${subtitle}</div>
+                                                                                  ${recapHtml}
                                                                                 `;
                     document.body.appendChild(el);
                     // Make Game Over popup clickable to restart (Option A)
@@ -1403,6 +1473,7 @@ function escapeHtmlAttr(str) {
             }
 
             function render() {
+                specialTelegraphIndex = null;
                 boardEl.innerHTML = ''; for (let i = 0; i < ROWS * COLS; i++) {
                     const val = state[i];
                     const specialType = specialState[i];
@@ -1945,6 +2016,70 @@ function escapeHtmlAttr(str) {
                 });
             }
 
+            function playStormPrecharge(centerIndex, onReady) {
+                if (!boardEl) {
+                    try { if (typeof onReady === 'function') onReady(); } catch (e) { }
+                    return;
+                }
+                try {
+                    boardEl.classList.remove('storm-precharge');
+                    void boardEl.offsetWidth;
+                    boardEl.classList.add('storm-precharge');
+                } catch (e) { }
+                try {
+                    const cell = boardEl.querySelector(`[data-index='${centerIndex}']`);
+                    if (cell) {
+                        const r = cell.getBoundingClientRect();
+                        const ring = document.createElement('div');
+                        ring.className = 'storm-precharge-ring';
+                        ring.style.left = Math.round(r.left + (r.width / 2)) + 'px';
+                        ring.style.top = Math.round(r.top + (r.height / 2)) + 'px';
+                        document.body.appendChild(ring);
+                        setTimeout(() => { try { ring.remove(); } catch (e) { } }, 260);
+                    }
+                } catch (e) { }
+                setTimeout(() => {
+                    try { boardEl.classList.remove('storm-precharge'); } catch (e) { }
+                    try { if (typeof onReady === 'function') onReady(); } catch (e) { }
+                }, 170);
+            }
+
+            function clearSpecialTelegraph() {
+                if (!boardEl) return;
+                try {
+                    const prev = boardEl.querySelector('.cell.special-telegraph, .cell.special-telegraph-strong');
+                    if (prev) prev.classList.remove('special-telegraph', 'special-telegraph-strong');
+                } catch (e) { }
+                specialTelegraphIndex = null;
+            }
+
+            function applySpecialTelegraph(index, strong = false) {
+                if (!boardEl) return false;
+                const idx = Number(index);
+                if (!Number.isFinite(idx)) return false;
+                const typeId = specialState[idx];
+                if (!typeId) {
+                    if (specialTelegraphIndex === idx) clearSpecialTelegraph();
+                    return false;
+                }
+                const cell = boardEl.querySelector(`[data-index='${idx}']`);
+                if (!cell) return false;
+                if (specialTelegraphIndex !== idx) clearSpecialTelegraph();
+                specialTelegraphIndex = idx;
+                cell.classList.add('special-telegraph');
+                if (strong) {
+                    try {
+                        cell.classList.remove('special-telegraph-strong');
+                        void cell.offsetWidth;
+                        cell.classList.add('special-telegraph-strong');
+                        setTimeout(() => {
+                            try { cell.classList.remove('special-telegraph-strong'); } catch (e) { }
+                        }, 260);
+                    } catch (e) { }
+                }
+                return true;
+            }
+
             function particlesActive() { try { if (PARTICLE_POOL.some(p => p && p._inUse)) return true; if (document.querySelectorAll && document.querySelectorAll('.particle.animate').length > 0) return true; } catch (e) { } return false; }
 
             function waitForParticlesThenShow(tracker, cb) { const check = () => { if (!particlesActive()) { try { cb(); } catch (e) { } } else { requestAnimationFrame(check); } }; requestAnimationFrame(check); }
@@ -2225,40 +2360,43 @@ function escapeHtmlAttr(str) {
                 incrementAchievementStat('runNanoStormUses', 1, 'run');
                 setStormArmed(false);
                 updateHUD();
-                try { playSfx('nanostorm'); } catch (e) { }
-                playStormBurst(centerIndex, targets);
-                const tracker = {
-                    pops: 0,
-                    positions: [],
-                    finalized: false,
-                    poppedSet: new Set(),
-                    hitSet: new Set()
-                };
-                resetStormChainIndicator();
-                // Center gets two hits; if the first hit pops it, the second hit does nothing on empty.
-                try { handleClick(center, false, tracker, true); } catch (e) { }
-                try { handleClick(center, false, tracker, true); } catch (e) { }
-                for (let i = 0; i < targets.length; i++) {
-                    if (targets[i] === center) continue;
-                    try { handleClick(targets[i], false, tracker, true); } catch (e) { }
-                }
-                setTimeout(() => {
+                const executeStormImpact = () => {
+                    try { playSfx('nanostorm'); } catch (e) { }
+                    playStormBurst(centerIndex, targets);
+                    const tracker = {
+                        pops: 0,
+                        positions: [],
+                        finalized: false,
+                        poppedSet: new Set(),
+                        hitSet: new Set()
+                    };
+                    resetStormChainIndicator();
+                    // Center gets two hits; if the first hit pops it, the second hit does nothing on empty.
+                    try { handleClick(center, false, tracker, true); } catch (e) { }
+                    try { handleClick(center, false, tracker, true); } catch (e) { }
+                    for (let i = 0; i < targets.length; i++) {
+                        if (targets[i] === center) continue;
+                        try { handleClick(targets[i], false, tracker, true); } catch (e) { }
+                    }
+                    setTimeout(() => {
+                        try {
+                            tracker.finalized = true;
+                            showChainBadge(tracker);
+                        } catch (e) { }
+                    }, 2200);
+                    const afterStorm = () => {
+                        stormResolving = false;
+                        inputLocked = false;
+                        if (clicksLeft <= 0) checkOutOfClicks();
+                    };
                     try {
-                        tracker.finalized = true;
-                        showChainBadge(tracker);
-                    } catch (e) { }
-                }, 2200);
-                const afterStorm = () => {
-                    stormResolving = false;
-                    inputLocked = false;
-                    if (clicksLeft <= 0) checkOutOfClicks();
+                        if (!particlesActive()) requestAnimationFrame(afterStorm);
+                        else waitForParticlesThenShow(tracker, afterStorm);
+                    } catch (e) {
+                        afterStorm();
+                    }
                 };
-                try {
-                    if (!particlesActive()) requestAnimationFrame(afterStorm);
-                    else waitForParticlesThenShow(tracker, afterStorm);
-                } catch (e) {
-                    afterStorm();
-                }
+                playStormPrecharge(centerIndex, executeStormImpact);
                 return true;
             }
 
@@ -2270,19 +2408,22 @@ function escapeHtmlAttr(str) {
                     const c = ev.target.closest('.cell');
                     if (!c) return;
                     const i = Number(c.dataset.index);
+                    if (Number.isFinite(i)) applySpecialTelegraph(i, true);
                     if (stormArmed && stormCharges > 0) {
                         if (useNanoStorm(i)) return;
                     }
                     handleClick(i, true);
                 });
                 boardEl.addEventListener('pointermove', (ev) => {
-                    if (!stormArmed) return;
                     const c = ev.target.closest('.cell');
                     if (!c) return;
                     const i = Number(c.dataset.index);
-                    if (Number.isFinite(i)) applyStormPreview(i);
+                    if (!Number.isFinite(i)) return;
+                    applySpecialTelegraph(i, false);
+                    if (stormArmed) applyStormPreview(i);
                 });
                 boardEl.addEventListener('pointerleave', () => {
+                    clearSpecialTelegraph();
                     stormHoverIndex = null;
                     clearStormPreview();
                 });
@@ -2299,6 +2440,13 @@ function escapeHtmlAttr(str) {
             scheduleAchievementsUIRender();
             const audioBtn = document.getElementById('audioBtn');
             if (audioBtn) audioBtn.addEventListener('click', () => { scheduleAchievementsUIRender(); });
+            const resetProgressBtn = document.getElementById('resetProgressBtn');
+            if (resetProgressBtn) {
+                resetProgressBtn.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    resetProgressWithConfirm();
+                });
+            }
 
             const restartBtn = document.getElementById('restart');
             if (restartBtn) { restartBtn.addEventListener('click', () => { screensPassed = 0; totalScore = 0; randomizeBoard(false); }); }

@@ -262,6 +262,23 @@
             animation-duration: 330ms;
         }
 
+        #board.storm-precharge {
+            animation: stormPrechargeBoard 170ms ease-out both;
+        }
+
+        .storm-precharge-ring {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            border: 2px solid rgba(172, 244, 255, 0.88);
+            box-shadow: 0 0 18px rgba(107, 228, 255, 0.5), inset 0 0 8px rgba(172, 244, 255, 0.22);
+            transform: translate(-50%, -50%) scale(0.24);
+            pointer-events: none;
+            z-index: 26010;
+            animation: stormPrechargeRing 260ms cubic-bezier(0.2, 0.78, 0.25, 1) forwards;
+        }
+
         @keyframes stormRingExpand {
             0% {
                 transform: translate(-50%, -50%) scale(0.3);
@@ -269,6 +286,29 @@
             }
             100% {
                 transform: translate(-50%, -50%) scale(3.3);
+                opacity: 0;
+            }
+        }
+
+        @keyframes stormPrechargeBoard {
+            0% {
+                filter: brightness(1) saturate(1);
+            }
+            38% {
+                filter: brightness(1.14) saturate(1.2);
+            }
+            100% {
+                filter: brightness(1) saturate(1);
+            }
+        }
+
+        @keyframes stormPrechargeRing {
+            0% {
+                transform: translate(-50%, -50%) scale(0.24);
+                opacity: 0.95;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(3.6);
                 opacity: 0;
             }
         }
@@ -359,6 +399,14 @@
 
         .cell.has-special.special-unstable {
             box-shadow: inset 0 0 0 1px rgba(255, 166, 121, 0.36);
+        }
+
+        .cell.special-telegraph {
+            animation: specialTelegraphPulse 620ms ease-in-out infinite;
+        }
+
+        .cell.special-telegraph-strong {
+            animation: specialTelegraphStrong 260ms ease-out;
         }
 
         .virus.special-virus {
@@ -511,6 +559,39 @@
             100% {
                 filter: brightness(1);
                 transform: scale(1);
+            }
+        }
+
+        @keyframes specialTelegraphPulse {
+            0% {
+                outline: 1px solid rgba(255, 223, 132, 0.32);
+                outline-offset: -2px;
+                box-shadow: inset 0 0 0 1px rgba(255, 223, 132, 0.14);
+            }
+            45% {
+                outline: 2px solid rgba(255, 239, 175, 0.76);
+                outline-offset: -2px;
+                box-shadow: inset 0 0 0 1px rgba(255, 239, 175, 0.24), 0 0 8px rgba(255, 231, 153, 0.24);
+            }
+            100% {
+                outline: 1px solid rgba(255, 223, 132, 0.32);
+                outline-offset: -2px;
+                box-shadow: inset 0 0 0 1px rgba(255, 223, 132, 0.14);
+            }
+        }
+
+        @keyframes specialTelegraphStrong {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            45% {
+                transform: scale(1.04);
+                filter: brightness(1.18);
+            }
+            100% {
+                transform: scale(1);
+                filter: brightness(1);
             }
         }
 
@@ -1060,11 +1141,78 @@
                 letter-spacing: 0.04em;
             }
 
-            .game-over-popup .go-sub {
-                font-size: 14px;
-                color: #ffe9b0;
-                text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
-            }
+        .game-over-popup .go-sub {
+            font-size: 14px;
+            color: #ffe9b0;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        .game-over-popup .go-recap {
+            width: min(420px, 84vw);
+            margin-top: 8px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 3px solid rgba(0, 0, 0, 0.45);
+            background: linear-gradient(180deg, rgba(15, 26, 43, 0.6), rgba(8, 16, 29, 0.66));
+            color: #ffe9b0;
+            text-align: left;
+            font-size: 10px;
+            line-height: 1.45;
+        }
+
+        .game-over-popup .go-recap-title {
+            font-size: 11px;
+            margin-bottom: 8px;
+            color: #ffd166;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        .game-over-popup .go-recap-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 4px 10px;
+            align-items: center;
+        }
+
+        .game-over-popup .go-recap-grid span {
+            color: #f4dab3;
+        }
+
+        .game-over-popup .go-recap-grid b {
+            color: #fff4d8;
+            justify-self: end;
+        }
+
+        .game-over-popup .go-recap-achv {
+            margin-top: 8px;
+            color: #f8dfba;
+        }
+
+        .game-over-popup .go-recap-list {
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .game-over-popup .go-recap-list span {
+            display: inline-block;
+            padding: 3px 6px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 236, 181, 0.44);
+            background: rgba(255, 241, 196, 0.08);
+            color: #fff0cc;
+            font-size: 9px;
+        }
+
+        .game-over-popup .go-recap-more {
+            margin-top: 6px;
+            color: #e8c68e;
+            font-size: 9px;
+            text-align: right;
+        }
 
             .game-over-popup.show .go-title {
                 animation: gameOverTitleFlicker 560ms steps(2, end) 1;
@@ -1440,6 +1588,9 @@
             pointer-events: auto;
             opacity: 0;
             visibility: hidden;
+            max-height: 88vh;
+            overflow-y: auto;
+            overscroll-behavior: contain;
             transition: opacity 220ms ease, transform 220ms ease, visibility 0ms 220ms;
         }
 
@@ -1513,8 +1664,8 @@
                 display: flex;
                 flex-direction: column;
                 gap: 6px;
-                max-height: none;
-                overflow: visible;
+                max-height: min(36vh, 320px);
+                overflow: auto;
                 padding-right: 2px;
             }
 
@@ -1638,6 +1789,7 @@
 
             /* popup small button */
             .audio-popup .btn {
+                font-family: inherit;
                 border-radius: 8px;
                 padding: 8px 12px;
                 font-size: 11px;
@@ -1646,6 +1798,27 @@
                 color: #0b3d91;
                 box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.12);
                 cursor: pointer;
+            }
+
+            .audio-popup .settings-reset-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 10px;
+                margin-top: 10px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(255, 255, 255, 0.16);
+            }
+
+            .audio-popup .settings-reset-note {
+                font-size: 9px;
+                color: #ffe9b0;
+                opacity: 0.9;
+                text-align: right;
+            }
+
+            .audio-popup #resetProgressBtn {
+                font-size: 10px;
             }
 
         /* the HUD gear button uses same small-ctrl style already present; optional slight tweak for icon */
@@ -2331,7 +2504,7 @@
 }
 
 /* audio popup sizing */
-.audio-popup { min-width: 420px; max-width: 90vw; padding: 14px; box-sizing: border-box; }
+.audio-popup { min-width: min(420px, 92vw); max-width: 90vw; padding: 14px; box-sizing: border-box; }
 
 
 /* Assistant & AI UI */
