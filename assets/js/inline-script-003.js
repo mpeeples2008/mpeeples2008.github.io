@@ -939,8 +939,6 @@ function escapeHtmlAttr(str) {
                                 if (typeof performGameReset === 'function') performGameReset();
                                 // remove popup element if still present
                                 try { if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { }
-                                // notify assistant (optional)
-                                try { if (window.Assistant && Assistant.emit) Assistant.emit('levelComplete', { title: 'Restarted after Game Over' }); } catch (e) { }
                             } catch (e) { console.warn('restart click handler failed', e); }
                         }, { once: true });
                     } catch (e) { console.warn('could not attach restart click handler', e); }
