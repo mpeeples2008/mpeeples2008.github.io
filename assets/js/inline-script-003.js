@@ -211,7 +211,24 @@ function escapeHtmlAttr(str) {
             let musicSilenceMs = 2000; // 2 seconds silence between tracks
             const AUDIO_PREF_MUSIC_ENABLED_KEY = 'goneViral_musicEnabled_v1';
             const AUDIO_PREF_SFX_ENABLED_KEY = 'goneViral_sfxEnabled_v1';
+            const SFX_MIN_GAP_MS = {
+                pop: 30,
+                grow: 70,
+                fill: 90,
+                nanostorm: 180,
+                win: 250,
+                lose: 250,
+                achievement: 220
+            };
+            const SFX_BURST_WINDOW_MS = 120;
+            const SFX_BURST_MAX = 6;
+            const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'win', 'lose', 'achievement'];
             let audioUserInteracted = false;
+            let audioWarmupStarted = false;
+            let musicWasPlayingBeforeHide = false;
+            const sfxLastPlayAt = Object.create(null);
+            const sfxRecentPlays = [];
             function loadAudioEnabledPref(key, fallback = true) {
                 try {
                     const raw = localStorage.getItem(key);
@@ -232,10 +249,55 @@ function escapeHtmlAttr(str) {
             let sfxCache = {};
             function createSfx(key) { const url = SFX_URLS[key]; if (!url) return null; try { const a = new Audio(url); a.preload = 'auto'; a.volume = 0.5; a.crossOrigin = 'anonymous'; sfxCache[key] = a; return a; } catch (e) { return null; } }
             function getSfx(key) { return sfxCache[key] || createSfx(key); }
+            function preloadSfxKeys(keys) {
+                try {
+                    (keys || []).forEach((key) => {
+                        const a = getSfx(key);
+                        if (!a) return;
+                        try { a.preload = 'auto'; } catch (e) { }
+                        try { a.load(); } catch (e) { }
+                    });
+                } catch (e) { }
+            }
+            function startAudioWarmup() {
+                if (audioWarmupStarted) return;
+                audioWarmupStarted = true;
+                preloadSfxKeys(SFX_CRITICAL_KEYS);
+                const lazyWarmup = () => preloadSfxKeys(SFX_LAZY_KEYS);
+                try {
+                    if (typeof window.requestIdleCallback === 'function') {
+                        window.requestIdleCallback(lazyWarmup, { timeout: 1500 });
+                    } else {
+                        setTimeout(lazyWarmup, 900);
+                    }
+                } catch (e) {
+                    setTimeout(lazyWarmup, 900);
+                }
+            }
+            function canPlaySfxNow(key) {
+                const now = Date.now();
+                while (sfxRecentPlays.length && (now - sfxRecentPlays[0]) > SFX_BURST_WINDOW_MS) {
+                    sfxRecentPlays.shift();
+                }
+                if (sfxRecentPlays.length >= SFX_BURST_MAX) return false;
+                const minGap = SFX_MIN_GAP_MS[key] ?? 60;
+                const last = sfxLastPlayAt[key] || 0;
+                if ((now - last) < minGap) return false;
+                sfxLastPlayAt[key] = now;
+                sfxRecentPlays.push(now);
+                return true;
+            }
             function playSfx(key) {
                 if (!sfxEnabled) return;
                 try { if (window.allMuted) return; } catch (e) { }
-                try { const a = getSfx(key); if (!a) return; a.currentTime = 0; const p = a.play(); if (p && p.catch) p.catch(() => { }); } catch (e) { }
+                if (!canPlaySfxNow(key)) return;
+                try {
+                    const a = getSfx(key);
+                    if (!a) return;
+                    a.currentTime = 0;
+                    const p = a.play();
+                    if (p && p.catch) p.catch(() => { });
+                } catch (e) { }
             }
 
             function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
@@ -964,6 +1026,7 @@ function escapeHtmlAttr(str) {
                 };
                 document.addEventListener('pointerdown', onFirstInteraction, { capture: true, passive: true });
                 document.addEventListener('keydown', onFirstInteraction, { capture: true });
+                document.addEventListener('visibilitychange', handleVisibilityAudioState, { passive: true });
             } catch (e) { }
 
 
@@ -975,12 +1038,34 @@ function escapeHtmlAttr(str) {
             function markAudioUserInteracted() {
                 const wasInteracted = audioUserInteracted;
                 audioUserInteracted = true;
+                if (!wasInteracted) startAudioWarmup();
                 if (!wasInteracted && musicEnabled) {
                     try {
                         const hasMusic = !!(musicAudio || window.musicAudio);
                         if (!hasMusic) startBackgroundMusic();
                     } catch (e) { }
                 }
+            }
+
+            function handleVisibilityAudioState() {
+                try {
+                    const ma = getActiveMusicAudio();
+                    if (document.hidden) {
+                        musicWasPlayingBeforeHide = !!(ma && !ma.paused);
+                        if (musicWasPlayingBeforeHide && ma) ma.pause();
+                        return;
+                    }
+                    if (!musicWasPlayingBeforeHide) return;
+                    musicWasPlayingBeforeHide = false;
+                    if (!musicEnabled || !!window.allMuted || !audioUserInteracted) return;
+                    const resumeTarget = getActiveMusicAudio();
+                    if (resumeTarget) {
+                        const p = resumeTarget.play();
+                        if (p && p.catch) p.catch(() => { });
+                    } else {
+                        startBackgroundMusic();
+                    }
+                } catch (e) { }
             }
 
             function syncAudioSettingsUI() {
@@ -998,6 +1083,7 @@ function escapeHtmlAttr(str) {
                 window.musicEnabled = !!musicEnabled;
                 saveAudioEnabledPref(AUDIO_PREF_MUSIC_ENABLED_KEY, !!musicEnabled);
                 if (!musicEnabled) {
+                    musicWasPlayingBeforeHide = false;
                     stopBackgroundMusic();
                 } else if (fromUserAction || audioUserInteracted) {
                     startBackgroundMusic();
