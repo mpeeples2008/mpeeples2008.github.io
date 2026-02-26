@@ -152,7 +152,8 @@ function escapeHtmlAttr(str) {
                 grow: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/grow.mp3',
                 fill: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/bubblefill2.mp3',
                 win: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/win2.mp3',
-                lose: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lose2.mp3'
+                lose: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lose2.mp3',
+                nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3'
             };
 
             // Background music playlist (hard-wired) — will be started on the user's first tap
@@ -292,10 +293,75 @@ function escapeHtmlAttr(str) {
             let clicksLeft = 10, screensPassed = 0, totalScore = 0;
             let outOfClicksShown = false;
             let state = new Array(ROWS * COLS).fill(null);
+            let specialState = new Array(ROWS * COLS).fill(null);
+            let specialMetaState = new Array(ROWS * COLS).fill(null);
             let inputLocked = false;
-            const MAX_STORM_CHARGES = 2;
+            const MAX_STORM_CHARGES = 1;
             const STORM_RECHARGE_CHAIN_MIN = 21; // must exceed 20 in one chain
             const STORM_NEAR_THRESHOLD = 16;
+            const SPECIAL_VIRUS_SETTINGS = {
+                baseChance: 0.22,
+                levelBonus: 0.01,
+                maxChance: 0.42
+            };
+            // Modular special-virus registry:
+            // - set `unlockLevel` per type to gate by progression
+            // - tune `spawnWeight` to bias frequency among unlocked types
+            // - add behavior in `hooks` (onBeforeGrow/onAfterGrow/onPop/onAfterPop)
+            const SPECIAL_VIRUS_TYPES = {
+                armored: {
+                    id: 'armored',
+                    label: 'Armored',
+                    badge: 'A',
+                    className: 'special-armored',
+                    enabled: true,
+                    unlockLevel: 1,
+                    spawnWeight: 1.0,
+                    hooks: {
+                        onBeforeGrow: specialHookArmoredBeforeGrow
+                    }
+                },
+                splitter: {
+                    id: 'splitter',
+                    label: 'Splitter',
+                    badge: 'S',
+                    className: 'special-splitter',
+                    enabled: false,
+                    unlockLevel: 1,
+                    spawnWeight: 1.0,
+                    hooks: {
+                        onAfterPop: specialHookSplitterAfterPop
+                    }
+                },
+                frozen: {
+                    id: 'frozen',
+                    label: 'Frozen',
+                    badge: 'F',
+                    className: 'special-frozen',
+                    enabled: false,
+                    unlockLevel: 1,
+                    spawnWeight: 1.0,
+                    hooks: {
+                        onBeforeGrow: specialHookFrozenBeforeGrow
+                    }
+                },
+                unstable: {
+                    id: 'unstable',
+                    label: 'Unstable',
+                    badge: '!',
+                    className: 'special-unstable',
+                    enabled: false,
+                    unlockLevel: 1,
+                    spawnWeight: 1.0,
+                    hooks: {
+                        getMaxStableSize: specialHookUnstableMaxStableSize
+                    }
+                }
+            };
+            try {
+                window.SpecialVirusConfig = SPECIAL_VIRUS_TYPES;
+                window.SpecialVirusSettings = SPECIAL_VIRUS_SETTINGS;
+            } catch (e) { }
             let stormCharges = 1;
             let stormArmed = false;
             let stormHoverIndex = null;
@@ -310,7 +376,6 @@ function escapeHtmlAttr(str) {
             const screensEl = document.getElementById('screens');
             const scoreEl = document.getElementById('score');
             const stormBtn = document.getElementById('stormBtn');
-            const stormCountEl = document.getElementById('stormCount');
 
 
             // High-score persistence (localStorage)
@@ -592,9 +657,194 @@ function escapeHtmlAttr(str) {
                 return weights.length - 1;
             }
 
+            function getCurrentLevelNumber() {
+                return Math.max(1, (Number(screensPassed) || 0) + 1);
+            }
+
+            function getSpecialTypeDef(typeId) {
+                if (!typeId) return null;
+                return SPECIAL_VIRUS_TYPES[typeId] || null;
+            }
+
+            function createInitialSpecialMeta(typeId) {
+                if (typeId === 'armored' || typeId === 'frozen') return { shieldHitsRemaining: 1 };
+                return {};
+            }
+
+            function setSpecialForCell(index, typeId) {
+                if (!Number.isFinite(index) || index < 0 || index >= state.length) return;
+                specialState[index] = typeId || null;
+                specialMetaState[index] = typeId ? createInitialSpecialMeta(typeId) : null;
+            }
+
+            function clearSpecialForCell(index) {
+                if (!Number.isFinite(index) || index < 0 || index >= state.length) return;
+                specialState[index] = null;
+                specialMetaState[index] = null;
+            }
+
+            function ensureSpecialMeta(index) {
+                if (!Number.isFinite(index) || index < 0 || index >= state.length) return null;
+                if (!specialMetaState[index]) specialMetaState[index] = {};
+                return specialMetaState[index];
+            }
+
+            function getActiveSpecialTypes(levelNum = getCurrentLevelNumber()) {
+                const level = Math.max(1, Number(levelNum) || 1);
+                return Object.values(SPECIAL_VIRUS_TYPES).filter((def) => {
+                    if (!def || !def.id) return false;
+                    if (def.enabled === false) return false;
+                    return level >= Math.max(1, Number(def.unlockLevel) || 1);
+                });
+            }
+
+            function rollSpecialVirusType(levelNum = getCurrentLevelNumber()) {
+                const active = getActiveSpecialTypes(levelNum);
+                if (!active.length) return null;
+                const level = Math.max(1, Number(levelNum) || 1);
+                const base = Math.max(0, Math.min(1, Number(SPECIAL_VIRUS_SETTINGS.baseChance) || 0));
+                const levelBonus = Math.max(0, Number(SPECIAL_VIRUS_SETTINGS.levelBonus) || 0);
+                const maxChance = Math.max(0, Math.min(1, Number(SPECIAL_VIRUS_SETTINGS.maxChance) || 1));
+                const chance = Math.min(maxChance, base + ((level - 1) * levelBonus));
+                if (Math.random() > chance) return null;
+                const totalWeight = active.reduce((sum, def) => sum + Math.max(0, Number(def.spawnWeight) || 0), 0);
+                if (totalWeight <= 0) return null;
+                let pick = Math.random() * totalWeight;
+                for (let i = 0; i < active.length; i++) {
+                    pick -= Math.max(0, Number(active[i].spawnWeight) || 0);
+                    if (pick <= 0) return active[i].id;
+                }
+                return active[active.length - 1].id;
+            }
+
+            function invokeSpecialHook(typeId, hookName, payload) {
+                const def = getSpecialTypeDef(typeId);
+                if (!def || !def.hooks) return null;
+                const hook = def.hooks[hookName];
+                if (typeof hook !== 'function') return null;
+                try {
+                    return hook(payload);
+                } catch (e) {
+                    console.warn('special hook failed', typeId, hookName, e);
+                    return null;
+                }
+            }
+
+            function getNeighborIndices(index, includeDiagonals = true) {
+                const out = [];
+                const row = Math.floor(index / COLS);
+                const col = index % COLS;
+                const deltas = includeDiagonals
+                    ? [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]]
+                    : [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                for (let i = 0; i < deltas.length; i++) {
+                    const nr = row + deltas[i][0];
+                    const nc = col + deltas[i][1];
+                    if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+                    out.push((nr * COLS) + nc);
+                }
+                return out;
+            }
+
+            function spawnVirusesNear(index, count = 1) {
+                const targetCount = Math.max(0, Number(count) || 0);
+                if (targetCount <= 0) return 0;
+                const candidates = getNeighborIndices(index, true).filter((i) => state[i] === null);
+                if (!candidates.length) return 0;
+                shuffle(candidates);
+                let spawned = 0;
+                for (let i = 0; i < candidates.length && spawned < targetCount; i++) {
+                    const id = candidates[i];
+                    state[id] = 0;
+                    clearSpecialForCell(id);
+                    spawned++;
+                }
+                return spawned;
+            }
+
+            function playShieldBlockFlash(index) {
+                if (!Number.isFinite(index) || !boardEl) return;
+                const applyFlash = () => {
+                    try {
+                        const cell = boardEl.querySelector(`[data-index='${index}']`);
+                        if (!cell) return;
+                        cell.classList.remove('shield-block');
+                        void cell.offsetWidth;
+                        cell.classList.add('shield-block');
+                        const v = cell.querySelector('.virus.special-armored');
+                        if (v) {
+                            v.classList.remove('shield-hit');
+                            void v.offsetWidth;
+                            v.classList.add('shield-hit');
+                            setTimeout(() => { try { v.classList.remove('shield-hit'); } catch (e) { } }, 240);
+                        }
+                        setTimeout(() => { try { cell.classList.remove('shield-block'); } catch (e) { } }, 240);
+                    } catch (e) { }
+                };
+                applyFlash();
+                try { requestAnimationFrame(applyFlash); } catch (e) { }
+            }
+
+            function playShieldBreakEffect(index) {
+                if (!Number.isFinite(index) || !boardEl) return;
+                try {
+                    const cell = boardEl.querySelector(`[data-index='${index}']`);
+                    if (!cell) return;
+                    const r = cell.getBoundingClientRect();
+                    const burst = document.createElement('div');
+                    burst.className = 'shield-break-burst';
+                    burst.style.left = Math.round(r.left + (r.width / 2)) + 'px';
+                    burst.style.top = Math.round(r.top + (r.height / 2)) + 'px';
+                    document.body.appendChild(burst);
+                    setTimeout(() => { try { burst.remove(); } catch (e) { } }, 430);
+                } catch (e) { }
+            }
+
+            function specialHookArmoredBeforeGrow(ctx) {
+                if (!ctx || !Number.isFinite(ctx.index)) return null;
+                const meta = ensureSpecialMeta(ctx.index);
+                const remaining = Math.max(0, Number(meta && meta.shieldHitsRemaining) || 0);
+                if (remaining <= 0) return null;
+                meta.shieldHitsRemaining = remaining - 1;
+                playShieldBlockFlash(ctx.index);
+                if (meta.shieldHitsRemaining <= 0) {
+                    playShieldBreakEffect(ctx.index);
+                    clearSpecialForCell(ctx.index);
+                }
+                try { playSfx('fill'); } catch (e) { }
+                return { cancelGrowth: true };
+            }
+
+            function specialHookFrozenBeforeGrow(ctx) {
+                if (!ctx || !Number.isFinite(ctx.index)) return null;
+                const meta = ensureSpecialMeta(ctx.index);
+                const remaining = Math.max(0, Number(meta && meta.shieldHitsRemaining) || 0);
+                if (remaining <= 0) return null;
+                meta.shieldHitsRemaining = remaining - 1;
+                if (Array.isArray(ctx.state) && ctx.state[ctx.index] !== null) {
+                    ctx.state[ctx.index] = Math.max(0, Number(ctx.state[ctx.index]) - 1);
+                }
+                if (meta.shieldHitsRemaining <= 0) clearSpecialForCell(ctx.index);
+                try { playSfx('fill'); } catch (e) { }
+                return { cancelGrowth: true };
+            }
+
+            function specialHookSplitterAfterPop(ctx) {
+                if (!ctx || !Number.isFinite(ctx.index)) return null;
+                spawnVirusesNear(ctx.index, 2);
+                return null;
+            }
+
+            function specialHookUnstableMaxStableSize(ctx) {
+                const maxDefault = (ctx && Number.isFinite(ctx.maxDefault)) ? Number(ctx.maxDefault) : MAX_SIZE;
+                return Math.max(0, maxDefault - 1);
+            }
+
 
             function randomizeBoard(preserveClicks = false) {
                 state.fill(null);
+                specialState.fill(null);
+                specialMetaState.fill(null);
                 if (!preserveClicks) {
                     clicksLeft = 10;
                     stormResolving = false;
@@ -603,20 +853,71 @@ function escapeHtmlAttr(str) {
                     resetStormChainIndicator();
                 }
                 const total = ROWS * COLS;
-                const target = Math.round(total * Math.min(0.95, BASE_DENSITY + screensPassed * DENSITY_GROWTH)); const idx = Array.from({ length: total }, (_, i) => i); shuffle(idx); for (let k = 0; k < target; k++) { state[idx[k]] = sampleSizeRandom(); } scheduleRender(); updateHUD();
+                const levelNum = getCurrentLevelNumber();
+                const target = Math.round(total * Math.min(0.95, BASE_DENSITY + screensPassed * DENSITY_GROWTH));
+                const idx = Array.from({ length: total }, (_, i) => i);
+                shuffle(idx);
+                for (let k = 0; k < target; k++) {
+                    const cellIndex = idx[k];
+                    state[cellIndex] = sampleSizeRandom();
+                    setSpecialForCell(cellIndex, rollSpecialVirusType(levelNum));
+                }
+                scheduleRender();
+                updateHUD();
             }
 
             function findNextBubble(index, dr, dc) { let r = Math.floor(index / COLS), c = index % COLS; while (true) { r += dr; c += dc; if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null; const i = r * COLS + c; if (state[i] !== null) return i; } }
 
             function createPetriElement() { const pet = document.createElement('div'); pet.className = 'petri'; if (PETRI_URL) { const img = document.createElement('img'); img.src = PETRI_URL; img.alt = 'petri'; pet.appendChild(img); } return pet; }
 
-            function createVirusContainer(size) { const container = document.createElement('div'); container.className = 'virus virus--size-' + size; const sprite = document.createElement('div'); sprite.className = 'face-sprite'; const img = document.createElement('img'); img.className = 'face-img'; img.src = SPRITE_URLS[Math.max(0, Math.min(3, size))]; img.alt = 'virus'; const sizeScales = [0.4, 0.6, 0.8, 1.0]; img.style.transform = 'scale(' + sizeScales[Math.max(0, Math.min(3, size))] + ')'; img.style.transformOrigin = 'center center'; sprite.appendChild(img); container.appendChild(sprite); const stain = document.createElement('div'); stain.className = 'stain'; container.appendChild(stain); return container; }
+            function createVirusContainer(size, specialType = null) {
+                const container = document.createElement('div');
+                container.className = 'virus virus--size-' + size;
+                const def = getSpecialTypeDef(specialType);
+                if (def) {
+                    container.classList.add('special-virus');
+                    if (def.className) container.classList.add(def.className);
+                    container.dataset.specialType = String(def.id);
+                }
+                const sprite = document.createElement('div');
+                sprite.className = 'face-sprite';
+                const img = document.createElement('img');
+                img.className = 'face-img';
+                img.src = SPRITE_URLS[Math.max(0, Math.min(3, size))];
+                img.alt = 'virus';
+                const sizeScales = [0.4, 0.6, 0.8, 1.0];
+                img.style.transform = 'scale(' + sizeScales[Math.max(0, Math.min(3, size))] + ')';
+                img.style.transformOrigin = 'center center';
+                sprite.appendChild(img);
+                container.appendChild(sprite);
+                if (def) {
+                    const marker = document.createElement('div');
+                    marker.className = 'special-badge';
+                    marker.textContent = def.badge || '?';
+                    marker.setAttribute('aria-hidden', 'true');
+                    marker.title = def.label || def.id;
+                    container.appendChild(marker);
+                }
+                const stain = document.createElement('div');
+                stain.className = 'stain';
+                container.appendChild(stain);
+                return container;
+            }
 
             function render() {
                 boardEl.innerHTML = ''; for (let i = 0; i < ROWS * COLS; i++) {
-                    const val = state[i]; const gridCell = document.createElement('div'); gridCell.className = 'cell'; gridCell.dataset.index = i; // petri underlay
+                    const val = state[i];
+                    const specialType = specialState[i];
+                    const specialDef = getSpecialTypeDef(specialType);
+                    const gridCell = document.createElement('div');
+                    gridCell.className = 'cell';
+                    gridCell.dataset.index = i; // petri underlay
+                    if (specialDef) {
+                        gridCell.classList.add('has-special');
+                        if (specialDef.className) gridCell.classList.add(specialDef.className);
+                    }
                     const pet = createPetriElement(); gridCell.appendChild(pet);
-                    if (val !== null) { const container = createVirusContainer(val); gridCell.appendChild(container); }
+                    if (val !== null) { const container = createVirusContainer(val, specialType); gridCell.appendChild(container); }
                     boardEl.appendChild(gridCell);
                 }
                 updateHUD();
@@ -945,16 +1246,17 @@ function escapeHtmlAttr(str) {
             function syncStormChainIndicator() {
                 if (!stormBtn) return;
                 const count = Math.max(0, Number(stormChainPops) || 0);
-                const canGain = stormCharges < MAX_STORM_CHARGES;
-                const visualCount = canGain ? count : 0;
+                const isCharged = stormCharges > 0;
+                const visualCount = isCharged ? STORM_RECHARGE_CHAIN_MIN : count;
                 const ratio = Math.max(0, Math.min(1, visualCount / STORM_RECHARGE_CHAIN_MIN));
                 stormBtn.style.setProperty('--storm-combo-ratio', String(ratio));
                 stormBtn.dataset.chain = String(Math.min(visualCount, STORM_RECHARGE_CHAIN_MIN));
-                stormBtn.classList.toggle('combo-tracking', visualCount > 0);
-                stormBtn.classList.toggle('combo-near', visualCount >= STORM_NEAR_THRESHOLD && visualCount < STORM_RECHARGE_CHAIN_MIN);
-                stormBtn.classList.toggle('combo-hot', visualCount >= (STORM_RECHARGE_CHAIN_MIN - 1));
-                const baseTitle = stormArmed ? 'Nano Storm armed' : 'Nano Storm';
-                const chainTitle = visualCount > 0 ? (' | chain ' + visualCount + '/' + STORM_RECHARGE_CHAIN_MIN) : '';
+                stormBtn.classList.toggle('charged', isCharged);
+                stormBtn.classList.toggle('combo-tracking', !isCharged && visualCount > 0);
+                stormBtn.classList.toggle('combo-near', !isCharged && visualCount >= STORM_NEAR_THRESHOLD && visualCount < STORM_RECHARGE_CHAIN_MIN);
+                stormBtn.classList.toggle('combo-hot', !isCharged && visualCount >= (STORM_RECHARGE_CHAIN_MIN - 1));
+                const baseTitle = stormArmed ? 'Nano Storm armed' : (isCharged ? 'Nano Storm ready' : 'Nano Storm charging');
+                const chainTitle = (!isCharged && visualCount > 0) ? (' | chain ' + visualCount + '/' + STORM_RECHARGE_CHAIN_MIN) : '';
                 stormBtn.setAttribute('title', baseTitle + chainTitle);
             }
 
@@ -1007,10 +1309,9 @@ function escapeHtmlAttr(str) {
             }
 
             function updateStormUI() {
-                if (!stormBtn || !stormCountEl) return;
+                if (!stormBtn) return;
                 if (stormCharges <= 0 && stormArmed) stormArmed = false;
-                stormCountEl.textContent = 'x' + Math.max(0, stormCharges);
-                stormBtn.classList.remove('ready', 'armed', 'empty');
+                stormBtn.classList.remove('ready', 'armed', 'empty', 'charged');
                 if (stormCharges <= 0) stormBtn.classList.add('empty');
                 else if (stormArmed) stormBtn.classList.add('armed');
                 else stormBtn.classList.add('ready');
@@ -1277,6 +1578,7 @@ function escapeHtmlAttr(str) {
                 if (state[index] === null) {
                     if (isUser) {
                         state[index] = 0;
+                        clearSpecialForCell(index);
                         scheduleRender();
                     }
                     if (suppressFinalize || stormResolving) return;
@@ -1290,13 +1592,54 @@ function escapeHtmlAttr(str) {
                     return;
                 }
 
+                const specialType = specialState[index];
+                const beforeGrowResult = invokeSpecialHook(specialType, 'onBeforeGrow', {
+                    index,
+                    isUser,
+                    state,
+                    specialState,
+                    specialMetaState,
+                    tracker
+                });
+                if (beforeGrowResult && beforeGrowResult.cancelGrowth) {
+                    scheduleRender();
+                    if (suppressFinalize || stormResolving) return;
+                    inputLocked = false;
+                    requestAnimationFrame(() => {
+                        if (!particlesActive() && clicksLeft <= 0) checkOutOfClicks();
+                    });
+                    return;
+                }
                 playSfx('grow');
                 state[index] += 1;
+                invokeSpecialHook(specialType, 'onAfterGrow', {
+                    index,
+                    isUser,
+                    state,
+                    specialState,
+                    specialMetaState,
+                    tracker
+                });
                 // Immediate paint so players see the size change without waiting for the RAF queue
                 try { render(); } catch (e) { scheduleRender(); }
 
 
-                if (state[index] <= MAX_SIZE) {
+                let maxStableSize = MAX_SIZE;
+                const currentTypeAfterGrow = specialState[index];
+                const maxStableOverride = invokeSpecialHook(currentTypeAfterGrow, 'getMaxStableSize', {
+                    index,
+                    isUser,
+                    state,
+                    specialState,
+                    specialMetaState,
+                    tracker,
+                    maxDefault: MAX_SIZE
+                });
+                if (Number.isFinite(maxStableOverride)) {
+                    maxStableSize = Math.max(0, Math.floor(Number(maxStableOverride)));
+                }
+
+                if (state[index] <= maxStableSize) {
                     scheduleRender();
                     if (suppressFinalize || stormResolving) return;
                     inputLocked = false;
@@ -1309,8 +1652,26 @@ function escapeHtmlAttr(str) {
 
                 // Pop event
                 playSfx('pop');
+                const specialTypeOnPop = specialState[index] || specialType;
+                invokeSpecialHook(specialTypeOnPop, 'onPop', {
+                    index,
+                    isUser,
+                    state,
+                    specialState,
+                    specialMetaState,
+                    tracker
+                });
                 popAt(index, tracker);
                 state[index] = null;
+                clearSpecialForCell(index);
+                invokeSpecialHook(specialTypeOnPop, 'onAfterPop', {
+                    index,
+                    isUser,
+                    state,
+                    specialState,
+                    specialMetaState,
+                    tracker
+                });
                 scheduleRender();
                 // single scheduled render; don't call render() directly here to avoid double-running level-complete
                 scheduleRender();
@@ -1352,6 +1713,7 @@ function escapeHtmlAttr(str) {
                 stormCharges = Math.max(0, stormCharges - 1);
                 setStormArmed(false);
                 updateHUD();
+                try { playSfx('nanostorm'); } catch (e) { }
                 playStormBurst(centerIndex, targets);
                 const tracker = {
                     pops: 0,
