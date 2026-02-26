@@ -805,8 +805,8 @@ function escapeHtmlAttr(str) {
             }
 
             function ensureAchievementsPanel() {
-                const popup = document.getElementById('audioPopup');
-                if (!popup) return null;
+                const host = document.getElementById('achievementsTabPane') || document.getElementById('audioPopup');
+                if (!host) return null;
                 let panel = document.getElementById('achievementsPanel');
                 if (panel) return panel;
                 panel = document.createElement('section');
@@ -819,7 +819,7 @@ function escapeHtmlAttr(str) {
                     </div>
                     <div id="achievementList" class="achievement-list"></div>
                 `;
-                popup.appendChild(panel);
+                host.appendChild(panel);
                 return panel;
             }
 
@@ -2799,7 +2799,37 @@ function escapeHtmlAttr(str) {
             evaluateAchievements({ emitUnlock: false });
             scheduleAchievementsUIRender();
             const audioBtn = document.getElementById('audioBtn');
-            if (audioBtn) audioBtn.addEventListener('click', () => { scheduleAchievementsUIRender(); syncTutorialControls(); syncAudioSettingsUI(); });
+            const settingsTabBtn = document.getElementById('settingsTabBtn');
+            const achievementsTabBtn = document.getElementById('achievementsTabBtn');
+            const settingsTabPane = document.getElementById('settingsTabPane');
+            const achievementsTabPane = document.getElementById('achievementsTabPane');
+            function setSettingsPopupTab(tabName) {
+                const showAchievements = String(tabName || '') === 'achievements';
+                if (settingsTabPane) settingsTabPane.classList.toggle('active', !showAchievements);
+                if (achievementsTabPane) achievementsTabPane.classList.toggle('active', showAchievements);
+                if (settingsTabBtn) {
+                    settingsTabBtn.classList.toggle('active', !showAchievements);
+                    settingsTabBtn.setAttribute('aria-selected', String(!showAchievements));
+                }
+                if (achievementsTabBtn) {
+                    achievementsTabBtn.classList.toggle('active', showAchievements);
+                    achievementsTabBtn.setAttribute('aria-selected', String(showAchievements));
+                }
+                if (achievementsTabPane) achievementsTabPane.setAttribute('aria-hidden', String(!showAchievements));
+                if (settingsTabPane) settingsTabPane.setAttribute('aria-hidden', String(showAchievements));
+                if (showAchievements) scheduleAchievementsUIRender();
+            }
+            if (settingsTabBtn) settingsTabBtn.addEventListener('click', () => setSettingsPopupTab('settings'));
+            if (achievementsTabBtn) achievementsTabBtn.addEventListener('click', () => setSettingsPopupTab('achievements'));
+            setSettingsPopupTab('settings');
+            if (audioBtn) {
+                audioBtn.addEventListener('click', () => {
+                    setSettingsPopupTab('settings');
+                    scheduleAchievementsUIRender();
+                    syncTutorialControls();
+                    syncAudioSettingsUI();
+                });
+            }
             const musicEnabledToggle = document.getElementById('musicEnabledToggle');
             const sfxEnabledToggle = document.getElementById('sfxEnabledToggle');
             const musicToggleSwitch = document.querySelector('#musicEnabledToggle + .audio-toggle-switch');

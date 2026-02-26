@@ -283,6 +283,12 @@
             <button id="audioClose" class="btn" aria-label="Close audio settings">❌</button>
         </div>
 
+        <div class="settings-tabs" role="tablist" aria-label="Settings sections">
+            <button id="settingsTabBtn" class="btn settings-tab active" type="button" role="tab" aria-controls="settingsTabPane" aria-selected="true">Settings</button>
+            <button id="achievementsTabBtn" class="btn settings-tab" type="button" role="tab" aria-controls="achievementsTabPane" aria-selected="false">Achievements</button>
+        </div>
+
+        <div id="settingsTabPane" class="settings-tab-pane active" role="tabpanel" aria-labelledby="settingsTabBtn">
         <div class="row">
             <label for="musicVol">Music Volume</label>
             <input id="musicVol" type="range" min="0" max="1" step="0.01" value="0.20" />
@@ -342,8 +348,9 @@
             <button id="resetProgressBtn" class="btn" type="button">Reset Progress</button>
             <div class="settings-reset-note">Clears High Score and Achievements</div>
         </div>
+        </div>
 
-        <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:8px;">
+        <div id="achievementsTabPane" class="settings-tab-pane" role="tabpanel" aria-labelledby="achievementsTabBtn" aria-hidden="true">
         </div>
     </div>
     <!-- END AUDIO SETTINGS POPUP -->

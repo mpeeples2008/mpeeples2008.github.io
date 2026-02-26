@@ -1637,8 +1637,35 @@
                 margin-top: 12px;
             }
 
+            .audio-popup .settings-tabs {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+
+            .audio-popup .settings-tab {
+                flex: 1;
+                text-align: center;
+                font-size: 10px;
+                padding: 7px 8px;
+            }
+
+            .audio-popup .settings-tab.active {
+                background: linear-gradient(180deg, #ffd166, #ffb84d);
+                color: #0b2a57;
+                box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.22);
+            }
+
+            .audio-popup .settings-tab-pane {
+                display: none;
+            }
+
+            .audio-popup .settings-tab-pane.active {
+                display: block;
+            }
+
             .audio-popup .achievements-panel {
-                margin-top: 12px;
+                margin-top: 0;
                 border: 3px solid rgba(255, 255, 255, 0.16);
                 border-radius: 8px;
                 background: rgba(0, 0, 0, 0.18);
