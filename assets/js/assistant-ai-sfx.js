@@ -1,16 +1,24 @@
 ﻿
         (function () {
-            var AI_SFX_URLS = ["https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3",
+            var AI_SFX_URLS = [
+                "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3",
                 "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI2.mp3",
                 "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI3.mp3",
                 "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI4.mp3",
                 "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI5.mp3",
                 "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI6.mp3",
-                "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI7.mp3"];
+                "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI7.mp3"
+            ];
+            var AI_SFX_KEYS = AI_SFX_URLS.map(function (_, i) { return 'assistant_ai_' + i; });
+            window.AI_SFX_URLS = AI_SFX_URLS.slice();
             window._assistantSfxCache = window._assistantSfxCache || {};
 
             function preloadAiSfx() {
                 try {
+                    if (typeof window.preloadSfxKeys === 'function') {
+                        window.preloadSfxKeys(AI_SFX_KEYS);
+                        return;
+                    }
                     for (var i = 0; i < AI_SFX_URLS.length; i++) {
                         var key = 'assistant_ai_' + i;
                         if (!window._assistantSfxCache[key]) {
@@ -21,7 +29,7 @@
                                 var vol = (typeof window.sfxVolume !== 'undefined') ? window.sfxVolume : 0.50;
                                 try { a.volume = vol; } catch (e) { }
                                 window._assistantSfxCache[key] = a;
-                            } catch (e) { console.warn('preload ai sfx error', e); }
+                            } catch (e) { }
                         }
                     }
                 } catch (e) { console.warn('preloadAiSfx failed', e); }
@@ -30,10 +38,14 @@
             function playRandomAiSfx() {
                 try {
                     if (window.allMuted || window.assistantMuted) return;
-                    var keys = Object.keys(window._assistantSfxCache || {});
-                    if (!keys.length) return;
-                    var idx = Math.floor(Math.random() * keys.length);
-                    var a = window._assistantSfxCache[keys[idx]];
+                    if (!AI_SFX_KEYS.length) return;
+                    var idx = Math.floor(Math.random() * AI_SFX_KEYS.length);
+                    var key = AI_SFX_KEYS[idx];
+                    if (typeof window.playSfx === 'function') {
+                        window.playSfx(key);
+                        return;
+                    }
+                    var a = window._assistantSfxCache[key];
                     if (!a) return;
                     try { a.currentTime = 0; a.volume = (typeof window.sfxVolume !== 'undefined') ? window.sfxVolume : 0.5; } catch (e) { }
                     var p = a.play();

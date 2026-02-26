@@ -197,7 +197,14 @@ function escapeHtmlAttr(str) {
                 win: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/win2.mp3',
                 lose: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lose2.mp3',
                 nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3',
-                achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3'
+                achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3',
+                assistant_ai_0: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3',
+                assistant_ai_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI2.mp3',
+                assistant_ai_2: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI3.mp3',
+                assistant_ai_3: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI4.mp3',
+                assistant_ai_4: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI5.mp3',
+                assistant_ai_5: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI6.mp3',
+                assistant_ai_6: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI7.mp3'
             };
 
             // Background music playlist (hard-wired) — will be started on the user's first tap
@@ -215,6 +222,13 @@ function escapeHtmlAttr(str) {
                 pop: 30,
                 grow: 70,
                 fill: 90,
+                assistant_ai_0: 180,
+                assistant_ai_1: 180,
+                assistant_ai_2: 180,
+                assistant_ai_3: 180,
+                assistant_ai_4: 180,
+                assistant_ai_5: 180,
+                assistant_ai_6: 180,
                 nanostorm: 180,
                 win: 250,
                 lose: 250,
@@ -223,7 +237,7 @@ function escapeHtmlAttr(str) {
             const SFX_BURST_WINDOW_MS = 120;
             const SFX_BURST_MAX = 6;
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
-            const SFX_LAZY_KEYS = ['nanostorm', 'win', 'lose', 'achievement'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
             let musicWasPlayingBeforeHide = false;
@@ -410,6 +424,10 @@ function escapeHtmlAttr(str) {
                     if (p && p.catch) p.catch(() => { });
                 } catch (e) { }
             }
+            try {
+                window.playSfx = playSfx;
+                window.preloadSfxKeys = preloadSfxKeys;
+            } catch (e) { }
 
             function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
             function prepareMusicOrder() { musicOrder = MUSIC_PLAYLIST.slice(); shuffleArray(musicOrder); musicIndex = 0; }
