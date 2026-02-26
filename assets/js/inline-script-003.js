@@ -196,7 +196,8 @@ function escapeHtmlAttr(str) {
                 fill: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/bubblefill2.mp3',
                 win: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/win2.mp3',
                 lose: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lose2.mp3',
-                nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3'
+                nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3',
+                achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3'
             };
 
             // Background music playlist (hard-wired) — will be started on the user's first tap
@@ -407,6 +408,337 @@ function escapeHtmlAttr(str) {
             let stormChainPops = 0;
             let stormChainResetTimer = null;
             let stormChargeFlashTimer = null;
+            const ACHIEVEMENT_STORAGE_KEY = 'goneViral_achievements_v1';
+            const ACHIEVEMENT_SCHEMA_VERSION = 1;
+            const ACHIEVEMENT_DEFS = [
+                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 1,000 viruses in one run.', stat: 'runPops', target: 1000, scope: 'run' },
+                { id: 'run_level_5', title: 'Containment I', description: 'Reach level 5 in one run.', stat: 'runLevelReached', target: 5, scope: 'run' },
+                { id: 'run_level_10', title: 'Containment II', description: 'Reach level 10 in one run.', stat: 'runLevelReached', target: 10, scope: 'run' },
+                { id: 'run_level_15', title: 'Containment III', description: 'Reach level 15 in one run.', stat: 'runLevelReached', target: 15, scope: 'run' },
+                { id: 'run_shell_breaker_10', title: 'Shell Breaker', description: 'Break 10 armored shells in one run.', stat: 'runArmoredShellsBroken', target: 10, scope: 'run' },
+                { id: 'run_chain_20', title: 'Chain Master', description: 'Reach a 20+ chain in one run.', stat: 'runBestChain', target: 20, scope: 'run' },
+                { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 3 times in one run.', stat: 'runNanoStormUses', target: 3, scope: 'run' },
+                { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left.', stat: 'runClutchClears', target: 1, scope: 'run' },
+                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 10,000 viruses across runs.', stat: 'totalPopsLifetime', target: 10000, scope: 'lifetime' },
+                { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 10 chains of 20+ across runs.', stat: 'chain20LifetimeCount', target: 10, scope: 'lifetime' },
+                { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored shells across runs.', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
+                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 100 levels across runs.', stat: 'levelsClearedLifetime', target: 100, scope: 'lifetime' }
+            ];
+            let achievementSaveTimer = null;
+            let achievementUiQueued = false;
+            const achievementToastQueue = [];
+            let achievementToastActive = false;
+
+            function createDefaultAchievementState() {
+                const stats = {};
+                for (let i = 0; i < ACHIEVEMENT_DEFS.length; i++) {
+                    if ((ACHIEVEMENT_DEFS[i].scope || 'lifetime') === 'run') continue;
+                    const statKey = String(ACHIEVEMENT_DEFS[i].stat || '');
+                    if (statKey && !Object.prototype.hasOwnProperty.call(stats, statKey)) stats[statKey] = 0;
+                }
+                return {
+                    version: ACHIEVEMENT_SCHEMA_VERSION,
+                    stats,
+                    unlocked: {}
+                };
+            }
+
+            function sanitizeAchievementState(raw) {
+                const base = createDefaultAchievementState();
+                if (!raw || typeof raw !== 'object') return base;
+                const rawStats = (raw.stats && typeof raw.stats === 'object') ? raw.stats : {};
+                Object.keys(base.stats).forEach((key) => {
+                    const n = Number(rawStats[key]);
+                    base.stats[key] = (Number.isFinite(n) && n > 0) ? n : 0;
+                });
+                const rawUnlocked = (raw.unlocked && typeof raw.unlocked === 'object') ? raw.unlocked : {};
+                for (let i = 0; i < ACHIEVEMENT_DEFS.length; i++) {
+                    const id = ACHIEVEMENT_DEFS[i].id;
+                    base.unlocked[id] = !!rawUnlocked[id];
+                }
+                return base;
+            }
+
+            function createDefaultRunAchievementStats() {
+                const stats = {};
+                for (let i = 0; i < ACHIEVEMENT_DEFS.length; i++) {
+                    if ((ACHIEVEMENT_DEFS[i].scope || 'lifetime') !== 'run') continue;
+                    const statKey = String(ACHIEVEMENT_DEFS[i].stat || '');
+                    if (statKey && !Object.prototype.hasOwnProperty.call(stats, statKey)) stats[statKey] = 0;
+                }
+                return stats;
+            }
+
+            function resetRunAchievementStats(levelNum = 1) {
+                runAchievementStats = createDefaultRunAchievementStats();
+                if (Object.prototype.hasOwnProperty.call(runAchievementStats, 'runLevelReached')) {
+                    runAchievementStats.runLevelReached = Math.max(1, Number(levelNum) || 1);
+                }
+                scheduleAchievementsUIRender();
+            }
+
+            function loadAchievementState() {
+                try {
+                    const raw = localStorage.getItem(ACHIEVEMENT_STORAGE_KEY);
+                    if (!raw) return createDefaultAchievementState();
+                    return sanitizeAchievementState(JSON.parse(raw));
+                } catch (e) {
+                    return createDefaultAchievementState();
+                }
+            }
+
+            let achievementState = loadAchievementState();
+            let runAchievementStats = createDefaultRunAchievementStats();
+            if (Object.prototype.hasOwnProperty.call(runAchievementStats, 'runLevelReached')) {
+                runAchievementStats.runLevelReached = 1;
+            }
+
+            function saveAchievementStateNow() {
+                try {
+                    localStorage.setItem(ACHIEVEMENT_STORAGE_KEY, JSON.stringify({
+                        version: ACHIEVEMENT_SCHEMA_VERSION,
+                        stats: achievementState.stats,
+                        unlocked: achievementState.unlocked
+                    }));
+                } catch (e) { }
+            }
+
+            function scheduleAchievementSave(delayMs = 120) {
+                try { if (achievementSaveTimer) clearTimeout(achievementSaveTimer); } catch (e) { }
+                achievementSaveTimer = setTimeout(() => {
+                    achievementSaveTimer = null;
+                    saveAchievementStateNow();
+                }, Math.max(0, Number(delayMs) || 0));
+            }
+
+            function getAchievementProgress(def) {
+                const scope = def.scope || 'lifetime';
+                const sourceStats = (scope === 'run') ? runAchievementStats : achievementState.stats;
+                const current = Math.max(0, Number(sourceStats[def.stat]) || 0);
+                const target = Math.max(1, Number(def.target) || 1);
+                const done = current >= target;
+                const ratio = Math.max(0, Math.min(1, current / target));
+                return { current, target, done, ratio };
+            }
+
+            function countUnlockedAchievements() {
+                let unlocked = 0;
+                for (let i = 0; i < ACHIEVEMENT_DEFS.length; i++) {
+                    if (achievementState.unlocked[ACHIEVEMENT_DEFS[i].id]) unlocked++;
+                }
+                return unlocked;
+            }
+
+            function showNextAchievementToast() {
+                if (!achievementToastQueue.length) {
+                    achievementToastActive = false;
+                    return;
+                }
+                achievementToastActive = true;
+                const payload = achievementToastQueue.shift() || {};
+                const title = String(payload.title || 'Achievement Unlocked');
+                const description = String(payload.description || '');
+                const el = document.createElement('div');
+                el.className = 'achievement-unlock-toast';
+                el.setAttribute('role', 'status');
+                el.setAttribute('aria-live', 'polite');
+                el.innerHTML = `
+                    <div class="a-head">Achievement Unlocked</div>
+                    <div class="a-title">${escapeHtml(title)}</div>
+                    <div class="a-desc">${escapeHtml(description)}</div>
+                `;
+                document.body.appendChild(el);
+                try { playSfx('achievement'); } catch (e) { try { playSfx('fill'); } catch (e2) { } }
+                requestAnimationFrame(() => {
+                    try { el.classList.add('show'); } catch (e) { }
+                });
+                const close = () => {
+                    try { if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { }
+                    achievementToastActive = false;
+                    showNextAchievementToast();
+                };
+                setTimeout(() => {
+                    try {
+                        el.classList.remove('show');
+                        el.classList.add('hide');
+                        setTimeout(close, 260);
+                    } catch (e) {
+                        close();
+                    }
+                }, 2000);
+            }
+
+            function queueAchievementUnlockFeedback(payload) {
+                achievementToastQueue.push(payload || {});
+                if (!achievementToastActive) showNextAchievementToast();
+            }
+
+            function emitAchievementUnlocked(def, progress) {
+                try {
+                    window.dispatchEvent(new CustomEvent('goneviral:achievement-unlocked', {
+                        detail: {
+                            id: def.id,
+                            title: def.title,
+                            description: def.description,
+                            current: progress.current,
+                            target: progress.target
+                        }
+                    }));
+                } catch (e) { }
+                queueAchievementUnlockFeedback({
+                    id: def.id,
+                    title: def.title,
+                    description: def.description
+                });
+            }
+
+            function evaluateAchievements(opts = {}) {
+                const emitUnlock = opts.emitUnlock !== false;
+                let changed = false;
+                for (let i = 0; i < ACHIEVEMENT_DEFS.length; i++) {
+                    const def = ACHIEVEMENT_DEFS[i];
+                    const progress = getAchievementProgress(def);
+                    const prev = !!achievementState.unlocked[def.id];
+                    if (!prev && progress.done) {
+                        achievementState.unlocked[def.id] = true;
+                        changed = true;
+                        if (emitUnlock) emitAchievementUnlocked(def, progress);
+                    }
+                }
+                if (changed) scheduleAchievementSave();
+                scheduleAchievementsUIRender();
+            }
+
+            function ensureAchievementsPanel() {
+                const popup = document.getElementById('audioPopup');
+                if (!popup) return null;
+                let panel = document.getElementById('achievementsPanel');
+                if (panel) return panel;
+                panel = document.createElement('section');
+                panel.id = 'achievementsPanel';
+                panel.className = 'achievements-panel';
+                panel.innerHTML = `
+                    <div class="achievements-head">
+                        <div class="achievements-title">Achievements</div>
+                        <div id="achievementSummary" class="achievements-summary">0/0</div>
+                    </div>
+                    <div id="achievementList" class="achievement-list"></div>
+                `;
+                popup.appendChild(panel);
+                return panel;
+            }
+
+            function renderAchievementsUI() {
+                const panel = ensureAchievementsPanel();
+                if (!panel) return;
+                const list = document.getElementById('achievementList');
+                const summary = document.getElementById('achievementSummary');
+                if (!list || !summary) return;
+                const unlockedCount = countUnlockedAchievements();
+                summary.textContent = unlockedCount + '/' + ACHIEVEMENT_DEFS.length + ' unlocked';
+                const html = ACHIEVEMENT_DEFS.map((def) => {
+                    const p = getAchievementProgress(def);
+                    const unlocked = !!achievementState.unlocked[def.id];
+                    const done = unlocked || p.done;
+                    const shown = done ? p.target : Math.min(p.current, p.target);
+                    return `
+                        <div class="achievement-item ${done ? 'done' : ''}" data-achievement-id="${def.id}">
+                            <div class="achievement-row">
+                                <div class="achievement-name">${def.title}</div>
+                                <div class="achievement-count">${shown}/${p.target}</div>
+                            </div>
+                            <div class="achievement-desc">${def.description}</div>
+                            <div class="achievement-track"><span style="transform:scaleX(${done ? 1 : p.ratio});"></span></div>
+                        </div>
+                    `;
+                }).join('');
+                list.innerHTML = html;
+            }
+
+            function scheduleAchievementsUIRender() {
+                if (achievementUiQueued) return;
+                achievementUiQueued = true;
+                const run = () => {
+                    achievementUiQueued = false;
+                    renderAchievementsUI();
+                };
+                if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+                else setTimeout(run, 0);
+            }
+
+            function incrementAchievementStat(statKey, amount = 1, scope = 'lifetime') {
+                const key = String(statKey || '');
+                if (!key) return;
+                const inc = Number(amount);
+                if (!Number.isFinite(inc) || inc <= 0) return;
+                const stats = (scope === 'run') ? runAchievementStats : achievementState.stats;
+                const prev = Math.max(0, Number(stats[key]) || 0);
+                stats[key] = prev + inc;
+                if (scope !== 'run') scheduleAchievementSave();
+                evaluateAchievements();
+            }
+
+            function setAchievementBest(statKey, candidate, scope = 'lifetime') {
+                const key = String(statKey || '');
+                if (!key) return;
+                const val = Math.max(0, Number(candidate) || 0);
+                const stats = (scope === 'run') ? runAchievementStats : achievementState.stats;
+                const prev = Math.max(0, Number(stats[key]) || 0);
+                if (val <= prev) return;
+                stats[key] = val;
+                if (scope !== 'run') scheduleAchievementSave();
+                evaluateAchievements();
+            }
+
+            try {
+                window.AchievementDefs = ACHIEVEMENT_DEFS.slice();
+                window.Achievements = {
+                    defs: ACHIEVEMENT_DEFS.slice(),
+                    getState: function () {
+                        return JSON.parse(JSON.stringify({
+                            stats: achievementState.stats,
+                            lifetimeStats: achievementState.stats,
+                            runStats: runAchievementStats,
+                            unlocked: achievementState.unlocked
+                        }));
+                    },
+                    add: function (statKey, amount = 1, scope = 'lifetime') {
+                        incrementAchievementStat(statKey, amount, scope);
+                        return this.getState();
+                    },
+                    setBest: function (statKey, value, scope = 'lifetime') {
+                        setAchievementBest(statKey, value, scope);
+                        return this.getState();
+                    },
+                    reset: function () {
+                        achievementState = createDefaultAchievementState();
+                        resetRunAchievementStats(getCurrentLevelNumber());
+                        evaluateAchievements({ emitUnlock: false });
+                        scheduleAchievementSave(0);
+                        return this.getState();
+                    },
+                    resetRun: function () {
+                        resetRunAchievementStats(getCurrentLevelNumber());
+                        evaluateAchievements({ emitUnlock: false });
+                        return this.getState();
+                    },
+                    render: function () {
+                        scheduleAchievementsUIRender();
+                    }
+                };
+                window.resetAchievements = function () {
+                    if (window.Achievements && typeof window.Achievements.reset === 'function') {
+                        return window.Achievements.reset();
+                    }
+                    return null;
+                };
+                window.resetRunAchievements = function () {
+                    if (window.Achievements && typeof window.Achievements.resetRun === 'function') {
+                        return window.Achievements.resetRun();
+                    }
+                    return null;
+                };
+            } catch (e) { }
 
             // Move DOM element lookups inside DOMContentLoaded
             const boardEl = document.getElementById('board');
@@ -887,6 +1219,8 @@ function escapeHtmlAttr(str) {
                 if (meta.shieldHitsRemaining <= 0) {
                     playShieldBreakEffect(ctx.index);
                     clearSpecialForCell(ctx.index);
+                    incrementAchievementStat('runArmoredShellsBroken', 1, 'run');
+                    incrementAchievementStat('armoredShellsLifetime', 1, 'lifetime');
                 }
                 try { playSfx('fill'); } catch (e) { }
                 return { cancelGrowth: true };
@@ -928,6 +1262,7 @@ function escapeHtmlAttr(str) {
                     stormCharges = 1;
                     setStormArmed(false);
                     resetStormChainIndicator();
+                    resetRunAchievementStats(getCurrentLevelNumber());
                 }
                 const total = ROWS * COLS;
                 const levelNum = getCurrentLevelNumber();
@@ -1007,9 +1342,12 @@ function escapeHtmlAttr(str) {
 
                 if (remaining === 0) {
                     // single, unified "level complete" path
+                    if (clicksLeft === 1) incrementAchievementStat('runClutchClears', 1, 'run');
                     clicksLeft = Math.min(MAX_CLICKS, clicksLeft + 1);
                     playSfx('win');
                     screensPassed += 1;
+                    incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
+                    setAchievementBest('runLevelReached', screensPassed + 1, 'run');
                     updateHUD();
 
                     try { showLevelComplete({ title: 'LEVEL COMPLETE', duration: 4500 }); } catch (e) { }
@@ -1284,6 +1622,8 @@ function escapeHtmlAttr(str) {
                     if (!tracker.poppedSet.has(index)) {
                         tracker.poppedSet.add(index);
                         tracker.pops = (tracker.pops || 0) + 1;
+                        incrementAchievementStat('runPops', 1, 'run');
+                        incrementAchievementStat('totalPopsLifetime', 1, 'lifetime');
                         updateStormChainProgress(tracker.pops);
 
                         // Chain click rewards are profile-driven (start pop + cadence).
@@ -1578,6 +1918,8 @@ function escapeHtmlAttr(str) {
                     try {
                         const count = tracker.pops || 0;
                         console.log('[Badge] final tracker.pops =', count);
+                        setAchievementBest('runBestChain', count, 'run');
+                        if (count >= 20) incrementAchievementStat('chain20LifetimeCount', 1, 'lifetime');
                         updateStormChainProgress(count);
                         grantStormChargeFromChain(count);
                         scheduleStormChainReset();
@@ -1797,6 +2139,7 @@ function escapeHtmlAttr(str) {
                 stormResolving = true;
                 clicksLeft--;
                 stormCharges = Math.max(0, stormCharges - 1);
+                incrementAchievementStat('runNanoStormUses', 1, 'run');
                 setStormArmed(false);
                 updateHUD();
                 try { playSfx('nanostorm'); } catch (e) { }
@@ -1869,6 +2212,10 @@ function escapeHtmlAttr(str) {
                 });
             }
             updateStormUI();
+            evaluateAchievements({ emitUnlock: false });
+            scheduleAchievementsUIRender();
+            const audioBtn = document.getElementById('audioBtn');
+            if (audioBtn) audioBtn.addEventListener('click', () => { scheduleAchievementsUIRender(); });
 
             const restartBtn = document.getElementById('restart');
             if (restartBtn) { restartBtn.addEventListener('click', () => { screensPassed = 0; totalScore = 0; randomizeBoard(false); }); }
