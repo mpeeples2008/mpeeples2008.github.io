@@ -247,11 +247,103 @@ function escapeHtmlAttr(str) {
             window.sfxEnabled = sfxEnabled;
 
             let sfxCache = {};
+            window.sfxCache = sfxCache;
+            let sfxAudioCtx = null;
+            let sfxMasterGain = null;
+            const sfxBufferCache = new Map();
+            const sfxDecodeInFlight = new Map();
+            const sfxActiveSources = new Set();
+            const MAX_SFX_VOICES = 8;
+            const HAS_WEB_AUDIO = typeof window !== 'undefined' && !!(window.AudioContext || window.webkitAudioContext);
             function createSfx(key) { const url = SFX_URLS[key]; if (!url) return null; try { const a = new Audio(url); a.preload = 'auto'; a.volume = 0.5; a.crossOrigin = 'anonymous'; sfxCache[key] = a; return a; } catch (e) { return null; } }
             function getSfx(key) { return sfxCache[key] || createSfx(key); }
+            function ensureSfxAudioContext() {
+                if (!HAS_WEB_AUDIO) return null;
+                if (sfxAudioCtx) return sfxAudioCtx;
+                try {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    sfxAudioCtx = new Ctx({ latencyHint: 'interactive' });
+                    sfxMasterGain = sfxAudioCtx.createGain();
+                    sfxMasterGain.gain.value = 1;
+                    sfxMasterGain.connect(sfxAudioCtx.destination);
+                    window.sfxAudioContext = sfxAudioCtx;
+                } catch (e) {
+                    sfxAudioCtx = null;
+                    sfxMasterGain = null;
+                }
+                return sfxAudioCtx;
+            }
+            function getSfxOutputGain() {
+                if (!sfxMasterGain) return null;
+                const vol = Math.max(0, Math.min(1, Number(window.sfxVolume ?? 0.5) || 0));
+                const enabled = !!sfxEnabled && !window.allMuted;
+                return enabled ? vol : 0;
+            }
+            function syncSfxEngineGain() {
+                try {
+                    if (!sfxMasterGain || !sfxAudioCtx) return;
+                    const target = getSfxOutputGain();
+                    const now = sfxAudioCtx.currentTime || 0;
+                    sfxMasterGain.gain.cancelScheduledValues(now);
+                    sfxMasterGain.gain.setTargetAtTime(target, now, 0.01);
+                } catch (e) { }
+            }
+            async function loadSfxBuffer(key) {
+                if (!HAS_WEB_AUDIO) return null;
+                const url = SFX_URLS[key];
+                if (!url) return null;
+                if (sfxBufferCache.has(key)) return sfxBufferCache.get(key);
+                if (sfxDecodeInFlight.has(key)) return sfxDecodeInFlight.get(key);
+                const ctx = ensureSfxAudioContext();
+                if (!ctx) return null;
+                const promise = fetch(url, { mode: 'cors', cache: 'force-cache' })
+                    .then((res) => res.arrayBuffer())
+                    .then((buf) => new Promise((resolve, reject) => {
+                        try {
+                            ctx.decodeAudioData(buf, resolve, reject);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    }))
+                    .then((decoded) => {
+                        sfxBufferCache.set(key, decoded);
+                        return decoded;
+                    })
+                    .catch(() => null)
+                    .finally(() => sfxDecodeInFlight.delete(key));
+                sfxDecodeInFlight.set(key, promise);
+                return promise;
+            }
+            function playSfxFromBuffer(buffer) {
+                try {
+                    const ctx = ensureSfxAudioContext();
+                    if (!ctx || !buffer || !sfxMasterGain) return false;
+                    if (sfxActiveSources.size >= MAX_SFX_VOICES) {
+                        const oldest = sfxActiveSources.values().next();
+                        if (oldest && oldest.value) {
+                            try { oldest.value.stop(); } catch (e) { }
+                        }
+                    }
+                    const src = ctx.createBufferSource();
+                    src.buffer = buffer;
+                    src.connect(sfxMasterGain);
+                    sfxActiveSources.add(src);
+                    src.onended = () => {
+                        try { sfxActiveSources.delete(src); } catch (e) { }
+                    };
+                    src.start(0);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
             function preloadSfxKeys(keys) {
                 try {
                     (keys || []).forEach((key) => {
+                        if (HAS_WEB_AUDIO) {
+                            loadSfxBuffer(key).catch(() => { });
+                            return;
+                        }
                         const a = getSfx(key);
                         if (!a) return;
                         try { a.preload = 'auto'; } catch (e) { }
@@ -262,6 +354,7 @@ function escapeHtmlAttr(str) {
             function startAudioWarmup() {
                 if (audioWarmupStarted) return;
                 audioWarmupStarted = true;
+                if (HAS_WEB_AUDIO) ensureSfxAudioContext();
                 preloadSfxKeys(SFX_CRITICAL_KEYS);
                 const lazyWarmup = () => preloadSfxKeys(SFX_LAZY_KEYS);
                 try {
@@ -292,6 +385,24 @@ function escapeHtmlAttr(str) {
                 try { if (window.allMuted) return; } catch (e) { }
                 if (!canPlaySfxNow(key)) return;
                 try {
+                    if (HAS_WEB_AUDIO) {
+                        const ctx = ensureSfxAudioContext();
+                        if (ctx && ctx.state === 'suspended' && audioUserInteracted) {
+                            ctx.resume().catch(() => { });
+                        }
+                        syncSfxEngineGain();
+                        const cached = sfxBufferCache.get(key);
+                        if (cached && playSfxFromBuffer(cached)) return;
+                        loadSfxBuffer(key).catch(() => { });
+                        const fallback = getSfx(key);
+                        if (!fallback) return;
+                        fallback.currentTime = 0;
+                        fallback.volume = Number(window.sfxVolume) || fallback.volume || 0.5;
+                        fallback.muted = !!window.allMuted;
+                        const p = fallback.play();
+                        if (p && p.catch) p.catch(() => { });
+                        return;
+                    }
                     const a = getSfx(key);
                     if (!a) return;
                     a.currentTime = 0;
@@ -371,6 +482,9 @@ function escapeHtmlAttr(str) {
                 if (sSlider) {
                     sSlider.value = String(window.sfxVolume || 0.50);
                     if (sVal) sVal.textContent = Math.round(Number(sSlider.value) * 100) + '%';
+                    sSlider.addEventListener('input', function () {
+                        try { syncSfxEngineGain(); } catch (e) { }
+                    }, { passive: true });
                 }
 
                 if (popupMute) {
@@ -1039,6 +1153,13 @@ function escapeHtmlAttr(str) {
                 const wasInteracted = audioUserInteracted;
                 audioUserInteracted = true;
                 if (!wasInteracted) startAudioWarmup();
+                try {
+                    if (HAS_WEB_AUDIO) {
+                        const ctx = ensureSfxAudioContext();
+                        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => { });
+                        syncSfxEngineGain();
+                    }
+                } catch (e) { }
                 if (!wasInteracted && musicEnabled) {
                     try {
                         const hasMusic = !!(musicAudio || window.musicAudio);
@@ -1053,8 +1174,15 @@ function escapeHtmlAttr(str) {
                     if (document.hidden) {
                         musicWasPlayingBeforeHide = !!(ma && !ma.paused);
                         if (musicWasPlayingBeforeHide && ma) ma.pause();
+                        if (sfxAudioCtx && sfxAudioCtx.state === 'running') {
+                            sfxAudioCtx.suspend().catch(() => { });
+                        }
                         return;
                     }
+                    if (sfxAudioCtx && sfxAudioCtx.state === 'suspended' && audioUserInteracted) {
+                        sfxAudioCtx.resume().catch(() => { });
+                    }
+                    syncSfxEngineGain();
                     if (!musicWasPlayingBeforeHide) return;
                     musicWasPlayingBeforeHide = false;
                     if (!musicEnabled || !!window.allMuted || !audioUserInteracted) return;
@@ -1098,6 +1226,14 @@ function escapeHtmlAttr(str) {
                     Object.values(sfxCache).forEach((a) => {
                         try { if (a) a.muted = (!sfxEnabled) || !!window.allMuted; } catch (e) { }
                     });
+                } catch (e) { }
+                try { syncSfxEngineGain(); } catch (e) { }
+                try {
+                    if (sfxAudioCtx && !sfxEnabled && sfxAudioCtx.state === 'running') {
+                        sfxAudioCtx.suspend().catch(() => { });
+                    } else if (sfxAudioCtx && sfxEnabled && audioUserInteracted && sfxAudioCtx.state === 'suspended' && !document.hidden) {
+                        sfxAudioCtx.resume().catch(() => { });
+                    }
                 } catch (e) { }
                 syncAudioSettingsUI();
             }
@@ -2983,7 +3119,16 @@ function escapeHtmlAttr(str) {
             let sfxMuted = false;
             // The mute button lives after the script in the DOM, but DOMContentLoaded guarantees it exists now
             const muteBtn = document.getElementById('mute');
-            if (muteBtn) { muteBtn.addEventListener('click', () => { sfxMuted = !sfxMuted; muteBtn.textContent = sfxMuted ? 'M' : 'M'; Object.values(sfxCache).forEach(a => { try { a.muted = sfxMuted; } catch (e) { } }); if (typeof musicAudio !== 'undefined' && musicAudio) try { musicAudio.muted = sfxMuted; } catch (e) { } }); }
+            if (muteBtn) {
+                muteBtn.addEventListener('click', () => {
+                    sfxMuted = !sfxMuted;
+                    try { window.allMuted = !!sfxMuted; } catch (e) { }
+                    muteBtn.textContent = sfxMuted ? 'M' : 'M';
+                    Object.values(sfxCache).forEach(a => { try { a.muted = sfxMuted; } catch (e) { } });
+                    if (typeof musicAudio !== 'undefined' && musicAudio) try { musicAudio.muted = sfxMuted; } catch (e) { }
+                    try { syncSfxEngineGain(); } catch (e) { }
+                });
+            }
 
             // Practical V1: remove HUD music toggle; audio lives in Settings.
             if (startBtn) {
