@@ -2799,6 +2799,28 @@ function escapeHtmlAttr(str) {
             evaluateAchievements({ emitUnlock: false });
             scheduleAchievementsUIRender();
             const audioBtn = document.getElementById('audioBtn');
+            const openInSafariBtn = document.getElementById('openInSafariBtn');
+            const isStandaloneDisplay = () => {
+                try {
+                    const navStandalone = !!(window.navigator && window.navigator.standalone);
+                    const mmStandalone = !!(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+                    return navStandalone || mmStandalone;
+                } catch (e) {
+                    return false;
+                }
+            };
+            if (openInSafariBtn) {
+                if (isStandaloneDisplay()) openInSafariBtn.classList.add('show');
+                openInSafariBtn.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    try {
+                        const url = String(window.location.href || '');
+                        if (!url) return;
+                        const w = window.open(url, '_blank');
+                        if (!w) window.location.href = url;
+                    } catch (e) { }
+                });
+            }
             const settingsTabBtn = document.getElementById('settingsTabBtn');
             const achievementsTabBtn = document.getElementById('achievementsTabBtn');
             const settingsTabPane = document.getElementById('settingsTabPane');

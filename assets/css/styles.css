@@ -23,6 +23,8 @@
             /* full-page background image, fixed centered - made to work in both narrow and wide configurations */
             background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab.png') center center / cover no-repeat fixed;
             color: #0b3d91;
+            box-sizing: border-box;
+            padding-top: max(8px, env(safe-area-inset-top));
         }
 
         /* Make wrap and board semi-transparent so background shows through
@@ -1662,6 +1664,17 @@
 
             .audio-popup .settings-tab-pane.active {
                 display: block;
+            }
+
+            .audio-popup .standalone-only {
+                display: none;
+                font-size: 9px;
+                padding: 7px 9px;
+                white-space: nowrap;
+            }
+
+            .audio-popup .standalone-only.show {
+                display: inline-block;
             }
 
             .audio-popup .achievements-panel {
