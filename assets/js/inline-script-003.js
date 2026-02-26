@@ -408,6 +408,11 @@ function escapeHtmlAttr(str) {
             let stormChainPops = 0;
             let stormChainResetTimer = null;
             let stormChargeFlashTimer = null;
+            let mobileStormPressTimer = null;
+            let mobileStormHoldActive = false;
+            let mobileStormPointerId = null;
+            let mobileStormCandidateIndex = null;
+            const MOBILE_STORM_HOLD_MS = 120;
             let gameOverVignetteEl = null;
             let gameOverMusicRestoreTimer = null;
             let gameOverPrevMusicVolume = null;
@@ -2168,10 +2173,40 @@ function escapeHtmlAttr(str) {
                 if (!stormArmed) {
                     stormHoverIndex = null;
                     clearStormPreview();
+                    clearMobileStormInteraction(true);
                 } else if (Number.isFinite(stormHoverIndex)) {
                     applyStormPreview(stormHoverIndex);
                 }
                 updateStormUI();
+            }
+
+            function clearMobileStormInteraction(clearPreview = false) {
+                try {
+                    if (mobileStormPressTimer) clearTimeout(mobileStormPressTimer);
+                } catch (e) { }
+                mobileStormPressTimer = null;
+                mobileStormHoldActive = false;
+                mobileStormPointerId = null;
+                mobileStormCandidateIndex = null;
+                if (clearPreview) {
+                    stormHoverIndex = null;
+                    clearStormPreview();
+                }
+            }
+
+            function beginMobileStormInteraction(index, pointerId) {
+                clearMobileStormInteraction(false);
+                mobileStormPointerId = pointerId;
+                mobileStormCandidateIndex = Number(index);
+                mobileStormPressTimer = setTimeout(() => {
+                    mobileStormPressTimer = null;
+                    if (!stormArmed || stormCharges <= 0 || !Number.isFinite(mobileStormCandidateIndex)) return;
+                    mobileStormHoldActive = true;
+                    applyStormPreview(mobileStormCandidateIndex);
+                    try {
+                        if (navigator && typeof navigator.vibrate === 'function') navigator.vibrate(10);
+                    } catch (e) { }
+                }, MOBILE_STORM_HOLD_MS);
             }
 
             function playStormBurst(centerIndex, targets) {
@@ -2621,6 +2656,10 @@ function escapeHtmlAttr(str) {
                     if (!c) return;
                     const i = Number(c.dataset.index);
                     if (Number.isFinite(i)) applySpecialTelegraph(i, true);
+                    if (IS_MOBILE_COARSE && stormArmed && stormCharges > 0) {
+                        beginMobileStormInteraction(i, ev.pointerId);
+                        return;
+                    }
                     if (stormArmed && stormCharges > 0) {
                         if (useNanoStorm(i)) return;
                     }
@@ -2632,12 +2671,41 @@ function escapeHtmlAttr(str) {
                     const i = Number(c.dataset.index);
                     if (!Number.isFinite(i)) return;
                     applySpecialTelegraph(i, false);
-                    if (stormArmed) applyStormPreview(i);
+                    if (stormArmed) {
+                        if (IS_MOBILE_COARSE) {
+                            if (mobileStormPointerId !== null && ev.pointerId === mobileStormPointerId) {
+                                mobileStormCandidateIndex = i;
+                                if (mobileStormHoldActive) applyStormPreview(i);
+                            }
+                        } else {
+                            applyStormPreview(i);
+                        }
+                    }
+                });
+                boardEl.addEventListener('pointerup', (ev) => {
+                    if (!IS_MOBILE_COARSE) return;
+                    if (!stormArmed || stormCharges <= 0) {
+                        clearMobileStormInteraction(true);
+                        return;
+                    }
+                    if (mobileStormPointerId === null || ev.pointerId !== mobileStormPointerId) return;
+                    const c = ev.target.closest('.cell');
+                    const upIndex = c ? Number(c.dataset.index) : mobileStormCandidateIndex;
+                    const targetIndex = Number.isFinite(upIndex) ? upIndex : mobileStormCandidateIndex;
+                    clearMobileStormInteraction(true);
+                    if (Number.isFinite(targetIndex)) {
+                        useNanoStorm(targetIndex);
+                    }
+                });
+                boardEl.addEventListener('pointercancel', () => {
+                    if (!IS_MOBILE_COARSE) return;
+                    clearMobileStormInteraction(true);
                 });
                 boardEl.addEventListener('pointerleave', () => {
                     clearSpecialTelegraph();
                     stormHoverIndex = null;
                     clearStormPreview();
+                    if (IS_MOBILE_COARSE) clearMobileStormInteraction(false);
                 });
             }
             if (stormBtn) {
