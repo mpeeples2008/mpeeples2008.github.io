@@ -3,11 +3,12 @@
 
 <head>
 
-<!-- Simple SfxManager shim inserted to replace complex monkeypatching -->
-<script src="assets/js/inline-script-001.js"></script>
+    <!-- Simple SfxManager shim inserted to replace complex monkeypatching -->
+    <script src="assets/js/inline-script-001.js"></script>
 
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta property="og:image" content="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/social_media.png" />
+    <meta property="og:image"
+        content="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/social_media.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="640" />
     <meta property="og:image:height" content="320" />
@@ -16,49 +17,19 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
     <title>Gone Viral!</title>
 
-    <link rel="preload" href="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PressStart2P-Regular.woff2" as="font" type="font/woff2" crossorigin>
-
-    
-
-    
+    <link rel="preload"
+        href="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PressStart2P-Regular.woff2"
+        as="font" type="font/woff2" crossorigin>
 
 
-    
-
-
-    <!-- AUDIO POPUP CSS INSERTED BY CHATGPT -->
-    
-    <!-- END AUDIO POPUP CSS -->
-    <!-- Assistant: force wrap-anchored layout + correct image sizing -->
-    
-
-
-    <!-- START-MISSION modal CSS -->
-    
-    <!-- END START-MISSION modal CSS -->
-
-
-    
-
-
-    
-
-
-    <!-- Consolidated CSS overrides added by assistant -->
-    
-    <!-- End consolidated CSS overrides -->
-    <!-- Assistant: breathe and hue animations -->
-    <!-- End Assistant breathe/hue -->
     <!-- Assistant: breathe-only animation -->
-    
-
     <script id="assistant-breathe-only-script" src="assets/js/assistant-breathe-only-script.js"></script>
     <!-- End Assistant breathe-only animation -->
 
 
 
 
-<link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
 
 </head>
 
@@ -100,26 +71,31 @@
 
             <div class="control-trio" role="group" aria-label="Controls">
                 <button id="startBtn" class="ctrl small-ctrl" aria-label="S">
-                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/start.png" alt="Start" class="btn-icon">
+                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/start.png"
+                        alt="Start" class="btn-icon">
                 </button>
                 <button id="restart" class="ctrl small-ctrl" aria-label="Restart">
-                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/reset.png" alt="Retart" class="btn-icon">
+                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/reset.png"
+                        alt="Retart" class="btn-icon">
                 </button>
 
-                <button id="audioBtn" class="ctrl small-ctrl" aria-label="Audio Settings" title="Audio Settings" data-modal-open="audioPopup">
-                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/gear.png" alt="Audio" class="btn-icon">
+                <button id="audioBtn" class="ctrl small-ctrl" aria-label="Audio Settings" title="Audio Settings"
+                    data-modal-open="audioPopup">
+                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/gear.png"
+                        alt="Audio" class="btn-icon">
                 </button>
                 <button id="helpBtn" class="ctrl small-ctrl" aria-label="How to Play" title="How to Play">
-                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/question.png" alt="Question" class="btn-icon">
+                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/question.png"
+                        alt="Question" class="btn-icon">
                 </button>
-                <button id="stormBtn" class="ctrl storm-btn" aria-label="Nano Storm" aria-pressed="false" title="Nano Storm"></button>
+                <button id="stormBtn" class="ctrl storm-btn" aria-label="Nano Storm" aria-pressed="false"
+                    title="Nano Storm"></button>
             </div>
 
             <div id="assist-badge" class="assist-badge" aria-live="polite" aria-atomic="true" title="Lab Assistant"
-                 role="button">
+                role="button">
                 <!-- Inline retro monitor SVG: paste into #assist-badge -->
-                <svg class="retro-monitor" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"
-                     focusable="false">
+                <svg class="retro-monitor" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" focusable="false">
                     <defs>
                         <linearGradient id="screenGrad" x1="0" x2="0" y1="0" y2="1">
                             <stop offset="0" stop-color="#0b1320" stop-opacity="0.85" />
@@ -142,13 +118,13 @@
                     <g class="retro-bezel" filter="url(#crt)">
                         <!-- outer case -->
                         <rect x="4" y="4" width="56" height="56" fill="#cfc9b0" stroke="#999684" stroke-width="1.8"
-                              rx="0" ry="0" />
+                            rx="0" ry="0" />
                         <!-- inner edge highlight -->
                         <rect x="7" y="7" width="50" height="50" fill="none" stroke="#e8e3cc" stroke-width="0.8" rx="0"
-                              ry="0" />
+                            ry="0" />
                         <!-- subtle shadow edges -->
                         <rect x="6" y="6" width="52" height="52" fill="none" stroke="rgba(0,0,0,0.25)"
-                              stroke-width="0.8" rx="0" ry="0" />
+                            stroke-width="0.8" rx="0" ry="0" />
 
                         <!-- dark shadow base -->
                         <rect x="4" y="60" width="56" height="2" fill="#7d7865" opacity="0.6" />
@@ -191,31 +167,38 @@
 
                                 <!-- eyebrows -->
                                 <path id="brow-left" d="M14 18 L22 16" stroke="#ffd166" stroke-width="1.4"
-                                      stroke-linecap="round" opacity="0" />
+                                    stroke-linecap="round" opacity="0" />
                                 <path id="brow-right" d="M42 16 L50 18" stroke="#ffd166" stroke-width="1.4"
-                                      stroke-linecap="round" opacity="0" />
+                                    stroke-linecap="round" opacity="0" />
 
                                 <!-- mouth shapes: neutral + talk + smile etc. -->
 
                                 <g id="monitor-mouth" transform="translate(0,6)">
                                     <path class="mouth-shape neutral" d="M22 36c4 0 20 0 20 0" stroke="#ffd166"
-                                          stroke-width="1.6" stroke-linecap="round" fill="none" />
+                                        stroke-width="1.6" stroke-linecap="round" fill="none" />
                                     <polyline class="mouth-shape talk" points="18,35 24,30 30,35 36,30 42,35"
-                                              fill="none" stroke="#ffd166" stroke-width="1.6" stroke-linecap="round"
-                                              stroke-linejoin="round" />
+                                        fill="none" stroke="#ffd166" stroke-width="1.6" stroke-linecap="round"
+                                        stroke-linejoin="round" />
                                     <path class="mouth-shape smile" d="M20 34c6 6 18 6 24 0" stroke="#ffd166"
-                                          stroke-width="1.8" stroke-linecap="round" fill="none" />
-                                    <path class="mouth-shape wink" d="M18 36c3 0 6 -6 12 -6" stroke="#ffd166" stroke-width="1.6" stroke-linecap="round" fill="none" />
-                                    <path class="mouth-shape angry" d="M20 36c6 -6 18 -6 24 0" stroke="#ff6b6b" stroke-width="1.8" stroke-linecap="round" fill="none" />
+                                        stroke-width="1.8" stroke-linecap="round" fill="none" />
+                                    <path class="mouth-shape wink" d="M18 36c3 0 6 -6 12 -6" stroke="#ffd166"
+                                        stroke-width="1.6" stroke-linecap="round" fill="none" />
+                                    <path class="mouth-shape angry" d="M20 36c6 -6 18 -6 24 0" stroke="#ff6b6b"
+                                        stroke-width="1.8" stroke-linecap="round" fill="none" />
 
-                                
-                                    <path class="mouth-shape worried" d="M20 36c6 6 18 -6 24 0" stroke="#ffd166" stroke-width="1.6" stroke-linecap="round" fill="none"/>
 
-                                    <path class="mouth-shape pout" d="M20 36c6 2 18 2 24 0" stroke="#ffd166" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0" />
-                                    <path class="mouth-shape grin" d="M18 34c6 8 18 8 24 0" stroke="#ffd166" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0" />
-                                    <path class="mouth-shape bigsurprised" d="M22 32c4 10 12 10 20 0" stroke="#ffd166" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0" />
-                                    <path class="mouth-shape smirk" d="M18 36c6 0 18 -2 24 -4" stroke="#ffd166" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0" />
-</g>
+                                    <path class="mouth-shape worried" d="M20 36c6 6 18 -6 24 0" stroke="#ffd166"
+                                        stroke-width="1.6" stroke-linecap="round" fill="none" />
+
+                                    <path class="mouth-shape pout" d="M20 36c6 2 18 2 24 0" stroke="#ffd166"
+                                        stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0" />
+                                    <path class="mouth-shape grin" d="M18 34c6 8 18 8 24 0" stroke="#ffd166"
+                                        stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0" />
+                                    <path class="mouth-shape bigsurprised" d="M22 32c4 10 12 10 20 0" stroke="#ffd166"
+                                        stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0" />
+                                    <path class="mouth-shape smirk" d="M18 36c6 0 18 -2 24 -4" stroke="#ffd166"
+                                        stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0" />
+                                </g>
                             </g>
                         </g>
                     </g>
@@ -245,81 +228,6 @@
     <script src="assets/js/inline-script-003.js"></script>
 
 
-
-
-
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     <div class="confetti"
         style="background: rgb(255, 138, 77); left: 987.727px; top: 179.545px; --sx: 0px; --sy: 0px; --tx: 109.48368776928565px; --ty: -9.288933281121935px; opacity: 0; transform: translate(-50%, -50%) scale(1);">
     </div>
@@ -338,59 +246,16 @@
     <div class="confetti"
         style="background: rgb(255, 184, 77); left: 987.727px; top: 179.545px; --sx: 0px; --sy: 0px; --tx: 115.0492635946823px; --ty: -56.178653845242636px; opacity: 0; transform: translate(-50%, -50%) scale(1);">
     </div>
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
     <div class="confetti"
         style="background: rgb(255, 111, 63); left: 1010px; top: 161.25px; --sx: 0px; --sy: 0px; --tx: 43.483811310799766px; --ty: 4.191365416509001px; opacity: 0; transform: translate(-50%, -50%) scale(1);">
     </div>
     <div class="confetti"
         style="background: rgb(255, 184, 77); left: 1010px; top: 161.25px; --sx: 0px; --sy: 0px; --tx: 101.42145338168777px; --ty: -109.88144764334464px; opacity: 0; transform: translate(-50%, -50%) scale(1);">
     </div>
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
     <script src="assets/js/inline-script-004.js"></script>
 
 
@@ -402,8 +267,7 @@
 
 
     <!-- AUDIO SETTINGS POPUP INSERTED BY CHATGPT -->
-    <div id="audioPopup" class="audio-popup" role="dialog" aria-modal="true"
-        style="pointer-events:auto;">
+    <div id="audioPopup" class="audio-popup" role="dialog" aria-modal="true" style="pointer-events:auto;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
             <div style="display:flex; gap:8px; align-items:center;">
                 <div
@@ -429,18 +293,21 @@
             <label for="sfxVol">SFX Volume</label>
             <input id="sfxVol" type="range" min="0" max="1" step="0.01" value="0.50" />
             <div id="sfxVolVal" style="width:40px;text-align:right;font-size:11px;color:#ffe9b0;">50%</div>
-            </div>
+        </div>
         <div class="row">
-<div class="assistant-control" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
-  <div style="flex:1">
-    <div style="font-weight:600;">Assistant UI</div>
-    <div style="font-size:12px; color:var(--muted, #9aa6b2);">Enable assistant animations and voice cues.</div>
-  </div>
-  <div style="flex:0 0 auto; position:relative;">
-  <input type="checkbox" id="assistantToggle" class="assistant-toggle-input" aria-label="Enable assistant" />
-  <span class="assistant-toggle-switch" aria-hidden="true"></span>
-</div>
-</div>
+            <div class="assistant-control"
+                style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                <div style="flex:1">
+                    <div style="font-weight:600;">Assistant UI</div>
+                    <div style="font-size:12px; color:var(--muted, #9aa6b2);">Enable assistant animations and voice
+                        cues.</div>
+                </div>
+                <div style="flex:0 0 auto; position:relative;">
+                    <input type="checkbox" id="assistantToggle" class="assistant-toggle-input"
+                        aria-label="Enable assistant" />
+                    <span class="assistant-toggle-switch" aria-hidden="true"></span>
+                </div>
+            </div>
 
         </div>
 
@@ -472,8 +339,7 @@
     <!-- Mobile Safari audio slider compatibility patch -->
     <script src="assets/js/inline-script-009.js"></script>
     <!-- HOW TO PLAY POPUP -->
-    <div id="helpPopup" class="audio-popup" role="dialog" aria-modal="true"
-        style="pointer-events:auto;">
+    <div id="helpPopup" class="audio-popup" role="dialog" aria-modal="true" style="pointer-events:auto;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px;">
             <div style="display:flex; gap:8px; align-items:center;">
                 <div
@@ -493,84 +359,99 @@
         <div class="howto-carousel">
             <button id="helpPrev" class="btn howto-nav" type="button" aria-label="Previous section">◀</button>
             <div class="howto-v2" id="howtoSlides">
-            <section class="howto-card active">
-                <h3>Core Loop</h3>
-                <p>Each tap spends 1 nano-bot. Grow viruses until they pop, trigger chain reactions, and clear the board to reach the next level.</p>
-                <div class="howto-step-row">
-                    <div class="howto-step">
-                        <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Test_pixel.png" alt="Small virus">
-                        <span>Tap to Grow</span>
-                    </div>
-                    <div class="howto-arrow">→</div>
-                    <div class="howto-step">
-                        <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png" alt="Larger virus">
-                        <span>Reach Critical</span>
-                    </div>
-                    <div class="howto-arrow">→</div>
-                    <div class="howto-step">
-                        <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png" alt="Popped virus">
-                        <span>Pop + Chain</span>
-                    </div>
-                </div>
-            </section>
-
-            <section class="howto-card">
-                <h3>Virus Sizes</h3>
-                <p>Viruses increase one size per tap. At max size, the next growth causes a pop.</p>
-                <div class="howto-size-grid">
-                    <div><img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Test_pixel.png" alt="Size 1"><span>S1</span></div>
-                    <div><img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus2.png" alt="Size 2"><span>S2</span></div>
-                    <div><img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png" alt="Size 3"><span>S3</span></div>
-                    <div><img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png" alt="Size 4"><span>S4</span></div>
-                </div>
-            </section>
-
-            <section class="howto-card">
-                <h3>Special Viruses</h3>
-                <p><strong>Armored:</strong> First growth hit breaks the shell. The next growth behaves normally.</p>
-                <div class="howto-armored-visual" aria-hidden="true">
-                    <div class="howto-armored-preview">
-                        <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png" alt="Armored virus example">
-                    </div>
-                </div>
-                <div class="howto-inline-note">Tip: clear armored viruses early when they block chains.</div>
-            </section>
-
-            <section class="howto-card">
-                <h3>Nano Storm</h3>
-                <p>Build a long chain (20+) to charge Nano Storm. Tap the battery button, then tap a target virus.</p>
-                <div class="howto-storm-meter-row" aria-hidden="true">
-                    <div class="howto-storm-meter-card">
-                        <div class="howto-storm-meter howto-storm-meter-charging">
-                            <span style="--fill:0.6;"></span>
+                <section class="howto-card active">
+                    <h3>Core Loop</h3>
+                    <p>Each tap spends 1 nano-bot. Grow viruses until they pop, trigger chain reactions, and clear the
+                        board to reach the next level.</p>
+                    <div class="howto-step-row">
+                        <div class="howto-step">
+                            <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Test_pixel.png"
+                                alt="Small virus">
+                            <span>Tap to Grow</span>
                         </div>
-                        <div class="howto-storm-meter-label">Charging</div>
-                    </div>
-                    <div class="howto-storm-meter-card">
-                        <div class="howto-storm-meter howto-storm-meter-full">
-                            <span style="--fill:1;"></span>
+                        <div class="howto-arrow">→</div>
+                        <div class="howto-step">
+                            <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png"
+                                alt="Larger virus">
+                            <span>Reach Critical</span>
                         </div>
-                        <div class="howto-storm-meter-label">Full / Ready</div>
+                        <div class="howto-arrow">→</div>
+                        <div class="howto-step">
+                            <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png"
+                                alt="Popped virus">
+                            <span>Pop + Chain</span>
+                        </div>
                     </div>
-                </div>
-                <p class="howto-caption">Refill rule: complete one chain of 20+ pops in a single cascade.</p>
-                <div class="howto-storm-grid" aria-hidden="true">
-                    <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
-                    <span class="n">◍</span><span class="c">◎</span><span class="n">◍</span>
-                    <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
-                </div>
-                <p class="howto-caption">Center gets 2 hits. Orthogonal + diagonal neighbors get 1 hit.</p>
-            </section>
+                </section>
 
-            <section class="howto-card">
-                <h3>Scoring and Survival</h3>
-                <ul>
-                    <li>Longer chains score more and improve recovery.</li>
-                    <li>Clear every virus to complete a level and gain 1 click.</li>
-                    <li>If clicks reach 0, it is game over.</li>
-                    <li>Use Nano Storm on crowded clusters or armored pressure zones.</li>
-                </ul>
-            </section>
+                <section class="howto-card">
+                    <h3>Virus Sizes</h3>
+                    <p>Viruses increase one size per tap. At max size, the next growth causes a pop.</p>
+                    <div class="howto-size-grid">
+                        <div><img
+                                src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Test_pixel.png"
+                                alt="Size 1"><span>S1</span></div>
+                        <div><img
+                                src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus2.png"
+                                alt="Size 2"><span>S2</span></div>
+                        <div><img
+                                src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png"
+                                alt="Size 3"><span>S3</span></div>
+                        <div><img
+                                src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png"
+                                alt="Size 4"><span>S4</span></div>
+                    </div>
+                </section>
+
+                <section class="howto-card">
+                    <h3>Special Viruses</h3>
+                    <p><strong>Armored:</strong> First growth hit breaks the shell. The next growth behaves normally.
+                    </p>
+                    <div class="howto-armored-visual" aria-hidden="true">
+                        <div class="howto-armored-preview">
+                            <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png"
+                                alt="Armored virus example">
+                        </div>
+                    </div>
+                    <div class="howto-inline-note">Tip: clear armored viruses early when they block chains.</div>
+                </section>
+
+                <section class="howto-card">
+                    <h3>Nano Storm</h3>
+                    <p>Build a long chain (20+) to charge Nano Storm. Tap the battery button, then tap a target virus.
+                    </p>
+                    <div class="howto-storm-meter-row" aria-hidden="true">
+                        <div class="howto-storm-meter-card">
+                            <div class="howto-storm-meter howto-storm-meter-charging">
+                                <span style="--fill:0.6;"></span>
+                            </div>
+                            <div class="howto-storm-meter-label">Charging</div>
+                        </div>
+                        <div class="howto-storm-meter-card">
+                            <div class="howto-storm-meter howto-storm-meter-full">
+                                <span style="--fill:1;"></span>
+                            </div>
+                            <div class="howto-storm-meter-label">Full / Ready</div>
+                        </div>
+                    </div>
+                    <p class="howto-caption">Refill rule: complete one chain of 20+ pops in a single cascade.</p>
+                    <div class="howto-storm-grid" aria-hidden="true">
+                        <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
+                        <span class="n">◍</span><span class="c">◎</span><span class="n">◍</span>
+                        <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
+                    </div>
+                    <p class="howto-caption">Center gets 2 hits. Orthogonal + diagonal neighbors get 1 hit.</p>
+                </section>
+
+                <section class="howto-card">
+                    <h3>Scoring and Survival</h3>
+                    <ul>
+                        <li>Longer chains score more and improve recovery.</li>
+                        <li>Clear every virus to complete a level and gain 1 click.</li>
+                        <li>If clicks reach 0, it is game over.</li>
+                        <li>Use Nano Storm on crowded clusters or armored pressure zones.</li>
+                    </ul>
+                </section>
             </div>
             <button id="helpNext" class="btn howto-nav" type="button" aria-label="Next section">▶</button>
         </div>
@@ -587,7 +468,7 @@
         <div class="ai-intro-content">
             <div class="ai-intro-logo" style="margin-bottom:10px;">
                 <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/logo_sm.png"
-                     alt="Gone Viral Logo" style="width:400px;max-width:70vw;height:auto;display:block;margin:0 auto;">
+                    alt="Gone Viral Logo" style="width:400px;max-width:70vw;height:auto;display:block;margin:0 auto;">
             </div>
             <div class="ai-face-slot">
                 <!-- reuse the same assistant badge visual -->
@@ -601,13 +482,13 @@
                 Initializing containment protocols…
             </div>
             <button id="aiStartBtn" class="ai-start-btn">START</button>
-            </div>
         </div>
+    </div>
 
 
 
     <!-- BEGIN: Sarcastic Assistant (added by patch) -->
-    
+
 
     <!-- assistant DOM -->
     <div id="assist-badge" class="assist-badge" aria-live="polite" aria-atomic="true" title="Lab Assistant"
@@ -650,11 +531,13 @@
     <div id="startModal" role="dialog" aria-modal="true" aria-label="Mission briefing">
         <div class="inner">
             <div class="modal-text">
-    PATHODYNE INDUSTRIES SERVICE TERMINAL <br>
-    CONTAINMENT BREACH DETECTED <br>
-    Welcome, human operator. I am your Programmable Intelligent eXperimentation and Eradication Liaison! But you can just call me PIXEL. <br>
-    My autonomous pathogen containment system has been compromised. I need your help to manually activate the nano-bot defenses. Eliminate pathogens before they spread, one click at a time. <br>
-    Please remain calm. The mortality rate for human operators is... statistically acceptable.
+                PATHODYNE INDUSTRIES SERVICE TERMINAL <br>
+                CONTAINMENT BREACH DETECTED <br>
+                Welcome, human operator. I am your Programmable Intelligent eXperimentation and Eradication Liaison! But
+                you can just call me PIXEL. <br>
+                My autonomous pathogen containment system has been compromised. I need your help to manually activate
+                the nano-bot defenses. Eliminate pathogens before they spread, one click at a time. <br>
+                Please remain calm. The mortality rate for human operators is... statistically acceptable.
             </div>
 
             <!-- image anchored to bottom-right of modal -->
@@ -676,82 +559,63 @@
     <!-- END START-MISSION modal JS -->
 
 
-<!-- START-MISSION modal jitter + SFX behavior -->
-<script src="assets/js/inline-script-022.js"></script>
-<!-- END START-MISSION modal jitter + SFX behavior -->
+    <!-- START-MISSION modal jitter + SFX behavior -->
+    <script src="assets/js/inline-script-022.js"></script>
+    <!-- END START-MISSION modal jitter + SFX behavior -->
 
 
-<script src="assets/js/inline-script-023.js"></script>
+    <script src="assets/js/inline-script-023.js"></script>
 
 
-<script src="assets/js/inline-script-024.js"></script>
+    <script src="assets/js/inline-script-024.js"></script>
 
 
-<script src="assets/js/inline-script-025.js"></script>
+    <script src="assets/js/inline-script-025.js"></script>
 
 
-<script src="assets/js/inline-script-026.js"></script>
+    <script src="assets/js/inline-script-026.js"></script>
 
-<!-- Assistant patch: WebAudio SFXManager to improve mobile SFX reliability & avoid overlapping/stuttering -->
-<script src="assets/js/inline-script-027.js"></script>
-
-
-<!-- Assistant patch: Preload sfxCache URLs into SfxManager on DOMContentLoaded -->
-<script src="assets/js/inline-script-028.js"></script>
+    <!-- Assistant patch: WebAudio SFXManager to improve mobile SFX reliability & avoid overlapping/stuttering -->
+    <script src="assets/js/inline-script-027.js"></script>
 
 
-<!-- Assistant patch: Robust sfxCache watcher + retry for preload (handles late population) -->
-<script src="assets/js/inline-script-029.js"></script>
+    <!-- Assistant patch: Preload sfxCache URLs into SfxManager on DOMContentLoaded -->
+    <script src="assets/js/inline-script-028.js"></script>
 
 
-<!-- Assistant: explicit preload list inserted -->
-<script src="assets/js/inline-script-030.js"></script>
-<!-- End explicit preload -->
+    <!-- Assistant patch: Robust sfxCache watcher + retry for preload (handles late population) -->
+    <script src="assets/js/inline-script-029.js"></script>
 
 
-<script src="assets/js/inline-script-031.js"></script>
+    <!-- Assistant: explicit preload list inserted -->
+    <script src="assets/js/inline-script-030.js"></script>
+    <!-- End explicit preload -->
 
 
-<!-- Modal inert management for accessibility -->
-<script src="assets/js/inline-script-032.js"></script>
+    <script src="assets/js/inline-script-031.js"></script>
+
+    <!-- Modal inert management for accessibility -->
+    <script src="assets/js/inline-script-032.js"></script>
+
+    <script src="assets/js/inline-script-033.js"></script>
+
+    <!-- Modal Manager injected -->
+    <script src="assets/js/inline-script-034.js"></script>
 
 
+    <!-- Assistant Modular Wrapper inserted (fallback always) -->
+    <script src="assets/js/inline-script-035.js"></script>
 
 
+    <!-- Assistant fallback shim inserted -->
+    <script src="assets/js/inline-script-036.js"></script>
+    <!-- End Assistant fallback shim -->
 
 
-
-
-<script src="assets/js/inline-script-033.js"></script>
-
-<!-- Modal Manager injected -->
-<script src="assets/js/inline-script-034.js"></script>
-
-
-
-
-
-
-<!-- Assistant Modular Wrapper inserted (fallback always) -->
-<script src="assets/js/inline-script-035.js"></script>
-
-
-
-
-
-
-<!-- Assistant fallback shim inserted -->
-<script src="assets/js/inline-script-036.js"></script>
-<!-- End Assistant fallback shim -->
-
-
-<!-- Assistant debug overlay shim -->
-<script src="assets/js/inline-script-037.js"></script>
-<!-- End Assistant debug overlay shim -->
+    <!-- Assistant debug overlay shim -->
+    <script src="assets/js/inline-script-037.js"></script>
+    <!-- End Assistant debug overlay shim -->
 
 </body>
 
 </html>
-
-
-
