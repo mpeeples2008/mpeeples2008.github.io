@@ -388,6 +388,10 @@
                 padding: 8px;
                 font-size: 10px
             }
+
+            .combo-meter {
+                min-width: 100%;
+            }
         }
 
         /* glowing burst at pop */
@@ -842,6 +846,85 @@
             font-size: 10px;
             color: #ffd166;
             text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55)
+        }
+
+        .combo-meter {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: flex-start !important;
+            gap: 4px !important;
+            min-width: 210px;
+            padding: 8px 10px !important;
+        }
+
+        .combo-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .combo-label {
+            font-size: 9px;
+            letter-spacing: 0.5px;
+            opacity: 0.92;
+        }
+
+        .combo-count {
+            font-size: 10px;
+            color: #ffe9b0;
+            min-width: 32px;
+            text-align: right;
+        }
+
+        .combo-track {
+            position: relative;
+            height: 12px;
+            border: 2px solid #081426;
+            border-radius: 2px;
+            background: linear-gradient(180deg, #2b2b2b, #1f1f1f);
+            overflow: hidden;
+        }
+
+        .combo-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(180deg, #ffd166, #ffb84d);
+            transition: width 180ms steps(6, end), filter 180ms linear, background 180ms linear;
+            box-shadow: inset -5px -5px 0 rgba(0, 0, 0, 0.16);
+        }
+
+        .combo-meter.tier-great .combo-fill {
+            background: linear-gradient(180deg, #ffd166, #ffb84d);
+        }
+
+        .combo-meter.tier-amazing .combo-fill {
+            background: linear-gradient(180deg, #ffe07a, #ffd166);
+        }
+
+        .combo-meter.tier-stupendous .combo-fill {
+            background: linear-gradient(180deg, #fff2a6, #ffe07a);
+        }
+
+        .combo-meter.tier-incredible .combo-fill {
+            background: linear-gradient(180deg, #fff7c9, #ffe07a);
+            filter: saturate(1.15) brightness(1.05);
+        }
+
+        .combo-meter.award-pop {
+            animation: comboMeterPop 260ms ease-out;
+        }
+
+        @keyframes comboMeterPop {
+            0% {
+                transform: scale(1);
+            }
+            45% {
+                transform: scale(1.03);
+            }
+            100% {
+                transform: scale(1);
+            }
         }
 
         .seg.pop {

@@ -299,6 +299,11 @@ function escapeHtmlAttr(str) {
             const clicksEl = document.getElementById('clicks');
             const screensEl = document.getElementById('screens');
             const scoreEl = document.getElementById('score');
+            const comboMeterEl = document.getElementById('comboMeter');
+            const comboTrackEl = document.getElementById('comboTrack');
+            const comboFillEl = document.getElementById('comboFill');
+            const comboCountEl = document.getElementById('comboCount');
+            let comboAwardTimer = null;
 
 
             // High-score persistence (localStorage)
@@ -583,6 +588,7 @@ function escapeHtmlAttr(str) {
             function randomizeBoard(preserveClicks = false) {
                 state.fill(null); if (!preserveClicks) clicksLeft = 10; const total = ROWS * COLS;
                 const target = Math.round(total * Math.min(0.95, BASE_DENSITY + screensPassed * DENSITY_GROWTH)); const idx = Array.from({ length: total }, (_, i) => i); shuffle(idx); for (let k = 0; k < target; k++) { state[idx[k]] = sampleSizeRandom(); } scheduleRender(); updateHUD();
+                try { resetComboMeter(); } catch (e) { }
             }
 
             function findNextBubble(index, dr, dc) { let r = Math.floor(index / COLS), c = index % COLS; while (true) { r += dr; c += dc; if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null; const i = r * COLS + c; if (state[i] !== null) return i; } }
@@ -880,6 +886,15 @@ function escapeHtmlAttr(str) {
                     if (!tracker.poppedSet.has(index)) {
                         tracker.poppedSet.add(index);
                         tracker.pops = (tracker.pops || 0) + 1;
+                        if (!tracker.comboMilestones) tracker.comboMilestones = new Set();
+                        const unlocked = COMBO_RULES_ASC.filter(r => tracker.pops >= r.min && !tracker.comboMilestones.has(r.min));
+                        let latestMilestone = null;
+                        if (unlocked.length) {
+                            unlocked.forEach((r) => tracker.comboMilestones.add(r.min));
+                            latestMilestone = unlocked[unlocked.length - 1];
+                        }
+                        if (latestMilestone) showComboMilestone(latestMilestone, tracker.pops);
+                        else updateComboMeter(tracker.pops);
 
                         // Only award an extra click on every *odd* pop after the second one (3rd, 5th, 7th.)
                         if (tracker.pops > 2 && (tracker.pops % 2) === 1) {
@@ -917,6 +932,65 @@ function escapeHtmlAttr(str) {
                 { min: 14, title: 'AMAZING', icon: 'spark', scoreBonus: 70, extraClicks: 2, className: 'amazing' },
                 { min: 10, title: 'GREAT', icon: 'pixel-star', scoreBonus: 30, extraClicks: 1, className: 'great' },
             ];
+            const COMBO_RULES_ASC = BADGE_RULES.slice().sort((a, b) => a.min - b.min);
+
+            function getComboMaxTarget() {
+                return COMBO_RULES_ASC.length ? COMBO_RULES_ASC[COMBO_RULES_ASC.length - 1].min : 1;
+            }
+
+            function getComboHighestRule(popCount) {
+                let best = null;
+                for (let i = 0; i < COMBO_RULES_ASC.length; i++) {
+                    if (popCount >= COMBO_RULES_ASC[i].min) best = COMBO_RULES_ASC[i];
+                }
+                return best;
+            }
+
+            function getComboNextRule(popCount) {
+                for (let i = 0; i < COMBO_RULES_ASC.length; i++) {
+                    if (popCount < COMBO_RULES_ASC[i].min) return COMBO_RULES_ASC[i];
+                }
+                return null;
+            }
+
+            function updateComboMeter(popCount) {
+                if (!comboMeterEl || !comboFillEl || !comboCountEl) return;
+                const count = Math.max(0, Number(popCount) || 0);
+                const maxTarget = getComboMaxTarget();
+                const ratio = Math.max(0, Math.min(1, count / maxTarget));
+                comboFillEl.style.width = Math.round(ratio * 100) + '%';
+                comboCountEl.textContent = 'x' + count;
+                comboMeterEl.classList.toggle('active', count > 0);
+                comboMeterEl.classList.remove('tier-great', 'tier-amazing', 'tier-stupendous', 'tier-incredible');
+                const highest = getComboHighestRule(count);
+                if (highest) comboMeterEl.classList.add('tier-' + highest.className);
+                if (comboTrackEl) {
+                    comboTrackEl.setAttribute('aria-valuemax', String(maxTarget));
+                    comboTrackEl.setAttribute('aria-valuenow', String(Math.min(count, maxTarget)));
+                }
+            }
+
+            function showComboMilestone(rule, popCount) {
+                if (!comboMeterEl) return;
+                updateComboMeter(popCount);
+                try { comboMeterEl.setAttribute('title', rule.title + ' unlocked'); } catch (e) { }
+                comboMeterEl.classList.remove('award-pop');
+                void comboMeterEl.offsetWidth;
+                comboMeterEl.classList.add('award-pop');
+                try { if (comboAwardTimer) clearTimeout(comboAwardTimer); } catch (e) { }
+                comboAwardTimer = setTimeout(() => {
+                    comboAwardTimer = null;
+                    comboMeterEl.classList.remove('award-pop');
+                    updateComboMeter(popCount);
+                }, 900);
+            }
+
+            function resetComboMeter() {
+                try { if (comboAwardTimer) clearTimeout(comboAwardTimer); } catch (e) { }
+                comboAwardTimer = null;
+                if (comboMeterEl) comboMeterEl.classList.remove('award-pop');
+                updateComboMeter(0);
+            }
 
             function particlesActive() { try { if (PARTICLE_POOL.some(p => p && p._inUse)) return true; if (document.querySelectorAll && document.querySelectorAll('.particle.animate').length > 0) return true; } catch (e) { } return false; }
 
@@ -1036,11 +1110,13 @@ function escapeHtmlAttr(str) {
                         pops: 0,
                         positions: [],
                         finalized: false,
+                        comboMilestones: new Set(),
                         // set of indices already popped during this chain (prevents double counting)
                         poppedSet: new Set(),
                         // (optional) set used by emitters to check whether a target was already hit
                         hitSet: new Set()
                     };
+                    resetComboMeter();
 
 
                     // show badge after short delay (existing behavior)
@@ -1057,6 +1133,7 @@ function escapeHtmlAttr(str) {
                     if (isUser) {
                         state[index] = 0;
                         scheduleRender();
+                        resetComboMeter();
                     }
                     // unlock since nothing actually happened
                     inputLocked = false;
@@ -1076,6 +1153,7 @@ function escapeHtmlAttr(str) {
 
                 if (state[index] <= MAX_SIZE) {
                     scheduleRender();
+                    if (isUser && tracker && (tracker.pops || 0) === 0) resetComboMeter();
                     inputLocked = false;
                     // same immediate check as above
                     requestAnimationFrame(() => {
