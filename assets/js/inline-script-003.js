@@ -408,6 +408,9 @@ function escapeHtmlAttr(str) {
             let stormChainPops = 0;
             let stormChainResetTimer = null;
             let stormChargeFlashTimer = null;
+            let gameOverVignetteEl = null;
+            let gameOverMusicRestoreTimer = null;
+            let gameOverPrevMusicVolume = null;
             const ACHIEVEMENT_STORAGE_KEY = 'goneViral_achievements_v1';
             const ACHIEVEMENT_SCHEMA_VERSION = 1;
             const ACHIEVEMENT_DEFS = [
@@ -810,9 +813,89 @@ function escapeHtmlAttr(str) {
                 try { updateStormUI(); } catch (e) { }
             }
 
+            function getActiveMusicAudio() {
+                try {
+                    if (typeof musicAudio !== 'undefined' && musicAudio) return musicAudio;
+                    if (window.musicAudio) return window.musicAudio;
+                } catch (e) { }
+                return null;
+            }
+
+            function ensureGameOverVignette() {
+                try {
+                    let el = document.getElementById('game-over-vignette');
+                    if (!el) {
+                        el = document.createElement('div');
+                        el.id = 'game-over-vignette';
+                        el.className = 'game-over-vignette';
+                        document.body.appendChild(el);
+                    }
+                    gameOverVignetteEl = el;
+                    return el;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function duckMusicForGameOver(durationMs = 1700, duckRatio = 0.28) {
+                const ma = getActiveMusicAudio();
+                if (!ma) return;
+                try {
+                    const currentVol = Math.max(0, Number(ma.volume) || 0);
+                    if (gameOverPrevMusicVolume == null) gameOverPrevMusicVolume = currentVol;
+                    const base = Math.max(0.02, Number(gameOverPrevMusicVolume) || currentVol);
+                    ma.volume = Math.max(0.02, Math.min(1, base * Math.max(0.05, Math.min(1, Number(duckRatio) || 0.28))));
+                } catch (e) { }
+                try { if (gameOverMusicRestoreTimer) clearTimeout(gameOverMusicRestoreTimer); } catch (e) { }
+                gameOverMusicRestoreTimer = setTimeout(() => {
+                    gameOverMusicRestoreTimer = null;
+                    restoreMusicFromGameOverDuck(false);
+                }, Math.max(300, Number(durationMs) || 1700));
+            }
+
+            function restoreMusicFromGameOverDuck(clearStored = false) {
+                try { if (gameOverMusicRestoreTimer) clearTimeout(gameOverMusicRestoreTimer); } catch (e) { }
+                gameOverMusicRestoreTimer = null;
+                const ma = getActiveMusicAudio();
+                if (ma && gameOverPrevMusicVolume != null) {
+                    try { ma.volume = Math.max(0, Math.min(1, Number(gameOverPrevMusicVolume) || ma.volume || 0.2)); } catch (e) { }
+                }
+                if (clearStored) gameOverPrevMusicVolume = null;
+            }
+
+            function triggerGameOverFeedback() {
+                try { document.body.classList.add('game-over-fx'); } catch (e) { }
+                const v = ensureGameOverVignette();
+                if (v) {
+                    try {
+                        v.classList.remove('show');
+                        void v.offsetWidth;
+                        v.classList.add('show');
+                    } catch (e) { }
+                }
+                duckMusicForGameOver();
+            }
+
+            function clearGameOverFeedback() {
+                try { document.body.classList.remove('game-over-fx'); } catch (e) { }
+                try {
+                    const v = gameOverVignetteEl || document.getElementById('game-over-vignette');
+                    if (v) {
+                        v.classList.remove('show');
+                        setTimeout(() => {
+                            try {
+                                if (!document.body.classList.contains('game-over-fx') && v.parentNode) v.parentNode.removeChild(v);
+                            } catch (e) { }
+                        }, 280);
+                    }
+                } catch (e) { }
+                restoreMusicFromGameOverDuck(true);
+            }
+
             // Unified reset used by the Game Over persistent popup and restart wiring
             function performGameReset() {
                 try {
+                    clearGameOverFeedback();
                     screensPassed = 0;
                     totalScore = 0;
                     randomizeBoard(false);
@@ -835,6 +918,7 @@ function escapeHtmlAttr(str) {
                 const persistent = !!opts.persistent;
 
                 try {
+                    triggerGameOverFeedback();
                     // create element
                     const el = document.createElement('div');
                     el.className = 'game-over-popup';
@@ -917,6 +1001,7 @@ function escapeHtmlAttr(str) {
                             el.classList.remove('show');
                             el.classList.add('hide');
                             el.addEventListener('animationend', () => el.remove(), { once: true });
+                            clearGameOverFeedback();
                         } catch (e) { }
                     }, duration);
                 } catch (e) {
