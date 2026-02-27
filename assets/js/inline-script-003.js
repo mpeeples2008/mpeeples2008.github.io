@@ -172,8 +172,9 @@ function escapeHtmlAttr(str) {
             try { highScoreEl = document.getElementById('highScoreValue'); if (highScoreEl) highScoreEl.textContent = String(highScore); } catch (e) { }
             // Full game script preserved from original with badge/confetti and 8-bit icons added
             const ROWS = 6, COLS = 6, MAX_SIZE = 3, MAX_CLICKS = 20;
-            const FEATURE_FLAGS = window.GameFeatureFlags || { rotatingBlocker: true };
+            const FEATURE_FLAGS = window.GameFeatureFlags || { rotatingBlocker: true, miniBoss: true };
             window.GameFeatureFlags = FEATURE_FLAGS;
+            if (typeof FEATURE_FLAGS.miniBoss === 'undefined') FEATURE_FLAGS.miniBoss = true;
 
             // ---------- Render scheduling (prevents redundant reflows) ----------
             const IS_MOBILE_COARSE = !!((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
@@ -197,6 +198,7 @@ function escapeHtmlAttr(str) {
                 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png',
                 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png'
             ];
+            const MINIBOSS_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss.png';
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
             const SFX_URLS = {
                 pop: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/pop2.mp3',
@@ -433,6 +435,7 @@ function escapeHtmlAttr(str) {
                 }
                 if (PETRI_URL) images.push(PETRI_URL);
                 if (typeof PARTICLE_SPRITE !== 'undefined' && PARTICLE_SPRITE) images.push(PARTICLE_SPRITE);
+                if (MINIBOSS_SPRITE_URL && level >= 5) images.push(MINIBOSS_SPRITE_URL);
                 if (level <= 4) {
                     images.push(SPRITE_URLS[3], SPRITE_URLS[2]);
                 } else if (level <= 9) {
@@ -669,6 +672,18 @@ function escapeHtmlAttr(str) {
                         onBeforeGrow: specialHookArmoredBeforeGrow
                     }
                 },
+                boss: {
+                    id: 'boss',
+                    label: 'Mutant Core',
+                    badge: 'B',
+                    className: 'special-boss',
+                    enabled: false,
+                    unlockLevel: 999,
+                    spawnWeight: 0,
+                    hooks: {
+                        onBeforeGrow: specialHookBossBeforeGrow
+                    }
+                },
                 splitter: {
                     id: 'splitter',
                     label: 'Splitter',
@@ -721,6 +736,11 @@ function escapeHtmlAttr(str) {
                     }
                     return FEATURE_FLAGS.rotatingBlocker;
                 };
+                window.setMiniBossEnabled = function (enabled) {
+                    FEATURE_FLAGS.miniBoss = !!enabled;
+                    try { randomizeBoard(false); } catch (e) { }
+                    return FEATURE_FLAGS.miniBoss;
+                };
                 window.setLevel = function (levelNum) {
                     const targetLevel = Math.max(1, Math.floor(Number(levelNum) || 1));
                     screensPassed = targetLevel - 1;
@@ -735,7 +755,7 @@ function escapeHtmlAttr(str) {
                     try { inputLocked = false; } catch (e) { }
                     try { randomizeBoard(false); } catch (e) { }
                     try { syncRotatingBlockerUI(); } catch (e) { }
-                    return { level: targetLevel, blockerActive: isRotatingBlockerActive(targetLevel) };
+                    return { level: targetLevel, blockerActive: isRotatingBlockerActive(targetLevel), miniBossLevel: isMiniBossLevel(targetLevel) };
                 };
                 window.getLevel = function () {
                     return getCurrentLevelNumber();
@@ -756,6 +776,8 @@ function escapeHtmlAttr(str) {
             let comboInsurance = 0;
             const COMBO_INSURANCE_CAP = 1;
             const COMBO_INSURANCE_CHAIN_START = 15;
+            const MINI_BOSS_CLICK_BONUS = 6;
+            let miniBossState = { active: false, index: -1, hp: 0, maxHp: 0 };
             let mobileStormPressTimer = null;
             let mobileStormHoldActive = false;
             let mobileStormPointerId = null;
@@ -2243,6 +2265,96 @@ function escapeHtmlAttr(str) {
                 return Math.max(0, maxDefault - 1);
             }
 
+            function isMiniBossLevel(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Number(levelNum) || 1);
+                return !!(FEATURE_FLAGS && FEATURE_FLAGS.miniBoss !== false && lvl >= 5 && (lvl % 5) === 0);
+            }
+
+            function getMiniBossHpForLevel(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Number(levelNum) || 1);
+                const tier = Math.max(1, Math.floor(lvl / 5));
+                return 5 + tier;
+            }
+
+            function setMiniBossStateFromMeta(index, meta) {
+                const hp = Math.max(0, Number(meta && meta.hp) || 0);
+                const maxHp = Math.max(1, Number(meta && meta.maxHp) || hp || 1);
+                miniBossState = { active: hp > 0, index: Number(index), hp, maxHp };
+            }
+
+            function clearMiniBossState() {
+                miniBossState = { active: false, index: -1, hp: 0, maxHp: 0 };
+            }
+
+            function spawnBossArmorPulse(count = 2) {
+                const empty = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (state[i] === null) empty.push(i);
+                }
+                shuffle(empty);
+                const n = Math.max(0, Math.min(empty.length, Math.floor(Number(count) || 0)));
+                for (let k = 0; k < n; k++) {
+                    const idx = empty[k];
+                    state[idx] = 3;
+                    setSpecialForCell(idx, 'armored');
+                }
+                if (n > 0) scheduleRender();
+                return n;
+            }
+
+            function maybeTriggerBossBreakpoint(meta) {
+                if (!meta || !meta.maxHp) return;
+                if (!meta.breaks) meta.breaks = { b75: false, b50: false, b25: false };
+                const ratio = Math.max(0, Math.min(1, (Number(meta.hp) || 0) / Math.max(1, Number(meta.maxHp) || 1)));
+                if (!meta.breaks.b75 && ratio <= 0.75) { meta.breaks.b75 = true; spawnBossArmorPulse(1); }
+                if (!meta.breaks.b50 && ratio <= 0.50) { meta.breaks.b50 = true; spawnBossArmorPulse(2); }
+                if (!meta.breaks.b25 && ratio <= 0.25) { meta.breaks.b25 = true; spawnBossArmorPulse(2); }
+            }
+
+            function specialHookBossBeforeGrow(ctx) {
+                if (!ctx || !Number.isFinite(ctx.index)) return null;
+                const idx = Number(ctx.index);
+                const meta = ensureSpecialMeta(idx) || {};
+                if (!meta.isBoss) return null;
+                const hpNow = Math.max(0, Number(meta.hp) || Number(meta.maxHp) || 1);
+                meta.hp = Math.max(0, hpNow - 1);
+                if (meta.hp <= 0) {
+                    try { popAt(idx, ctx.tracker); } catch (e) { }
+                    if (Array.isArray(ctx.state)) ctx.state[idx] = null;
+                    clearSpecialForCell(idx);
+                    clearMiniBossState();
+                    clicksLeft = Math.min(MAX_CLICKS, clicksLeft + MINI_BOSS_CLICK_BONUS);
+                    updateHUD();
+                    try { playSfx('win'); } catch (e) { }
+                } else {
+                    setMiniBossStateFromMeta(idx, meta);
+                    maybeTriggerBossBreakpoint(meta);
+                    try { playSfx('fill'); } catch (e) { }
+                }
+                scheduleRender();
+                return { cancelGrowth: true };
+            }
+
+            function placeMiniBossForLevel(levelNum, preferredEmptyList = null) {
+                if (!isMiniBossLevel(levelNum)) {
+                    clearMiniBossState();
+                    return false;
+                }
+                const empties = Array.isArray(preferredEmptyList) ? preferredEmptyList.filter((i) => state[i] === null) : [];
+                let bossIndex = -1;
+                if (empties.length) bossIndex = empties[Math.floor(Math.random() * empties.length)];
+                if (bossIndex < 0) {
+                    const all = Array.from({ length: state.length }, (_, i) => i);
+                    bossIndex = all[Math.floor(Math.random() * all.length)];
+                }
+                const hp = getMiniBossHpForLevel(levelNum);
+                state[bossIndex] = 3;
+                specialState[bossIndex] = 'boss';
+                specialMetaState[bossIndex] = { isBoss: true, hp, maxHp: hp, breaks: { b75: false, b50: false, b25: false } };
+                setMiniBossStateFromMeta(bossIndex, specialMetaState[bossIndex]);
+                return true;
+            }
+
 
             function randomizeBoard(preserveClicks = false) {
                 boardGeneration += 1;
@@ -2264,13 +2376,21 @@ function escapeHtmlAttr(str) {
                 const difficulty = getDifficultyForLevel(levelNum);
                 const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
                 const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
-                const target = Math.round(total * Math.min(0.95, baseDensity + screensPassed * densityGrowth));
+                const isBossLevelNow = isMiniBossLevel(levelNum);
+                const density = Math.min(0.95, baseDensity + screensPassed * densityGrowth);
+                let target = Math.round(total * density);
+                if (isBossLevelNow) target = Math.max(8, Math.round(target * 0.78));
                 const idx = Array.from({ length: total }, (_, i) => i);
                 shuffle(idx);
                 for (let k = 0; k < target; k++) {
                     const cellIndex = idx[k];
                     state[cellIndex] = sampleSizeRandom();
                     setSpecialForCell(cellIndex, rollSpecialVirusType(levelNum));
+                }
+                if (isBossLevelNow) {
+                    placeMiniBossForLevel(levelNum, idx.slice(target));
+                } else {
+                    clearMiniBossState();
                 }
                 queueLikelyAssetPrefetch(levelNum + 1, 'next-level');
                 scheduleRender();
@@ -2284,7 +2404,7 @@ function escapeHtmlAttr(str) {
 
             function createPetriElement() { const pet = document.createElement('div'); pet.className = 'petri'; if (PETRI_URL) { const img = document.createElement('img'); img.src = PETRI_URL; img.alt = 'petri'; pet.appendChild(img); } return pet; }
 
-            function createVirusContainer(size, specialType = null) {
+            function createVirusContainer(size, specialType = null, cellIndex = -1) {
                 const container = document.createElement('div');
                 container.className = 'virus virus--size-' + size;
                 const def = getSpecialTypeDef(specialType);
@@ -2295,14 +2415,22 @@ function escapeHtmlAttr(str) {
                 }
                 const sprite = document.createElement('div');
                 sprite.className = 'face-sprite';
-                const img = document.createElement('img');
-                img.className = 'face-img';
-                img.src = SPRITE_URLS[Math.max(0, Math.min(3, size))];
-                img.alt = 'virus';
-                const sizeScales = [0.4, 0.6, 0.8, 1.0];
-                img.style.transform = 'scale(' + sizeScales[Math.max(0, Math.min(3, size))] + ')';
-                img.style.transformOrigin = 'center center';
-                sprite.appendChild(img);
+                if (specialType === 'boss') {
+                    const bossSheet = document.createElement('div');
+                    bossSheet.className = 'boss-sprite-sheet';
+                    bossSheet.style.backgroundImage = `url('${MINIBOSS_SPRITE_URL}')`;
+                    bossSheet.setAttribute('aria-hidden', 'true');
+                    sprite.appendChild(bossSheet);
+                } else {
+                    const img = document.createElement('img');
+                    img.className = 'face-img';
+                    img.src = SPRITE_URLS[Math.max(0, Math.min(3, size))];
+                    img.alt = 'virus';
+                    const sizeScales = [0.4, 0.6, 0.8, 1.0];
+                    img.style.transform = 'scale(' + sizeScales[Math.max(0, Math.min(3, size))] + ')';
+                    img.style.transformOrigin = 'center center';
+                    sprite.appendChild(img);
+                }
                 container.appendChild(sprite);
                 if (def) {
                     const marker = document.createElement('div');
@@ -2315,6 +2443,18 @@ function escapeHtmlAttr(str) {
                 const stain = document.createElement('div');
                 stain.className = 'stain';
                 container.appendChild(stain);
+                if (specialType === 'boss' && Number.isFinite(cellIndex) && cellIndex >= 0) {
+                    const meta = specialMetaState[cellIndex] || {};
+                    const hp = Math.max(0, Number(meta.hp) || 0);
+                    const maxHp = Math.max(1, Number(meta.maxHp) || hp || 1);
+                    const ratio = Math.max(0, Math.min(1, hp / maxHp));
+                    const miniHp = document.createElement('div');
+                    miniHp.className = 'boss-mini-hp';
+                    const fill = document.createElement('span');
+                    fill.style.transform = `scaleX(${ratio})`;
+                    miniHp.appendChild(fill);
+                    container.appendChild(miniHp);
+                }
                 return container;
             }
 
@@ -2332,7 +2472,7 @@ function escapeHtmlAttr(str) {
                         if (specialDef.className) gridCell.classList.add(specialDef.className);
                     }
                     const pet = createPetriElement(); gridCell.appendChild(pet);
-                    if (val !== null) { const container = createVirusContainer(val, specialType); gridCell.appendChild(container); }
+                    if (val !== null) { const container = createVirusContainer(val, specialType, i); gridCell.appendChild(container); }
                     boardEl.appendChild(gridCell);
                 }
                 syncRotatingBlockerUI();
