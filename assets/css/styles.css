@@ -60,6 +60,160 @@
             box-sizing: border-box
         }
 
+        .rotating-blocker {
+            position: fixed;
+            left: 0;
+            top: 0;
+            transform: translate(-50%, -50%) rotate(0deg);
+            transform-origin: center center;
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: 9000;
+            overflow: visible;
+            background: linear-gradient(90deg, rgba(150, 108, 22, 0.98), rgba(252, 226, 114, 0.98), rgba(150, 108, 22, 0.98));
+            box-shadow: 0 0 0 2px rgba(255, 238, 150, 0.78), 0 0 16px rgba(250, 220, 100, 0.55), inset 0 0 9px rgba(255, 250, 198, 0.52);
+            opacity: 0.94;
+            transition: left 560ms cubic-bezier(0.2, 0.78, 0.22, 1), top 560ms cubic-bezier(0.2, 0.78, 0.22, 1), transform 560ms cubic-bezier(0.2, 0.78, 0.22, 1), background 180ms ease-out, box-shadow 180ms ease-out;
+            will-change: left, top, transform;
+            animation: blockerBeamPulse 900ms ease-in-out infinite alternate;
+        }
+
+        .rotating-blocker::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 62%;
+            transform: translateY(-50%);
+            border-radius: 999px;
+            background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 10px, rgba(255, 255, 255, 0.22) 10px 20px, rgba(255, 255, 255, 0.05) 20px 30px);
+            mix-blend-mode: screen;
+            opacity: 0.8;
+            animation: blockerBeamFlow 650ms linear infinite;
+            pointer-events: none;
+        }
+
+        .rotating-blocker::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 30%;
+            transform: translateY(-50%);
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(255, 247, 205, 0.2), rgba(255, 252, 236, 0.95), rgba(255, 247, 205, 0.2));
+            box-shadow: 0 0 8px rgba(255, 247, 205, 0.66);
+            opacity: 0.95;
+            animation: blockerBeamCore 360ms ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+
+        .rotating-blocker.blocked-hit {
+            box-shadow: 0 0 0 2px rgba(255, 170, 130, 0.92), 0 0 18px rgba(255, 128, 96, 0.72);
+            background: linear-gradient(90deg, rgba(194, 84, 68, 0.98), rgba(255, 132, 110, 0.98), rgba(194, 84, 68, 0.98));
+        }
+
+        .rotating-blocker.blocked-hit::before {
+            background: repeating-linear-gradient(90deg, rgba(255, 224, 210, 0.12) 0 8px, rgba(255, 170, 144, 0.6) 8px 16px, rgba(255, 224, 210, 0.12) 16px 24px);
+        }
+
+        .rotating-blocker.blocked-hit::after {
+            background: linear-gradient(90deg, rgba(255, 218, 204, 0.24), rgba(255, 182, 166, 0.96), rgba(255, 218, 204, 0.24));
+            box-shadow: 0 0 10px rgba(255, 155, 132, 0.8);
+        }
+
+        .rotating-blocker .blocker-emitter {
+            position: absolute;
+            top: 50%;
+            --emitter-size: clamp(42px, 5.2vw, 56px);
+            --emitter-overhang: clamp(8px, 1.2vw, 14px);
+            width: var(--emitter-size);
+            height: var(--emitter-size);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            background: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_nanobot.png') center center / contain no-repeat;
+            filter: drop-shadow(0 0 7px rgba(255, 225, 120, 0.82)) saturate(1.08);
+            pointer-events: none;
+            z-index: 1;
+            will-change: transform;
+            animation: blockerEmitterFloatA 1400ms ease-in-out infinite;
+        }
+
+        .rotating-blocker .blocker-emitter.e-left {
+            left: calc(0px - var(--emitter-overhang));
+        }
+
+        .rotating-blocker .blocker-emitter.e-right {
+            left: calc(100% + var(--emitter-overhang));
+            animation-name: blockerEmitterFloatB;
+        }
+
+        .rotating-blocker.blocked-hit .blocker-emitter {
+            filter: drop-shadow(0 0 6px rgba(255, 132, 110, 0.95)) saturate(1.2);
+        }
+
+        @keyframes blockerBeamFlow {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 64px 0;
+            }
+        }
+
+        @keyframes blockerBeamCore {
+            0% {
+                opacity: 0.7;
+                transform: translateY(-50%) scaleX(0.985);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(-50%) scaleX(1);
+            }
+        }
+
+        @keyframes blockerBeamPulse {
+            0% {
+                opacity: 0.86;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes blockerEmitterFloatA {
+            0% {
+                transform: translate(-50%, -50%) translateY(-1px) rotate(-1.5deg) scale(0.985);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) translateY(1px) rotate(1.5deg) scale(1.015);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) translateY(-1px) rotate(-1.5deg) scale(0.985);
+            }
+        }
+
+        @keyframes blockerEmitterFloatB {
+            0% {
+                transform: translate(-50%, -50%) translateY(1px) rotate(1.5deg) scale(1.015);
+            }
+
+            50% {
+                transform: translate(-50%, -50%) translateY(-1px) rotate(-1.5deg) scale(0.985);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) translateY(1px) rotate(1.5deg) scale(1.015);
+            }
+        }
+
         /* HUD styling — responsive: full-width on narrow, right-column on wide, test on mobile and browser */
         .hud {
             display: flex;

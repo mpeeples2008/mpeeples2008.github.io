@@ -130,7 +130,13 @@ function escapeHtmlAttr(str) {
                 chainClickBonusStartPop: 3,
                 chainClickBonusEvery: 2,
                 chainScoreStep: 0.5,
-                levelScoreScaleStep: 0.1
+                levelScoreScaleStep: 0.1,
+                blockerUnlockLevel: 10,
+                blockerTickMs: 1650,
+                blockerTickJitterMs: 550,
+                blockerPostUserTickMs: 700,
+                blockerUserBoostWindowMs: 1300,
+                blockerThicknessRatio: 0.010
             },
             bands: [
                 {
@@ -166,6 +172,8 @@ function escapeHtmlAttr(str) {
             try { highScoreEl = document.getElementById('highScoreValue'); if (highScoreEl) highScoreEl.textContent = String(highScore); } catch (e) { }
             // Full game script preserved from original with badge/confetti and 8-bit icons added
             const ROWS = 6, COLS = 6, MAX_SIZE = 3, MAX_CLICKS = 20;
+            const FEATURE_FLAGS = window.GameFeatureFlags || { rotatingBlocker: true };
+            window.GameFeatureFlags = FEATURE_FLAGS;
 
             // ---------- Render scheduling (prevents redundant reflows) ----------
             const IS_MOBILE_COARSE = !!((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
@@ -196,7 +204,9 @@ function escapeHtmlAttr(str) {
                 fill: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/bubblefill2.mp3',
                 win: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/win2.mp3',
                 lose: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lose2.mp3',
+                blocker_move_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil1.mp3',
                 nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3',
+                blocker_move: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil2.mp3',
                 achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3',
                 assistant_ai_0: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3',
                 assistant_ai_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI2.mp3',
@@ -229,15 +239,20 @@ function escapeHtmlAttr(str) {
                 assistant_ai_4: 180,
                 assistant_ai_5: 180,
                 assistant_ai_6: 180,
+                blocker_move_1: 140,
                 nanostorm: 180,
+                blocker_move: 140,
                 win: 250,
                 lose: 250,
                 achievement: 220
             };
             const SFX_BURST_WINDOW_MS = 120;
             const SFX_BURST_MAX = 6;
+            const SFX_VOLUME_MULTIPLIER = {
+                blocker_move_1: 0.62
+            };
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
-            const SFX_LAZY_KEYS = ['nanostorm', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
             const IMAGE_PREFETCH_MAX = 10;
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
@@ -332,7 +347,7 @@ function escapeHtmlAttr(str) {
                 sfxDecodeInFlight.set(key, promise);
                 return promise;
             }
-            function playSfxFromBuffer(buffer) {
+            function playSfxFromBuffer(buffer, gainMult = 1) {
                 try {
                     const ctx = ensureSfxAudioContext();
                     if (!ctx || !buffer || !sfxMasterGain) return false;
@@ -344,7 +359,10 @@ function escapeHtmlAttr(str) {
                     }
                     const src = ctx.createBufferSource();
                     src.buffer = buffer;
-                    src.connect(sfxMasterGain);
+                    const voiceGain = ctx.createGain();
+                    voiceGain.gain.value = Math.max(0, Math.min(1, Number(gainMult) || 1));
+                    src.connect(voiceGain);
+                    voiceGain.connect(sfxMasterGain);
                     sfxActiveSources.add(src);
                     src.onended = () => {
                         try { sfxActiveSources.delete(src); } catch (e) { }
@@ -424,6 +442,7 @@ function escapeHtmlAttr(str) {
                 }
                 if (level >= 2) sfx.push('assistant_ai_' + (level % 7));
                 if (level >= 4) sfx.push('nanostorm');
+                if (level >= 10) sfx.push('blocker_move', 'blocker_move_1');
                 if ((level % 3) === 0) sfx.push('win');
                 if ((level % 4) === 0) sfx.push('lose');
                 return {
@@ -471,6 +490,7 @@ function escapeHtmlAttr(str) {
                 if (!sfxEnabled) return;
                 try { if (window.allMuted) return; } catch (e) { }
                 if (!canPlaySfxNow(key)) return;
+                const gainMult = Math.max(0, Number(SFX_VOLUME_MULTIPLIER[key] ?? 1) || 1);
                 try {
                     if (HAS_WEB_AUDIO) {
                         const ctx = ensureSfxAudioContext();
@@ -479,12 +499,12 @@ function escapeHtmlAttr(str) {
                         }
                         syncSfxEngineGain();
                         const cached = sfxBufferCache.get(key);
-                        if (cached && playSfxFromBuffer(cached)) return;
+                        if (cached && playSfxFromBuffer(cached, gainMult)) return;
                         loadSfxBuffer(key).catch(() => { });
                         const fallback = getSfx(key);
                         if (!fallback) return;
                         fallback.currentTime = 0;
-                        fallback.volume = Number(window.sfxVolume) || fallback.volume || 0.5;
+                        fallback.volume = Math.max(0, Math.min(1, (Number(window.sfxVolume) || fallback.volume || 0.5) * gainMult));
                         fallback.muted = !!window.allMuted;
                         const p = fallback.play();
                         if (p && p.catch) p.catch(() => { });
@@ -493,6 +513,7 @@ function escapeHtmlAttr(str) {
                     const a = getSfx(key);
                     if (!a) return;
                     a.currentTime = 0;
+                    a.volume = Math.max(0, Math.min(1, (Number(window.sfxVolume) || a.volume || 0.5) * gainMult));
                     const p = a.play();
                     if (p && p.catch) p.catch(() => { });
                 } catch (e) { }
@@ -690,7 +711,41 @@ function escapeHtmlAttr(str) {
                 window.DifficultyProfile = DIFFICULTY_PROFILE;
                 window.getDifficultyForLevel = getDifficultyForLevel;
                 window.getCurrentDifficulty = getCurrentDifficulty;
+                window.setRotatingBlockerEnabled = function (enabled) {
+                    FEATURE_FLAGS.rotatingBlocker = !!enabled;
+                    try { scheduleRender(); } catch (e) { }
+                    if (!FEATURE_FLAGS.rotatingBlocker) {
+                        try { stopRotatingBlockerTicker(); } catch (e) { }
+                    } else {
+                        try { syncRotatingBlockerUI(); } catch (e) { }
+                    }
+                    return FEATURE_FLAGS.rotatingBlocker;
+                };
+                window.setLevel = function (levelNum) {
+                    const targetLevel = Math.max(1, Math.floor(Number(levelNum) || 1));
+                    screensPassed = targetLevel - 1;
+                    try {
+                        const levelPopup = document.querySelector('.level-complete');
+                        if (levelPopup) levelPopup.remove();
+                    } catch (e) { }
+                    try {
+                        const gameOverPopup = document.querySelector('.game-over-popup');
+                        if (gameOverPopup) gameOverPopup.remove();
+                    } catch (e) { }
+                    try { inputLocked = false; } catch (e) { }
+                    try { randomizeBoard(false); } catch (e) { }
+                    try { syncRotatingBlockerUI(); } catch (e) { }
+                    return { level: targetLevel, blockerActive: isRotatingBlockerActive(targetLevel) };
+                };
+                window.getLevel = function () {
+                    return getCurrentLevelNumber();
+                };
             } catch (e) { }
+            let blockerOrientationDeg = 0; // only 0 or 90
+            let blockerLaneIndex = 2; // boundary between rows/cols (0-based lane index)
+            let blockerTickTimer = null;
+            let blockerFlashTimeout = null;
+            let blockerUserBoostUntil = 0;
             let stormCharges = 1;
             let stormArmed = false;
             let stormHoverIndex = null;
@@ -1272,12 +1327,14 @@ function escapeHtmlAttr(str) {
                         if (sfxAudioCtx && sfxAudioCtx.state === 'running') {
                             sfxAudioCtx.suspend().catch(() => { });
                         }
+                        try { stopRotatingBlockerTicker(); } catch (e) { }
                         return;
                     }
                     if (sfxAudioCtx && sfxAudioCtx.state === 'suspended' && audioUserInteracted) {
                         sfxAudioCtx.resume().catch(() => { });
                     }
                     syncSfxEngineGain();
+                    try { syncRotatingBlockerUI(); } catch (e) { }
                     if (!musicWasPlayingBeforeHide) return;
                     musicWasPlayingBeforeHide = false;
                     if (!musicEnabled || !!window.allMuted || !audioUserInteracted) return;
@@ -1790,6 +1847,181 @@ function escapeHtmlAttr(str) {
                 return getDifficultyForLevel(getCurrentLevelNumber());
             }
 
+            function getBlockerSettings(levelNum = getCurrentLevelNumber()) {
+                const d = getDifficultyForLevel(levelNum);
+                return {
+                    unlockLevel: Math.max(1, Math.floor(Number(d.blockerUnlockLevel) || 1)),
+                    tickMs: Math.max(800, Math.floor(Number(d.blockerTickMs) || 1650)),
+                    tickJitterMs: Math.max(0, Math.floor(Number(d.blockerTickJitterMs) || 550)),
+                    postUserTickMs: Math.max(320, Math.floor(Number(d.blockerPostUserTickMs) || 700)),
+                    userBoostWindowMs: Math.max(250, Math.floor(Number(d.blockerUserBoostWindowMs) || 1300)),
+                    thicknessRatio: Math.max(0.004, Math.min(0.04, Number(d.blockerThicknessRatio) || 0.010))
+                };
+            }
+
+            function nudgeRotatingBlockerAfterUserMove() {
+                if (!isRotatingBlockerActive()) return;
+                const cfg = getBlockerSettings();
+                blockerUserBoostUntil = Date.now() + cfg.userBoostWindowMs;
+                scheduleRotatingBlockerTick();
+            }
+
+            function playBlockerMoveSfx() {
+                try {
+                    playSfx('blocker_move_1');
+                } catch (e) { }
+            }
+
+            function isRotatingBlockerActive(levelNum = getCurrentLevelNumber()) {
+                if (!FEATURE_FLAGS || FEATURE_FLAGS.rotatingBlocker === false) return false;
+                const cfg = getBlockerSettings(levelNum);
+                return levelNum >= cfg.unlockLevel;
+            }
+
+            function getRotatingBlockerSegment() {
+                if (!boardEl || !isRotatingBlockerActive()) return null;
+                const br = boardEl.getBoundingClientRect();
+                if (!br || !br.width || !br.height) return null;
+                const cfg = getBlockerSettings();
+                const laneCount = Math.max(1, (blockerOrientationDeg === 90 ? COLS : ROWS) - 1);
+                const lane = Math.max(0, Math.min(laneCount - 1, blockerLaneIndex));
+                let cx = br.left + (br.width / 2);
+                let cy = br.top + (br.height / 2);
+                if (blockerOrientationDeg === 90) {
+                    const cellW = br.width / COLS;
+                    cx = br.left + (cellW * (lane + 1));
+                } else {
+                    const cellH = br.height / ROWS;
+                    cy = br.top + (cellH * (lane + 1));
+                }
+                const lineLen = blockerOrientationDeg === 90 ? br.height : br.width;
+                const halfLen = Math.max(20, (lineLen * 0.5) - 2);
+                const thickness = Math.max(2, Math.round(Math.min(br.width, br.height) * cfg.thicknessRatio));
+                const ang = ((blockerOrientationDeg === 90 ? 90 : 0) * Math.PI) / 180;
+                return { cx, cy, ang, halfLen, halfThickness: thickness / 2, thickness };
+            }
+
+            function getRotatingBlockerImpact(sx, sy, tx, ty) {
+                const seg = getRotatingBlockerSegment();
+                if (!seg) return null;
+                const dirX = Math.cos(seg.ang);
+                const dirY = Math.sin(seg.ang);
+                const nX = -dirY;
+                const nY = dirX;
+                const s1 = ((sx - seg.cx) * nX) + ((sy - seg.cy) * nY);
+                const s2 = ((tx - seg.cx) * nX) + ((ty - seg.cy) * nY);
+                const band = seg.halfThickness + 1.25;
+                if (Math.abs(s1) > band && Math.abs(s2) > band && (s1 * s2) > 0) return null;
+
+                const denom = (s1 - s2);
+                let t = 0.5;
+                if (Math.abs(denom) > 0.00001) t = Math.max(0, Math.min(1, s1 / denom));
+                const ix = sx + ((tx - sx) * t);
+                const iy = sy + ((ty - sy) * t);
+                const along = ((ix - seg.cx) * dirX) + ((iy - seg.cy) * dirY);
+                if (Math.abs(along) > (seg.halfLen + band)) return null;
+                return { x: ix, y: iy };
+            }
+
+            function advanceRotatingBlockerOverTime() {
+                if (!isRotatingBlockerActive()) return;
+                const prevOrientation = blockerOrientationDeg;
+                const prevLane = blockerLaneIndex;
+                const laneCount = Math.max(1, (prevOrientation === 90 ? COLS : ROWS) - 1);
+                const tryCount = 10;
+                for (let i = 0; i < tryCount; i++) {
+                    const nextOrientation = Math.random() < 0.35 ? (prevOrientation === 90 ? 0 : 90) : prevOrientation;
+                    const nextLane = Math.floor(Math.random() * laneCount);
+                    if (nextOrientation !== prevOrientation || nextLane !== prevLane) {
+                        blockerOrientationDeg = nextOrientation;
+                        blockerLaneIndex = nextLane;
+                        playBlockerMoveSfx();
+                        return;
+                    }
+                }
+                blockerLaneIndex = (prevLane + 1) % laneCount;
+                if (blockerLaneIndex !== prevLane) {
+                    playBlockerMoveSfx();
+                }
+            }
+
+            function stopRotatingBlockerTicker() {
+                if (!blockerTickTimer) return;
+                clearTimeout(blockerTickTimer);
+                blockerTickTimer = null;
+            }
+
+            function scheduleRotatingBlockerTick() {
+                stopRotatingBlockerTicker();
+                if (!isRotatingBlockerActive()) return;
+                const cfg = getBlockerSettings();
+                let delay = cfg.tickMs + Math.floor(Math.random() * (cfg.tickJitterMs + 1));
+                if (Date.now() < blockerUserBoostUntil) {
+                    const fastJitter = Math.max(50, Math.floor(cfg.postUserTickMs * 0.35));
+                    const boostedDelay = cfg.postUserTickMs + Math.floor(Math.random() * (fastJitter + 1));
+                    delay = Math.min(delay, boostedDelay);
+                }
+                blockerTickTimer = setTimeout(() => {
+                    blockerTickTimer = null;
+                    try {
+                        if (!document.hidden && isRotatingBlockerActive()) {
+                            advanceRotatingBlockerOverTime();
+                            syncRotatingBlockerUI();
+                        }
+                    } catch (e) { }
+                    scheduleRotatingBlockerTick();
+                }, delay);
+            }
+
+            function flashRotatingBlocker() {
+                if (!boardEl || !isRotatingBlockerActive()) return;
+                const el = document.getElementById('rotatingBlocker');
+                if (!el) return;
+                el.classList.remove('blocked-hit');
+                void el.offsetWidth;
+                el.classList.add('blocked-hit');
+                clearTimeout(blockerFlashTimeout);
+                blockerFlashTimeout = setTimeout(() => {
+                    try { el.classList.remove('blocked-hit'); } catch (e) { }
+                }, 240);
+            }
+
+            function syncRotatingBlockerUI() {
+                if (!boardEl) return;
+                let el = document.getElementById('rotatingBlocker');
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = 'rotatingBlocker';
+                    el.className = 'rotating-blocker';
+                    const emitterLeft = document.createElement('span');
+                    emitterLeft.className = 'blocker-emitter e-left';
+                    const emitterRight = document.createElement('span');
+                    emitterRight.className = 'blocker-emitter e-right';
+                    el.appendChild(emitterLeft);
+                    el.appendChild(emitterRight);
+                }
+                if (!isRotatingBlockerActive()) {
+                    stopRotatingBlockerTicker();
+                    try { el.remove(); } catch (e) { }
+                    return;
+                }
+                scheduleRotatingBlockerTick();
+                const br = boardEl.getBoundingClientRect();
+                const cfg = getBlockerSettings();
+                const lineLen = blockerOrientationDeg === 90 ? br.height : br.width;
+                const thick = Math.max(2, Math.round(Math.min(br.width, br.height) * cfg.thicknessRatio));
+                const laneCount = Math.max(1, (blockerOrientationDeg === 90 ? COLS : ROWS) - 1);
+                const lane = Math.max(0, Math.min(laneCount - 1, blockerLaneIndex));
+                const yPx = (br.height / ROWS) * (lane + 1);
+                const xPx = (br.width / COLS) * (lane + 1);
+                el.style.width = Math.round(lineLen) + 'px';
+                el.style.height = thick + 'px';
+                el.style.left = blockerOrientationDeg === 90 ? `${Math.round(br.left + xPx)}px` : `${Math.round(br.left + (br.width * 0.5))}px`;
+                el.style.top = blockerOrientationDeg === 90 ? `${Math.round(br.top + (br.height * 0.5))}px` : `${Math.round(br.top + yPx)}px`;
+                el.style.transform = `translate(-50%, -50%) rotate(${blockerOrientationDeg === 90 ? 90 : 0}deg)`;
+                if (!document.body.contains(el)) document.body.appendChild(el);
+            }
+
             function getStormRechargeChainMin(levelNum = getCurrentLevelNumber()) {
                 const d = getDifficultyForLevel(levelNum);
                 return Math.max(1, Math.floor(Number(d.stormRechargeChainMin) || 21));
@@ -2089,6 +2321,7 @@ function escapeHtmlAttr(str) {
                     if (val !== null) { const container = createVirusContainer(val, specialType); gridCell.appendChild(container); }
                     boardEl.appendChild(gridCell);
                 }
+                syncRotatingBlockerUI();
                 updateHUD();
                 if (!tutorialSeen.firstArmoredSeen) {
                     for (let i = 0; i < specialState.length; i++) {
@@ -2387,17 +2620,27 @@ function escapeHtmlAttr(str) {
                             const tr = targetEl.getBoundingClientRect();
                             const tx = tr.left + tr.width / 2 + (Math.random() - 0.5) * 12;
                             const ty = tr.top + tr.height / 2 + (Math.random() - 0.5) * 12;
+                            const block = getRotatingBlockerImpact(sx + jitterX, sy + jitterY, tx, ty);
                             // duration tuned per direction (slightly varied)
                             const dur = 400 + Math.random() * 600 + dirIdx * 20;
-                            animateParticleTo(p, sx + jitterX, sy + jitterY, tx, ty, dur, () => {
-                                try {
-                                    if (sourceBoardGeneration !== boardGeneration) return;
-                                    if (!hitTargets.has(next)) {
-                                        hitTargets.add(next);
-                                        handleClick(next, false, tracker);
-                                    }
-                                } catch (e) { }
-                            });
+                            if (block) {
+                                animateParticleTo(p, sx + jitterX, sy + jitterY, block.x, block.y, Math.max(220, dur * 0.72), () => {
+                                    try {
+                                        if (sourceBoardGeneration !== boardGeneration) return;
+                                        flashRotatingBlocker();
+                                    } catch (e) { }
+                                });
+                            } else {
+                                animateParticleTo(p, sx + jitterX, sy + jitterY, tx, ty, dur, () => {
+                                    try {
+                                        if (sourceBoardGeneration !== boardGeneration) return;
+                                        if (!hitTargets.has(next)) {
+                                            hitTargets.add(next);
+                                            handleClick(next, false, tracker);
+                                        }
+                                    } catch (e) { }
+                                });
+                            }
                         } else {
                             // no element found, send particle off-screen based on fallback direction
                             const tx = sx + ox * (window.innerWidth * 0.8) + (Math.random() - 0.5) * 80;
@@ -2900,6 +3143,7 @@ function escapeHtmlAttr(str) {
                 if (isUser) {
                     // block clicks if game is locked or already out of clicks
                     if (inputLocked || clicksLeft <= 0) return;
+                    nudgeRotatingBlockerAfterUserMove();
 
                     // lock input for the duration of this chain
                     inputLocked = true;
