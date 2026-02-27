@@ -69,6 +69,17 @@
                     "Try again? The virus certainly will."
                 ],
 
+                postGameWelcome: [
+                    "Welcome, new user. Previous operator has been archived in the corner.",
+                    "Hey, second Becky. Try not to break the lab this time.",
+                    "Fresh badge, same biohazard. Let’s see how long you last.",
+                    "New hire detected. Confidence level: suspiciously high.",
+                    "I reset the board. I did not reset your decision-making.",
+                    "Good news: containment is possible. Bad news: it’s your job.",
+                    "Hello replacement human. Try to look busy and pop viruses.",
+                    "Welcome back. I lowered my expectations for both of us."
+                ],
+
                 cascade: [
                     "Wow. You broke three containment layers in one click.",
                     "Cascade! Math did something horrifying again.",
@@ -150,7 +161,7 @@
 
 
             // history to avoid immediate repeats per pool
-            const recent = { levelComplete: [], gameOver: [], cascade: [], lowClicks: [] };
+            const recent = { levelComplete: [], gameOver: [], postGameWelcome: [], cascade: [], lowClicks: [] };
             const RECENT_MAX = 3;
 
             function pick(poolName) {
@@ -182,6 +193,9 @@
                         // prefer a game-over specific pool line, but include title/subtitle if helpful
                         const line = pick('gameOver') || (data && data.title ? data.title + ' — ' + (data.subtitle || '') : null);
                         if (line) Assistant.show(line, { priority: 3, sticky: true });
+                    } else if (eventName === 'postGameWelcome') {
+                        const line = pick('postGameWelcome');
+                        if (line) Assistant.show(line, { priority: 2, sticky: false });
                     } else if (eventName === 'cascade') {
                         const now = Date.now();
                         if (now - _lastCascadeAt < CASCADE_COOLDOWN) return; // cooldown

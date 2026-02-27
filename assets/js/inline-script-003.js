@@ -29,11 +29,14 @@ const levelCompleteImages = [
     'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster36.png',
     'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster38.png'
 ];
+const BOSS_LEVEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.png';
 
 
 function showLevelComplete(opts = {}) {
   const title = opts.title || 'LEVEL COMPLETE';
   const imgSrc = opts.imageUrl || levelCompleteImages[Math.floor(Math.random() * levelCompleteImages.length)] || '';
+  const onDismiss = (typeof opts.onDismiss === 'function') ? opts.onDismiss : null;
+  const emitAssistant = opts.emitAssistant !== false;
 
   // remove any previous popup
   const prior = document.querySelector('.level-complete');
@@ -72,7 +75,9 @@ function showLevelComplete(opts = {}) {
     // show popup
     void el.offsetWidth;
     el.classList.add('show');
-    try { if (window.Assistant) Assistant.emit && Assistant.emit('levelComplete'); } catch (e) {}
+    if (emitAssistant) {
+      try { if (window.Assistant) Assistant.emit && Assistant.emit('levelComplete'); } catch (e) {}
+    }
 
     // make persistent until user click or keypress
     el.style.pointerEvents = 'auto';
@@ -86,6 +91,9 @@ function showLevelComplete(opts = {}) {
       el.classList.add('hide');
       el.addEventListener('animationend', () => { try { el.remove(); } catch (e) {} }, { once: true });
       document.removeEventListener('keydown', keyHandler);
+      if (onDismiss) {
+        try { onDismiss(); } catch (e) {}
+      }
     };
 
     const keyHandler = (ev) => {
@@ -209,6 +217,9 @@ function escapeHtmlAttr(str) {
                 blocker_move_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil1.mp3',
                 nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3',
                 blocker_move: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil2.mp3',
+                boss_level: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.mp3',
+                miniboss_laugh: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_laugh.mp3',
+                miniboss_dies: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_dies.mp3',
                 achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3',
                 assistant_ai_0: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3',
                 assistant_ai_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI2.mp3',
@@ -244,6 +255,9 @@ function escapeHtmlAttr(str) {
                 blocker_move_1: 140,
                 nanostorm: 180,
                 blocker_move: 140,
+                boss_level: 350,
+                miniboss_laugh: 300,
+                miniboss_dies: 300,
                 win: 250,
                 lose: 250,
                 achievement: 220
@@ -254,7 +268,7 @@ function escapeHtmlAttr(str) {
                 blocker_move_1: 0.62
             };
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
-            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
             const IMAGE_PREFETCH_MAX = 10;
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
@@ -445,6 +459,8 @@ function escapeHtmlAttr(str) {
                 }
                 if (level >= 2) sfx.push('assistant_ai_' + (level % 7));
                 if (level >= 4) sfx.push('nanostorm');
+                if (level === 5 || level === 10 || level === 15) sfx.push('boss_level');
+                if (level >= 5) sfx.push('miniboss_laugh', 'miniboss_dies');
                 if (level >= 10) sfx.push('blocker_move', 'blocker_move_1');
                 if ((level % 3) === 0) sfx.push('win');
                 if ((level % 4) === 0) sfx.push('lose');
@@ -1608,12 +1624,16 @@ function escapeHtmlAttr(str) {
             // Unified reset used by the Game Over persistent popup and restart wiring
             function performGameReset() {
                 try {
+                    const fromGameOver = !!outOfClicksShown || !!(document.body && document.body.classList.contains('game-over-fx')) || !!document.querySelector('.game-over-popup');
                     clearGameOverFeedback();
                     screensPassed = 0;
                     totalScore = 0;
                     randomizeBoard(false);
                     updateHUD();
                     outOfClicksShown = false;
+                    if (fromGameOver) {
+                        try { if (window.Assistant && Assistant.emit) Assistant.emit('postGameWelcome'); } catch (e) { }
+                    }
                 } catch (e) { console.warn('performGameReset failed', e); }
             }
 
@@ -2223,6 +2243,21 @@ function escapeHtmlAttr(str) {
                 } catch (e) { }
             }
 
+            function playMiniBossBurstEffect(index, strong = false) {
+                if (!Number.isFinite(index) || !boardEl) return;
+                try {
+                    const cell = boardEl.querySelector(`[data-index='${index}']`);
+                    if (!cell) return;
+                    const r = cell.getBoundingClientRect();
+                    const burst = document.createElement('div');
+                    burst.className = strong ? 'miniboss-burst miniboss-burst-strong' : 'miniboss-burst miniboss-burst-faint';
+                    burst.style.left = Math.round(r.left + (r.width / 2)) + 'px';
+                    burst.style.top = Math.round(r.top + (r.height / 2)) + 'px';
+                    document.body.appendChild(burst);
+                    setTimeout(() => { try { burst.remove(); } catch (e) { } }, strong ? 520 : 380);
+                } catch (e) { }
+            }
+
             function specialHookArmoredBeforeGrow(ctx) {
                 if (!ctx || !Number.isFinite(ctx.index)) return null;
                 const meta = ensureSpecialMeta(ctx.index);
@@ -2297,8 +2332,12 @@ function escapeHtmlAttr(str) {
                     const idx = empty[k];
                     state[idx] = 3;
                     setSpecialForCell(idx, 'armored');
+                    playMiniBossBurstEffect(idx, false);
                 }
-                if (n > 0) scheduleRender();
+                if (n > 0) {
+                    try { playSfx('miniboss_laugh'); } catch (e) { }
+                    scheduleRender();
+                }
                 return n;
             }
 
@@ -2319,13 +2358,14 @@ function escapeHtmlAttr(str) {
                 const hpNow = Math.max(0, Number(meta.hp) || Number(meta.maxHp) || 1);
                 meta.hp = Math.max(0, hpNow - 1);
                 if (meta.hp <= 0) {
+                    playMiniBossBurstEffect(idx, true);
                     try { popAt(idx, ctx.tracker); } catch (e) { }
                     if (Array.isArray(ctx.state)) ctx.state[idx] = null;
                     clearSpecialForCell(idx);
                     clearMiniBossState();
                     clicksLeft = Math.min(MAX_CLICKS, clicksLeft + MINI_BOSS_CLICK_BONUS);
                     updateHUD();
-                    try { playSfx('win'); } catch (e) { }
+                    try { playSfx('miniboss_dies'); } catch (e) { }
                 } else {
                     setMiniBossStateFromMeta(idx, meta);
                     maybeTriggerBossBreakpoint(meta);
@@ -2496,14 +2536,34 @@ function escapeHtmlAttr(str) {
                     playSfx('win');
                     screensPassed += 1;
                     incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
-                    setAchievementBest('runLevelReached', screensPassed + 1, 'run');
+                    const nextLevelNum = screensPassed + 1;
+                    setAchievementBest('runLevelReached', nextLevelNum, 'run');
                     updateHUD();
                     tutorialEvent('firstLevelClear');
 
-                    try { showLevelComplete({ title: 'LEVEL COMPLETE', duration: 4500 }); } catch (e) { }
-
-                    // wait a moment for the popup/animation, then new board
-                    setTimeout(() => randomizeBoard(true), 420);
+                    const isBossIntroLevel = (nextLevelNum === 5 || nextLevelNum === 10 || nextLevelNum === 15);
+                    if (isBossIntroLevel) {
+                        try { playSfx('boss_level'); } catch (e) { }
+                        try {
+                            showLevelComplete({
+                                title: `BOSS LEVEL ${nextLevelNum}`,
+                                imageUrl: BOSS_LEVEL_IMAGE_URL,
+                                emitAssistant: false,
+                                onDismiss: () => randomizeBoard(true)
+                            });
+                        } catch (e) {
+                            randomizeBoard(true);
+                        }
+                    } else {
+                        try {
+                            showLevelComplete({
+                                title: 'LEVEL COMPLETE',
+                                onDismiss: () => randomizeBoard(true)
+                            });
+                        } catch (e) {
+                            randomizeBoard(true);
+                        }
+                    }
                 }
 
 

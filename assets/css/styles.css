@@ -872,6 +872,31 @@
             animation: shieldBreakBurst 360ms ease-out forwards;
         }
 
+        .miniboss-burst {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            transform: translate(-50%, -50%) scale(0.35);
+            pointer-events: none;
+            z-index: 26015;
+            opacity: 0;
+        }
+
+        .miniboss-burst-strong {
+            border: 2px solid rgba(255, 134, 134, 0.95);
+            box-shadow: 0 0 22px rgba(255, 88, 88, 0.75);
+            background: radial-gradient(circle, rgba(255, 126, 126, 0.7) 0%, rgba(196, 35, 35, 0.28) 36%, rgba(131, 16, 16, 0) 74%);
+            animation: minibossBurstStrong 500ms ease-out forwards;
+        }
+
+        .miniboss-burst-faint {
+            border: 1px solid rgba(255, 124, 124, 0.55);
+            box-shadow: 0 0 10px rgba(255, 96, 96, 0.42);
+            background: radial-gradient(circle, rgba(255, 116, 116, 0.45) 0%, rgba(187, 32, 32, 0.16) 40%, rgba(131, 16, 16, 0) 72%);
+            animation: minibossBurstFaint 360ms ease-out forwards;
+        }
+
             .shield-break-burst::after {
                 content: '';
                 position: absolute;
@@ -900,6 +925,28 @@
             }
             100% {
                 transform: scale(1.35) rotate(16deg);
+                opacity: 0;
+            }
+        }
+
+        @keyframes minibossBurstStrong {
+            0% {
+                transform: translate(-50%, -50%) scale(0.38);
+                opacity: 0.98;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(3.1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes minibossBurstFaint {
+            0% {
+                transform: translate(-50%, -50%) scale(0.32);
+                opacity: 0.72;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(2.05);
                 opacity: 0;
             }
         }
