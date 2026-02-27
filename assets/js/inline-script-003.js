@@ -1866,8 +1866,18 @@ function escapeHtmlAttr(str) {
                 scheduleRotatingBlockerTick();
             }
 
+            function isGameOverActiveNow() {
+                try {
+                    if (outOfClicksShown) return true;
+                    if (document.body && document.body.classList.contains('game-over-fx')) return true;
+                    if (document.querySelector('.game-over-popup')) return true;
+                } catch (e) { }
+                return false;
+            }
+
             function playBlockerMoveSfx() {
                 try {
+                    if (isGameOverActiveNow()) return;
                     playSfx('blocker_move_1');
                 } catch (e) { }
             }
