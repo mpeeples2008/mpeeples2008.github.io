@@ -753,6 +753,9 @@ function escapeHtmlAttr(str) {
             let stormChainPops = 0;
             let stormChainResetTimer = null;
             let stormChargeFlashTimer = null;
+            let comboInsurance = 0;
+            const COMBO_INSURANCE_CAP = 1;
+            const COMBO_INSURANCE_CHAIN_START = 15;
             let mobileStormPressTimer = null;
             let mobileStormHoldActive = false;
             let mobileStormPointerId = null;
@@ -2250,6 +2253,7 @@ function escapeHtmlAttr(str) {
                     clicksLeft = 10;
                     stormResolving = false;
                     stormCharges = 1;
+                    comboInsurance = 0;
                     setStormArmed(false);
                     resetStormChainIndicator();
                     resetRunAchievementStats(getCurrentLevelNumber());
@@ -2756,17 +2760,35 @@ function escapeHtmlAttr(str) {
                 const rechargeTarget = getStormRechargeChainMin();
                 const nearThreshold = getStormNearThreshold();
                 const isCharged = stormCharges > 0;
-                const visualCount = isCharged ? rechargeTarget : count;
+                const insuranceVisualBoost = Math.floor(Math.max(0, Math.min(1, comboInsurance)) * 3);
+                const visualCount = isCharged ? rechargeTarget : Math.max(0, count + insuranceVisualBoost);
                 const ratio = Math.max(0, Math.min(1, visualCount / rechargeTarget));
                 stormBtn.style.setProperty('--storm-combo-ratio', String(ratio));
                 stormBtn.dataset.chain = String(Math.min(visualCount, rechargeTarget));
+                stormBtn.dataset.insurance = String(Math.round(Math.max(0, Math.min(1, comboInsurance)) * 100));
                 stormBtn.classList.toggle('charged', isCharged);
                 stormBtn.classList.toggle('combo-tracking', !isCharged && visualCount > 0);
                 stormBtn.classList.toggle('combo-near', !isCharged && visualCount >= nearThreshold && visualCount < rechargeTarget);
                 stormBtn.classList.toggle('combo-hot', !isCharged && visualCount >= (rechargeTarget - 1));
+                stormBtn.classList.toggle('insurance-ready', comboInsurance >= COMBO_INSURANCE_CAP);
                 const baseTitle = stormArmed ? 'Nano Storm armed' : (isCharged ? 'Nano Storm ready' : 'Nano Storm charging');
                 const chainTitle = (!isCharged && visualCount > 0) ? (' | chain ' + visualCount + '/' + rechargeTarget) : '';
-                stormBtn.setAttribute('title', baseTitle + chainTitle);
+                const insuranceTitle = comboInsurance > 0 ? (' | combo save ' + Math.round(comboInsurance * 100) + '%') : '';
+                stormBtn.setAttribute('title', baseTitle + chainTitle + insuranceTitle);
+            }
+
+            function addComboInsuranceFromChain(popCount) {
+                const count = Math.max(0, Number(popCount) || 0);
+                if (count < COMBO_INSURANCE_CHAIN_START) return 0;
+                const rechargeTarget = getStormRechargeChainMin();
+                if (count >= rechargeTarget) return 0;
+                const steps = Math.max(1, rechargeTarget - (COMBO_INSURANCE_CHAIN_START - 1));
+                const gained = (count - (COMBO_INSURANCE_CHAIN_START - 1)) / steps;
+                if (gained <= 0) return 0;
+                const before = comboInsurance;
+                comboInsurance = Math.max(0, Math.min(COMBO_INSURANCE_CAP, comboInsurance + gained));
+                syncStormChainIndicator();
+                return Math.max(0, comboInsurance - before);
             }
 
             function flashStormChargeGain() {
@@ -2805,7 +2827,19 @@ function escapeHtmlAttr(str) {
             function grantStormChargeFromChain(popCount) {
                 const count = Math.max(0, Number(popCount) || 0);
                 const rechargeTarget = getStormRechargeChainMin();
-                if (count < rechargeTarget) return false;
+                if (stormCharges >= MAX_STORM_CHARGES) {
+                    updateStormUI();
+                    return false;
+                }
+                let effectiveCount = count;
+                if (effectiveCount < rechargeTarget && comboInsurance > 0) {
+                    const boost = Math.floor(Math.max(0, Math.min(1, comboInsurance)) * 3);
+                    if (boost > 0) {
+                        effectiveCount += boost;
+                        if (effectiveCount >= rechargeTarget) comboInsurance = 0;
+                    }
+                }
+                if (effectiveCount < rechargeTarget) return false;
                 const before = stormCharges;
                 stormCharges = Math.min(MAX_STORM_CHARGES, stormCharges + 1);
                 if (stormCharges > before) {
@@ -3102,6 +3136,7 @@ function escapeHtmlAttr(str) {
                         if (count >= 4) tutorialEvent('firstChain');
                         updateStormChainProgress(count);
                         grantStormChargeFromChain(count);
+                        if (count < getStormRechargeChainMin()) addComboInsuranceFromChain(count);
                         scheduleStormChainReset();
                         const rule = BADGE_RULES.find(r => count >= r.min);
                         if (!rule) return;
