@@ -1823,7 +1823,7 @@ function escapeHtmlAttr(str) {
             }
 
             // Weighted sampler that adapts based on screensPassed (levels completed)
-            function sampleSizeRandom() {
+            function sampleSizeRandom(levelOverride = null, completedOverride = null) {
                 const dims = MAX_SIZE + 1;
                 // helper to ensure arrays are the right length
                 function ensureLen(arr) {
@@ -1831,14 +1831,14 @@ function escapeHtmlAttr(str) {
                     while (out.length < dims) out.push(0);
                     return out;
                 }
-                const levelNum = getCurrentLevelNumber();
+                const levelNum = (levelOverride == null) ? getCurrentLevelNumber() : Math.max(1, Number(levelOverride) || getCurrentLevelNumber());
                 const difficulty = getDifficultyForLevel(levelNum);
                 const S = ensureLen(Array.isArray(difficulty.sizeMixStart) ? difficulty.sizeMixStart : [0.05, 0.20, 0.35, 0.40]);
                 const M = ensureLen(Array.isArray(difficulty.sizeMixEven) ? difficulty.sizeMixEven : [0.15, 0.25, 0.30, 0.30]);
                 const E = ensureLen(Array.isArray(difficulty.sizeMixEnd) ? difficulty.sizeMixEnd : [0.32, 0.33, 0.23, 0.12]);
                 const levelsToEven = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToEven) || 6));
                 const levelsToEnd = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToEnd) || 12));
-                const completed = Math.max(0, Number(screensPassed) || 0);
+                const completed = (completedOverride == null) ? Math.max(0, Number(screensPassed) || 0) : Math.max(0, Number(completedOverride) || 0);
 
                 let weights;
                 if (typeof screensPassed === 'undefined') {
@@ -2305,6 +2305,12 @@ function escapeHtmlAttr(str) {
                 return !!(FEATURE_FLAGS && FEATURE_FLAGS.miniBoss !== false && lvl >= 5 && (lvl % 5) === 0);
             }
 
+            function getMiniBossCountForLevel(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Number(levelNum) || 1);
+                if (lvl === 15) return 2;
+                return 1;
+            }
+
             function getMiniBossHpForLevel(levelNum = getCurrentLevelNumber()) {
                 const lvl = Math.max(1, Number(levelNum) || 1);
                 const tier = Math.max(1, Math.floor(lvl / 5));
@@ -2321,15 +2327,60 @@ function escapeHtmlAttr(str) {
                 miniBossState = { active: false, index: -1, hp: 0, maxHp: 0 };
             }
 
-            function spawnBossArmorPulse(count = 2) {
-                const empty = [];
-                for (let i = 0; i < state.length; i++) {
-                    if (state[i] === null) empty.push(i);
+            function syncMiniBossStateFromBoard() {
+                for (let i = 0; i < specialState.length; i++) {
+                    if (specialState[i] !== 'boss') continue;
+                    const meta = specialMetaState[i] || {};
+                    const hp = Math.max(0, Number(meta.hp) || 0);
+                    const maxHp = Math.max(1, Number(meta.maxHp) || hp || 1);
+                    if (hp > 0) {
+                        miniBossState = { active: true, index: i, hp, maxHp };
+                        return miniBossState;
+                    }
                 }
-                shuffle(empty);
-                const n = Math.max(0, Math.min(empty.length, Math.floor(Number(count) || 0)));
+                clearMiniBossState();
+                return miniBossState;
+            }
+
+            function getLineSpawnCandidates(originIndex, dr, dc) {
+                const out = [];
+                if (!Number.isFinite(originIndex)) return out;
+                let r = Math.floor(Number(originIndex) / COLS);
+                let c = Number(originIndex) % COLS;
+                while (true) {
+                    r += dr;
+                    c += dc;
+                    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) break;
+                    const idx = r * COLS + c;
+                    if (state[idx] === null) out.push(idx);
+                }
+                return out;
+            }
+
+            function spawnBossArmorPulse(count = 2, originIndex = null) {
+                const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                let candidates = [];
+                if (Number.isFinite(originIndex)) {
+                    const order = dirs.slice();
+                    shuffle(order);
+                    for (let i = 0; i < order.length; i++) {
+                        const [dr, dc] = order[i];
+                        const line = getLineSpawnCandidates(originIndex, dr, dc);
+                        if (line.length) {
+                            candidates = line;
+                            break;
+                        }
+                    }
+                }
+                if (!candidates.length) {
+                    for (let i = 0; i < state.length; i++) {
+                        if (state[i] === null) candidates.push(i);
+                    }
+                }
+                shuffle(candidates);
+                const n = Math.max(0, Math.min(candidates.length, Math.floor(Number(count) || 0)));
                 for (let k = 0; k < n; k++) {
-                    const idx = empty[k];
+                    const idx = candidates[k];
                     state[idx] = 3;
                     setSpecialForCell(idx, 'armored');
                     playMiniBossBurstEffect(idx, false);
@@ -2341,13 +2392,13 @@ function escapeHtmlAttr(str) {
                 return n;
             }
 
-            function maybeTriggerBossBreakpoint(meta) {
+            function maybeTriggerBossBreakpoint(meta, originIndex = null) {
                 if (!meta || !meta.maxHp) return;
                 if (!meta.breaks) meta.breaks = { b75: false, b50: false, b25: false };
                 const ratio = Math.max(0, Math.min(1, (Number(meta.hp) || 0) / Math.max(1, Number(meta.maxHp) || 1)));
-                if (!meta.breaks.b75 && ratio <= 0.75) { meta.breaks.b75 = true; spawnBossArmorPulse(1); }
-                if (!meta.breaks.b50 && ratio <= 0.50) { meta.breaks.b50 = true; spawnBossArmorPulse(2); }
-                if (!meta.breaks.b25 && ratio <= 0.25) { meta.breaks.b25 = true; spawnBossArmorPulse(2); }
+                if (!meta.breaks.b75 && ratio <= 0.75) { meta.breaks.b75 = true; spawnBossArmorPulse(1, originIndex); }
+                if (!meta.breaks.b50 && ratio <= 0.50) { meta.breaks.b50 = true; spawnBossArmorPulse(2, originIndex); }
+                if (!meta.breaks.b25 && ratio <= 0.25) { meta.breaks.b25 = true; spawnBossArmorPulse(2, originIndex); }
             }
 
             function specialHookBossBeforeGrow(ctx) {
@@ -2362,13 +2413,13 @@ function escapeHtmlAttr(str) {
                     try { popAt(idx, ctx.tracker); } catch (e) { }
                     if (Array.isArray(ctx.state)) ctx.state[idx] = null;
                     clearSpecialForCell(idx);
-                    clearMiniBossState();
+                    syncMiniBossStateFromBoard();
                     clicksLeft = Math.min(MAX_CLICKS, clicksLeft + MINI_BOSS_CLICK_BONUS);
                     updateHUD();
                     try { playSfx('miniboss_dies'); } catch (e) { }
                 } else {
                     setMiniBossStateFromMeta(idx, meta);
-                    maybeTriggerBossBreakpoint(meta);
+                    maybeTriggerBossBreakpoint(meta, idx);
                     try { playSfx('fill'); } catch (e) { }
                 }
                 scheduleRender();
@@ -2381,18 +2432,19 @@ function escapeHtmlAttr(str) {
                     return false;
                 }
                 const empties = Array.isArray(preferredEmptyList) ? preferredEmptyList.filter((i) => state[i] === null) : [];
-                let bossIndex = -1;
-                if (empties.length) bossIndex = empties[Math.floor(Math.random() * empties.length)];
-                if (bossIndex < 0) {
-                    const all = Array.from({ length: state.length }, (_, i) => i);
-                    bossIndex = all[Math.floor(Math.random() * all.length)];
-                }
+                const candidate = empties.length ? empties.slice() : Array.from({ length: state.length }, (_, i) => i);
+                shuffle(candidate);
+                const bossCount = Math.max(1, Math.floor(getMiniBossCountForLevel(levelNum)));
+                const spawnCount = Math.max(1, Math.min(bossCount, candidate.length));
                 const hp = getMiniBossHpForLevel(levelNum);
-                state[bossIndex] = 3;
-                specialState[bossIndex] = 'boss';
-                specialMetaState[bossIndex] = { isBoss: true, hp, maxHp: hp, breaks: { b75: false, b50: false, b25: false } };
-                setMiniBossStateFromMeta(bossIndex, specialMetaState[bossIndex]);
-                return true;
+                for (let i = 0; i < spawnCount; i++) {
+                    const bossIndex = candidate[i];
+                    state[bossIndex] = 3;
+                    specialState[bossIndex] = 'boss';
+                    specialMetaState[bossIndex] = { isBoss: true, hp, maxHp: hp, breaks: { b75: false, b50: false, b25: false } };
+                }
+                syncMiniBossStateFromBoard();
+                return spawnCount > 0;
             }
 
 
@@ -2413,18 +2465,21 @@ function escapeHtmlAttr(str) {
                 }
                 const total = ROWS * COLS;
                 const levelNum = getCurrentLevelNumber();
-                const difficulty = getDifficultyForLevel(levelNum);
+                const useLevel10SpawnProfile = (levelNum === 15);
+                const spawnProfileLevel = useLevel10SpawnProfile ? 10 : levelNum;
+                const spawnProfileCompleted = useLevel10SpawnProfile ? 9 : screensPassed;
+                const difficulty = getDifficultyForLevel(spawnProfileLevel);
                 const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
                 const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
                 const isBossLevelNow = isMiniBossLevel(levelNum);
-                const density = Math.min(0.95, baseDensity + screensPassed * densityGrowth);
+                const density = Math.min(0.95, baseDensity + Math.max(0, Number(spawnProfileCompleted) || 0) * densityGrowth);
                 let target = Math.round(total * density);
                 if (isBossLevelNow) target = Math.max(8, Math.round(target * 0.78));
                 const idx = Array.from({ length: total }, (_, i) => i);
                 shuffle(idx);
                 for (let k = 0; k < target; k++) {
                     const cellIndex = idx[k];
-                    state[cellIndex] = sampleSizeRandom();
+                    state[cellIndex] = sampleSizeRandom(spawnProfileLevel, spawnProfileCompleted);
                     setSpecialForCell(cellIndex, rollSpecialVirusType(levelNum));
                 }
                 if (isBossLevelNow) {
@@ -3253,6 +3308,10 @@ function escapeHtmlAttr(str) {
                 const idx = Number(index);
                 if (!Number.isFinite(idx)) return false;
                 const typeId = specialState[idx];
+                if (typeId === 'armored' || typeId === 'boss') {
+                    if (specialTelegraphIndex === idx) clearSpecialTelegraph();
+                    return false;
+                }
                 if (!typeId) {
                     if (specialTelegraphIndex === idx) clearSpecialTelegraph();
                     return false;
