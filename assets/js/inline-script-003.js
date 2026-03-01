@@ -3613,7 +3613,6 @@ function escapeHtmlAttr(str) {
                 const center = Number(centerIndex);
                 inputLocked = true;
                 stormResolving = true;
-                clicksLeft--;
                 stormCharges = Math.max(0, stormCharges - 1);
                 incrementAchievementStat('runNanoStormUses', 1, 'run');
                 tutorialEvent('firstStormUse');
