@@ -140,9 +140,9 @@ function escapeHtmlAttr(str) {
                 chainScoreStep: 0.5,
                 levelScoreScaleStep: 0.1,
                 blockerUnlockLevel: 10,
-                blockerTickMs: 1650,
+                blockerTickMs: 1500,
                 blockerTickJitterMs: 550,
-                blockerPostUserTickMs: 700,
+                blockerPostUserTickMs: 520,
                 blockerUserBoostWindowMs: 1300,
                 blockerThicknessRatio: 0.010
             },
@@ -552,6 +552,23 @@ function escapeHtmlAttr(str) {
 
             function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
             function prepareMusicOrder() { musicOrder = MUSIC_PLAYLIST.slice(); shuffleArray(musicOrder); musicIndex = 0; }
+            function switchMusicForNewRun() {
+                try {
+                    if (!musicEnabled || !audioUserInteracted) return;
+                    if (!Array.isArray(MUSIC_PLAYLIST) || MUSIC_PLAYLIST.length === 0) return;
+                    const active = getActiveMusicAudio();
+                    const currentSrc = active && active.src ? String(active.src) : '';
+                    const candidates = MUSIC_PLAYLIST.filter((u) => String(u || '') !== currentSrc);
+                    const pickFrom = candidates.length ? candidates : MUSIC_PLAYLIST.slice();
+                    if (!pickFrom.length) return;
+                    const picked = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+                    const rest = MUSIC_PLAYLIST.filter((u) => String(u || '') !== String(picked || ''));
+                    shuffleArray(rest);
+                    musicOrder = [picked].concat(rest);
+                    musicIndex = 0;
+                    playNextMusicTrack();
+                } catch (e) { }
+            }
             function playNextMusicTrack() {
                 if (!musicEnabled) return; if (musicAudio) { try { musicAudio.pause(); musicAudio.src = ''; } catch (e) { } musicAudio = null; }
                 if (musicOrder.length === 0 || musicIndex >= musicOrder.length) prepareMusicOrder();
@@ -817,18 +834,18 @@ function escapeHtmlAttr(str) {
             const ACHIEVEMENT_STORAGE_KEY = 'goneViral_achievements_v1';
             const ACHIEVEMENT_SCHEMA_VERSION = 1;
             const ACHIEVEMENT_DEFS = [
-                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 250 viruses in one run.', stat: 'runPops', target: 250, scope: 'run' },
-                { id: 'run_level_5', title: 'Containment I', description: 'Reach level 5 in one run.', stat: 'runLevelReached', target: 5, scope: 'run' },
-                { id: 'run_level_10', title: 'Containment II', description: 'Reach level 10 in one run.', stat: 'runLevelReached', target: 10, scope: 'run' },
-                { id: 'run_level_15', title: 'Containment III', description: 'Reach level 15 in one run.', stat: 'runLevelReached', target: 15, scope: 'run' },
-                { id: 'run_shell_breaker_10', title: 'Shell Breaker', description: 'Break 10 armored shells in one run.', stat: 'runArmoredShellsBroken', target: 10, scope: 'run' },
+                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 300 viruses in one run.', stat: 'runPops', target: 300, scope: 'run' },
+                { id: 'run_level_5', title: 'Containment I', description: 'Complete level 5 in one run.', stat: 'runLevelReached', target: 6, scope: 'run' },
+                { id: 'run_level_10', title: 'Containment II', description: 'Complete level 10 in one run.', stat: 'runLevelReached', target: 11, scope: 'run' },
+                { id: 'run_level_15', title: 'Containment III', description: 'Complete level 15 in one run.', stat: 'runLevelReached', target: 16, scope: 'run' },
+                { id: 'run_shell_breaker_10', title: 'Shell Breaker', description: 'Break 25 armored shells in one run.', stat: 'runArmoredShellsBroken', target: 25, scope: 'run' },
                 { id: 'run_chain_20', title: 'Chain Master', description: 'Reach a 20+ chain in one run.', stat: 'runBestChain', target: 20, scope: 'run' },
                 { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 3 times in one run.', stat: 'runNanoStormUses', target: 3, scope: 'run' },
                 { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left.', stat: 'runClutchClears', target: 1, scope: 'run' },
                 { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,000 viruses across runs.', stat: 'totalPopsLifetime', target: 2000, scope: 'lifetime' },
                 { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs.', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
-                { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 100 armored viruses across runs.', stat: 'armoredShellsLifetime', target: 100, scope: 'lifetime' },
-                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 100 levels across runs.', stat: 'levelsClearedLifetime', target: 100, scope: 'lifetime' }
+                { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored viruses across runs.', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
+                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 250 levels across runs.', stat: 'levelsClearedLifetime', target: 250, scope: 'lifetime' }
             ];
             let achievementSaveTimer = null;
             let achievementUiQueued = false;
@@ -887,14 +904,7 @@ function escapeHtmlAttr(str) {
             }
 
             function tutorialVoiceEnabled() {
-                try {
-                    if (tutorialMode === TUTORIAL_MODES.off) return false;
-                    if (window.assistantMuted) return false;
-                    if (document.body && document.body.classList.contains('assistant-disabled')) return false;
-                    return !!(window.Assistant && typeof Assistant.show === 'function');
-                } catch (e) {
-                    return false;
-                }
+                return false;
             }
 
             function isTutorialGateReady() {
@@ -1062,9 +1072,6 @@ function escapeHtmlAttr(str) {
             function maybeShowLevelDynamicsIntro(nextLevelNum) {
                 const briefing = getLevelDynamicsBriefing(nextLevelNum);
                 if (!briefing) {
-                    return false;
-                }
-                if (tutorialMode === TUTORIAL_MODES.off) {
                     return false;
                 }
                 try { inputLocked = true; } catch (e) { }
@@ -1731,6 +1738,7 @@ function escapeHtmlAttr(str) {
                     updateHUD();
                     outOfClicksShown = false;
                     if (fromGameOver) {
+                        try { switchMusicForNewRun(); } catch (e) { }
                         try { if (window.Assistant && Assistant.emit) Assistant.emit('postGameWelcome'); } catch (e) { }
                     }
                 } catch (e) { console.warn('performGameReset failed', e); }
@@ -1993,13 +2001,22 @@ function escapeHtmlAttr(str) {
                 return getDifficultyForLevel(getCurrentLevelNumber());
             }
 
+            // Spawn pacing can differ from displayed level to tune feel.
+            // Level 10 resets to level-5 spawn profile, then advances one profile step every 2 levels.
+            function getSpawnProfileLevel(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Number(levelNum) || 1);
+                if (lvl < 10) return Math.min(10, lvl);
+                const remapped = 5 + Math.floor((lvl - 10) / 2);
+                return Math.max(1, Math.min(10, remapped));
+            }
+
             function getBlockerSettings(levelNum = getCurrentLevelNumber()) {
                 const d = getDifficultyForLevel(levelNum);
                 return {
                     unlockLevel: Math.max(1, Math.floor(Number(d.blockerUnlockLevel) || 1)),
-                    tickMs: Math.max(800, Math.floor(Number(d.blockerTickMs) || 1650)),
+                    tickMs: Math.max(800, Math.floor(Number(d.blockerTickMs) || 1500)),
                     tickJitterMs: Math.max(0, Math.floor(Number(d.blockerTickJitterMs) || 550)),
-                    postUserTickMs: Math.max(320, Math.floor(Number(d.blockerPostUserTickMs) || 700)),
+                    postUserTickMs: Math.max(280, Math.floor(Number(d.blockerPostUserTickMs) || 520)),
                     userBoostWindowMs: Math.max(250, Math.floor(Number(d.blockerUserBoostWindowMs) || 1300)),
                     thicknessRatio: Math.max(0.004, Math.min(0.04, Number(d.blockerThicknessRatio) || 0.010))
                 };
@@ -2010,6 +2027,19 @@ function escapeHtmlAttr(str) {
                 const cfg = getBlockerSettings();
                 blockerUserBoostUntil = Date.now() + cfg.userBoostWindowMs;
                 scheduleRotatingBlockerTick();
+            }
+
+            function moveBlockerAfterResolution() {
+                if (!isRotatingBlockerActive()) return;
+                try {
+                    advanceRotatingBlockerOverTime();
+                    syncRotatingBlockerUI();
+                } catch (e) { }
+                try {
+                    const cfg = getBlockerSettings();
+                    blockerUserBoostUntil = Date.now() + Math.max(220, Math.floor(cfg.userBoostWindowMs * 0.5));
+                    scheduleRotatingBlockerTick();
+                } catch (e) { }
             }
 
             function isGameOverActiveNow() {
@@ -2589,8 +2619,8 @@ function escapeHtmlAttr(str) {
                 }
                 const total = ROWS * COLS;
                 const levelNum = getCurrentLevelNumber();
-                const spawnProfileLevel = Math.min(10, levelNum);
-                const spawnProfileCompleted = Math.min(9, Math.max(0, Number(screensPassed) || 0));
+                const spawnProfileLevel = getSpawnProfileLevel(levelNum);
+                const spawnProfileCompleted = Math.max(0, Math.min(9, spawnProfileLevel - 1));
                 const difficulty = getDifficultyForLevel(spawnProfileLevel);
                 const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
                 const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
@@ -3635,7 +3665,6 @@ function escapeHtmlAttr(str) {
                 if (isUser) {
                     // block clicks if game is locked or already out of clicks
                     if (inputLocked || clicksLeft <= 0) return;
-                    nudgeRotatingBlockerAfterUserMove();
 
                     // lock input for the duration of this chain
                     inputLocked = true;
@@ -3772,6 +3801,9 @@ function escapeHtmlAttr(str) {
 
                 // Define common callback for after chain/particle resolution
                 const afterChain = () => {
+                    if (isUser) {
+                        try { moveBlockerAfterResolution(); } catch (e) { }
+                    }
                     inputLocked = false; // allow next click
                     if (clicksLeft <= 0) checkOutOfClicks();
                 };
@@ -3831,6 +3863,7 @@ function escapeHtmlAttr(str) {
                         } catch (e) { }
                     }, 2200);
                     const afterStorm = () => {
+                        try { moveBlockerAfterResolution(); } catch (e) { }
                         stormResolving = false;
                         inputLocked = false;
                         if (clicksLeft <= 0) checkOutOfClicks();
@@ -3945,7 +3978,6 @@ function escapeHtmlAttr(str) {
                 audioBtn.addEventListener('click', () => {
                     setSettingsPopupTab('settings');
                     scheduleAchievementsUIRender();
-                    syncTutorialControls();
                     syncAudioSettingsUI();
                 });
             }
@@ -3982,25 +4014,6 @@ function escapeHtmlAttr(str) {
             }
             applyMusicEnabledState(false);
             applySfxEnabledState();
-            const tutorialModeSelect = document.getElementById('tutorialMode');
-            const replayTutorialBtn = document.getElementById('replayTutorialBtn');
-            syncTutorialControls();
-            if (tutorialModeSelect) {
-                tutorialModeSelect.addEventListener('change', (ev) => {
-                    const nextMode = String((ev && ev.target && ev.target.value) || '').toLowerCase();
-                    if (!TUTORIAL_MODES[nextMode]) return;
-                    tutorialMode = nextMode;
-                    saveTutorialMode();
-                    syncTutorialControls();
-                    if (tutorialMode !== TUTORIAL_MODES.off) maybeShowTutorialIntro(false);
-                });
-            }
-            if (replayTutorialBtn) {
-                replayTutorialBtn.addEventListener('click', (ev) => {
-                    try { ev.preventDefault(); } catch (e) { }
-                    replayTutorialNow();
-                });
-            }
             const resetProgressBtn = document.getElementById('resetProgressBtn');
             if (resetProgressBtn) {
                 resetProgressBtn.addEventListener('click', (ev) => {

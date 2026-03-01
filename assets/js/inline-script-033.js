@@ -9,14 +9,22 @@
 
   function clearAssistantVisuals() {
     try {
-      var bubbles = Array.from(document.querySelectorAll('.assist-bubble, #assist-bubble'));
+      var bubbles = Array.from(document.querySelectorAll(
+        '.assist-bubble, #assist-bubble, .assistant-bubble, .ai-assistant-bubble, .assistant-fallback-bubble'
+      ));
       bubbles.forEach(function(b){
         try {
           b.classList.remove('show');
-          b.style.removeProperty('opacity');
-          b.style.removeProperty('pointer-events');
+          b.style.setProperty('display', 'none', 'important');
+          b.style.setProperty('visibility', 'hidden', 'important');
+          b.style.setProperty('opacity', '0', 'important');
+          b.style.setProperty('pointer-events', 'none', 'important');
         } catch(e){}
       });
+      var textEl = document.getElementById('assist-text');
+      if (textEl) {
+        try { textEl.textContent = ''; } catch(e){}
+      }
       var fallbackRoot = document.getElementById('assistant-bubble-root');
       if (fallbackRoot) {
         try { fallbackRoot.innerHTML = ''; } catch(e){}
@@ -24,6 +32,26 @@
       }
       var fallbackBubbles = Array.from(document.querySelectorAll('.assistant-fallback-bubble'));
       fallbackBubbles.forEach(function(b){ try { b.remove(); } catch(e){} });
+    } catch(e){}
+  }
+
+  function restoreAssistantVisuals() {
+    try {
+      var bubbles = Array.from(document.querySelectorAll(
+        '.assist-bubble, #assist-bubble, .assistant-bubble, .ai-assistant-bubble, .assistant-fallback-bubble'
+      ));
+      bubbles.forEach(function(b){
+        try {
+          b.style.removeProperty('display');
+          b.style.removeProperty('visibility');
+          b.style.removeProperty('opacity');
+          b.style.removeProperty('pointer-events');
+        } catch(e){}
+      });
+      var textEl = document.getElementById('assist-text');
+      if (textEl && !String(textEl.textContent || '').trim()) {
+        try { textEl.textContent = '...'; } catch(e){}
+      }
     } catch(e){}
   }
   
@@ -37,6 +65,7 @@ function setAssistantEnabled(val) {
       try { if (window.Assistant && typeof window.Assistant.init === 'function') window.Assistant.init(); } catch(e){}
       document.body.classList.remove('assistant-disabled');
       try { document.documentElement.classList.remove('assistant-disabled'); } catch(e){}
+      restoreAssistantVisuals();
     } else {
       try { if (window.Assistant && typeof window.Assistant.clear === 'function') window.Assistant.clear(); } catch(e){}
       try { if (window.Assistant && typeof window.Assistant.destroy === 'function') window.Assistant.destroy(); } catch(e){}
