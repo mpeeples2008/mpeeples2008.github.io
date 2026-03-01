@@ -96,12 +96,12 @@
             pointer-events: none;
             z-index: 9000;
             overflow: visible;
-            background: linear-gradient(90deg, rgba(150, 108, 22, 0.98), rgba(252, 226, 114, 0.98), rgba(150, 108, 22, 0.98));
-            box-shadow: 0 0 0 2px rgba(255, 238, 150, 0.78), 0 0 16px rgba(250, 220, 100, 0.55), inset 0 0 9px rgba(255, 250, 198, 0.52);
+            background: linear-gradient(90deg, rgba(26, 122, 62, 0.98), rgba(122, 255, 176, 0.98), rgba(26, 122, 62, 0.98));
+            box-shadow: 0 0 0 2px rgba(146, 255, 190, 0.78), 0 0 16px rgba(96, 232, 148, 0.55), inset 0 0 9px rgba(184, 255, 216, 0.5);
             opacity: 0.94;
             transition: left 560ms cubic-bezier(0.2, 0.78, 0.22, 1), top 560ms cubic-bezier(0.2, 0.78, 0.22, 1), transform 560ms cubic-bezier(0.2, 0.78, 0.22, 1), background 180ms ease-out, box-shadow 180ms ease-out;
             will-change: left, top, transform;
-            animation: blockerBeamPulse 900ms ease-in-out infinite alternate;
+            animation: blockerBeamPulse 900ms ease-in-out infinite alternate, blockerBeamBodyBob 700ms ease-in-out infinite;
         }
 
         .rotating-blocker::before {
@@ -137,17 +137,17 @@
         }
 
         .rotating-blocker.blocked-hit {
-            box-shadow: 0 0 0 2px rgba(255, 170, 130, 0.92), 0 0 18px rgba(255, 128, 96, 0.72);
-            background: linear-gradient(90deg, rgba(194, 84, 68, 0.98), rgba(255, 132, 110, 0.98), rgba(194, 84, 68, 0.98));
+            box-shadow: 0 0 0 2px rgba(78, 206, 128, 0.88), 0 0 18px rgba(42, 158, 90, 0.68);
+            background: linear-gradient(90deg, rgba(18, 84, 46, 0.98), rgba(38, 136, 78, 0.98), rgba(18, 84, 46, 0.98));
         }
 
         .rotating-blocker.blocked-hit::before {
-            background: repeating-linear-gradient(90deg, rgba(255, 224, 210, 0.12) 0 8px, rgba(255, 170, 144, 0.6) 8px 16px, rgba(255, 224, 210, 0.12) 16px 24px);
+            background: repeating-linear-gradient(90deg, rgba(202, 255, 224, 0.12) 0 8px, rgba(112, 224, 162, 0.56) 8px 16px, rgba(202, 255, 224, 0.12) 16px 24px);
         }
 
         .rotating-blocker.blocked-hit::after {
-            background: linear-gradient(90deg, rgba(255, 218, 204, 0.24), rgba(255, 182, 166, 0.96), rgba(255, 218, 204, 0.24));
-            box-shadow: 0 0 10px rgba(255, 155, 132, 0.8);
+            background: linear-gradient(90deg, rgba(204, 255, 224, 0.22), rgba(128, 232, 172, 0.9), rgba(204, 255, 224, 0.22));
+            box-shadow: 0 0 10px rgba(98, 210, 144, 0.72);
         }
 
         .rotating-blocker .blocker-emitter {
@@ -159,12 +159,16 @@
             height: var(--emitter-size);
             border-radius: 50%;
             transform: translate(-50%, -50%);
-            background: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_nanobot.png') center center / contain no-repeat;
-            filter: drop-shadow(0 0 7px rgba(255, 225, 120, 0.82)) saturate(1.08);
+            background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanobot_hover.png');
+            background-repeat: no-repeat;
+            background-size: 300% 300%;
+            background-position: 0% 0%;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 0 3px rgba(255, 225, 120, 0.45)) saturate(1.03);
             pointer-events: none;
             z-index: 1;
             will-change: transform;
-            animation: blockerEmitterFloatA 1400ms ease-in-out infinite;
+            animation: blockerEmitterFrames 620ms steps(7, end) infinite, blockerEmitterFloatA 1400ms ease-in-out infinite;
         }
 
         .rotating-blocker .blocker-emitter.e-left {
@@ -173,11 +177,20 @@
 
         .rotating-blocker .blocker-emitter.e-right {
             left: calc(100% + var(--emitter-overhang));
-            animation-name: blockerEmitterFloatB;
+            animation-name: blockerEmitterFrames, blockerEmitterFloatB;
         }
 
         .rotating-blocker.blocked-hit .blocker-emitter {
-            filter: drop-shadow(0 0 6px rgba(255, 132, 110, 0.95)) saturate(1.2);
+            filter: drop-shadow(0 0 3px rgba(255, 132, 110, 0.62)) saturate(1.08);
+        }
+
+        @keyframes blockerBeamBodyBob {
+            0%, 100% {
+                translate: 0 -2px;
+            }
+            50% {
+                translate: 0 2px;
+            }
         }
 
         @keyframes blockerBeamFlow {
@@ -187,6 +200,15 @@
 
             100% {
                 background-position: 64px 0;
+            }
+        }
+
+        @keyframes blockerBeamBob {
+            0%, 100% {
+                transform: translateY(calc(-50% - 2px));
+            }
+            50% {
+                transform: translateY(calc(-50% + 2px));
             }
         }
 
@@ -210,6 +232,16 @@
             100% {
                 opacity: 1;
             }
+        }
+
+        @keyframes blockerEmitterFrames {
+            0%, 14.285% { background-position: 0% 0%; }
+            14.286%, 28.571% { background-position: 50% 0%; }
+            28.572%, 42.857% { background-position: 100% 0%; }
+            42.858%, 57.142% { background-position: 0% 50%; }
+            57.143%, 71.428% { background-position: 50% 50%; }
+            71.429%, 85.714% { background-position: 100% 50%; }
+            85.715%, 100% { background-position: 0% 100%; }
         }
 
         @keyframes blockerEmitterFloatA {
@@ -993,14 +1025,31 @@
             justify-content: center
         }
 
-            .face-sprite img {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-                pointer-events: none;
-                transform-origin: center center;
-                display: block
-            }
+        .face-sprite img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            transform-origin: center center;
+            display: block
+        }
+
+        .virus1-sprite-sheet {
+            width: 100%;
+            height: 100%;
+            background-position: 0% 0%;
+            background-repeat: no-repeat;
+            background-size: 300% 400%;
+            image-rendering: pixelated;
+            animation: virus1SpriteFrames 760ms step-end infinite;
+            will-change: background-position;
+            pointer-events: none;
+        }
+
+        .virus.grow-tween .face-sprite {
+            animation: virusGrowTween 300ms cubic-bezier(0.16, 0.82, 0.22, 1);
+            transform-origin: center center;
+        }
 
         /* Animate size-3 viruses with gentle jitter/pulse - make it look like it's ready to burst! */
         @keyframes jitter {
@@ -1024,6 +1073,54 @@
 
         .virus--size-3 .face-sprite img {
             animation: jitter 0.45s infinite ease-in-out;
+        }
+
+        @keyframes virus1SpriteFrames {
+            0%, 9.999% {
+                background-position: 0% 0%;
+            }
+            10%, 19.999% {
+                background-position: 50% 0%;
+            }
+            20%, 29.999% {
+                background-position: 100% 0%;
+            }
+            30%, 39.999% {
+                background-position: 0% 33.333%;
+            }
+            40%, 49.999% {
+                background-position: 50% 33.333%;
+            }
+            50%, 59.999% {
+                background-position: 100% 33.333%;
+            }
+            60%, 69.999% {
+                background-position: 0% 66.666%;
+            }
+            70%, 79.999% {
+                background-position: 50% 66.666%;
+            }
+            80%, 89.999% {
+                background-position: 100% 66.666%;
+            }
+            90%, 100% {
+                background-position: 0% 100%;
+            }
+        }
+
+        @keyframes virusGrowTween {
+            0% {
+                transform: scale(calc(var(--grow-from, 0.84) * 0.9));
+                filter: brightness(0.9);
+            }
+            62% {
+                transform: scale(1.12);
+                filter: brightness(1.18);
+            }
+            100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
         }
 
         /* Animate the splat/stain/burst when a virus pops */
@@ -3059,7 +3156,8 @@
 
 
 /* START-MISSION modal */
-        #startModal {
+        #startModal,
+        #level5DynamicsModal {
             position: fixed;
             left: 50%;
             top: 50%;
@@ -3084,13 +3182,15 @@
         }
 
             /* visible state */
-            #startModal.show {
+            #startModal.show,
+            #level5DynamicsModal.show {
                 display: block;
                 animation: modalIn 260ms ease both;
             }
 
             /* inner layout: text left, small image anchored bottom-right inside modal */
-            #startModal .inner {
+            #startModal .inner,
+            #level5DynamicsModal .inner {
                 position: relative;
                 display: flex;
                 align-items: flex-start;
@@ -3099,7 +3199,8 @@
             }
 
             /* text column takes remaining width, left aligned */
-            #startModal .modal-text {
+            #startModal .modal-text,
+            #level5DynamicsModal .modal-text {
                 padding-right: 8px;
                 flex: 1 1 auto;
                 text-align: left;
@@ -3111,7 +3212,8 @@
 
             /* small image anchored bottom-right inside the modal */
             /* small image placed as a flex item to avoid overlapping text */
-            #startModal .modal-img {
+            #startModal .modal-img,
+            #level5DynamicsModal .modal-img {
                 position: static;
                 right: auto;
                 bottom: auto;
@@ -3128,7 +3230,8 @@
             }
 
             /* Close button */
-            #startModal .close-btn {
+            #startModal .close-btn,
+            #level5DynamicsModal .close-btn {
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
@@ -3158,13 +3261,15 @@
 
         /* responsive: allow image to shrink on narrow screens */
         @media (max-width: 420px) {
-            #startModal .modal-img {
+            #startModal .modal-img,
+            #level5DynamicsModal .modal-img {
                 width: 56px;
                 right: 8px;
                 bottom: 8px;
             }
 
-            #startModal {
+            #startModal,
+            #level5DynamicsModal {
                 padding: 16px;
             }
         }
@@ -3348,7 +3453,7 @@ html.assistant-disabled .assistant-fallback-bubble {
             display: flex;
             gap: 8px;
             align-items: center;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
         }
 
             .control-trio .ctrl {
@@ -3368,46 +3473,49 @@ html.assistant-disabled .assistant-fallback-bubble {
                 padding: 6px;
             }
 
-            .control-trio .storm-btn {
-                width: 64px;
-                min-width: 64px;
-                height: 34px;
+             .control-trio .storm-btn {
+                width: 56px;
+                min-width: 56px;
+                height: 28px;
                 padding: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
                 position: relative;
                 overflow: visible;
                 --storm-combo-ratio: 0;
-                border: 3px solid #0f2b3d;
+                border: 3px solid #12161b;
                 border-radius: 8px;
-                background: linear-gradient(180deg, #132b3d, #0b1823);
+                background: linear-gradient(180deg, #1a1f25, #0b0f14);
                 color: #d9f6ff;
-                box-shadow: inset 0 0 0 1px rgba(201, 247, 255, 0.12), 4px 4px 0 rgba(0, 0, 0, 0.16);
+                box-shadow: inset 0 0 0 1px rgba(201, 247, 255, 0.08), 4px 4px 0 rgba(0, 0, 0, 0.2);
             }
 
-            .control-trio .storm-btn::before {
+             .control-trio .storm-btn::before {
                 content: '';
                 position: absolute;
-                right: -7px;
+                right: -6px;
                 top: 50%;
-                width: 6px;
-                height: 12px;
+                width: 5px;
+                height: 10px;
                 border-radius: 2px;
                 transform: translateY(-50%);
-                border: 2px solid #0f2b3d;
+                border: 2px solid #12161b;
                 border-left: 0;
-                background: linear-gradient(180deg, #3f5f77, #203849);
-                box-shadow: inset 0 0 0 1px rgba(201, 247, 255, 0.16);
+                background: linear-gradient(180deg, #232a31, #13181d);
+                box-shadow: inset 0 0 0 1px rgba(201, 247, 255, 0.1);
                 z-index: 2;
             }
 
-            .control-trio .storm-btn::after {
+             .control-trio .storm-btn::after {
                 content: '';
                 position: absolute;
                 left: 3px;
-                right: 7px;
+                right: 6px;
                 top: 3px;
                 bottom: 3px;
                 border-radius: 5px;
-                background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 7px, rgba(255, 255, 255, 0.08) 7px 14px), linear-gradient(90deg, #5ed8ff, #bbf8ff);
+                background: repeating-linear-gradient(90deg, rgba(179, 255, 225, 0.2) 0 7px, rgba(179, 255, 225, 0.08) 7px 14px), linear-gradient(90deg, #2f7a66, #5fbf9f);
                 transform-origin: left center;
                 transform: scaleX(var(--storm-combo-ratio));
                 opacity: 0.16;
@@ -3417,54 +3525,55 @@ html.assistant-disabled .assistant-fallback-bubble {
                 z-index: 1;
             }
 
-            .control-trio .storm-btn.combo-tracking::after {
+             .control-trio .storm-btn.combo-tracking::after {
                 opacity: 0.96;
                 animation: stormFillSweep 700ms linear infinite;
             }
 
-            .control-trio .storm-btn.combo-near::after {
-                background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.24) 0 7px, rgba(255, 255, 255, 0.1) 7px 14px), linear-gradient(90deg, #8feaff, #fff5ae);
-                box-shadow: 0 0 16px rgba(198, 245, 255, 0.56);
+             .control-trio .storm-btn.combo-near::after {
+                background: repeating-linear-gradient(90deg, rgba(210, 255, 213, 0.24) 0 7px, rgba(210, 255, 213, 0.1) 7px 14px), linear-gradient(90deg, #4d9a5f, #8aca79);
+                box-shadow: 0 0 16px rgba(138, 202, 121, 0.52);
             }
 
-            .control-trio .storm-btn.combo-hot::after {
-                background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.32) 0 8px, rgba(255, 255, 255, 0.12) 8px 16px), linear-gradient(90deg, #fff2a4, #ffffff);
-                box-shadow: 0 0 20px rgba(255, 241, 166, 0.75);
+             .control-trio .storm-btn.combo-hot::after {
+                background: repeating-linear-gradient(90deg, rgba(230, 255, 192, 0.3) 0 8px, rgba(230, 255, 192, 0.12) 8px 16px), linear-gradient(90deg, #79ba58, #b9dc6c);
+                box-shadow: 0 0 20px rgba(185, 220, 108, 0.66);
                 animation: stormFillSweep 520ms linear infinite, stormComboHotPulse 520ms ease-in-out infinite;
             }
 
-            .control-trio .storm-btn.charged::after {
+             .control-trio .storm-btn.charged::after {
                 transform: scaleX(1);
                 opacity: 0.98;
-                background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.32) 0 8px, rgba(255, 255, 255, 0.12) 8px 16px), linear-gradient(90deg, #fff2a4, #ffffff);
-                box-shadow: 0 0 18px rgba(255, 241, 166, 0.72);
+                background: repeating-linear-gradient(90deg, rgba(230, 255, 192, 0.3) 0 8px, rgba(230, 255, 192, 0.12) 8px 16px), linear-gradient(90deg, #79ba58, #b9dc6c);
+                box-shadow: 0 0 18px rgba(185, 220, 108, 0.62);
                 animation: none;
             }
 
-            .control-trio .storm-btn.charge-gained {
+             .control-trio .storm-btn.charge-gained {
                 animation: stormChargeGain 520ms ease-out;
             }
 
-            .control-trio .storm-btn.insurance-ready::after {
+             .control-trio .storm-btn.insurance-ready::after {
                 box-shadow: 0 0 22px rgba(255, 241, 166, 0.82);
             }
 
-            .control-trio .storm-btn.ready {
-                box-shadow: inset 0 0 0 1px rgba(201, 247, 255, 0.12), 0 0 0 2px rgba(94, 216, 255, 0.28), 4px 4px 0 rgba(0, 0, 0, 0.16);
+             .control-trio .storm-btn.ready {
+                border-color: #1f3b45;
+                box-shadow: inset 0 0 0 1px rgba(171, 236, 255, 0.12), 0 0 0 2px rgba(66, 142, 170, 0.28), 4px 4px 0 rgba(0, 0, 0, 0.16);
             }
 
-            .control-trio .storm-btn.armed {
-                border-color: #ffd166;
-                box-shadow: inset 0 0 0 1px rgba(255, 240, 184, 0.18), 0 0 0 3px rgba(255, 224, 122, 0.35), 4px 4px 0 rgba(0, 0, 0, 0.18);
-                animation: stormBtnPulse 680ms ease-in-out infinite;
+             .control-trio .storm-btn.armed {
+                border-color: #7a5a1e;
+                box-shadow: inset 0 0 0 1px rgba(255, 217, 140, 0.2), 0 0 0 3px rgba(143, 109, 44, 0.45), 4px 4px 0 rgba(0, 0, 0, 0.2);
+                animation: stormBtnPulse 760ms ease-in-out infinite;
             }
 
-            .control-trio .storm-btn.empty {
+             .control-trio .storm-btn.empty {
                 opacity: 1;
                 filter: grayscale(0.35);
             }
 
-            .control-trio .storm-btn:disabled {
+             .control-trio .storm-btn:disabled {
                 cursor: default;
             }
 
@@ -3476,10 +3585,10 @@ html.assistant-disabled .assistant-fallback-bubble {
                 font-size: 10px;
             }
 
-            .control-trio .storm-btn {
-                width: 56px;
-                min-width: 56px;
-                height: 30px;
+             .control-trio .storm-btn {
+                width: 52px;
+                min-width: 52px;
+                height: 26px;
             }
         }
 
@@ -3507,12 +3616,15 @@ html.assistant-disabled .assistant-fallback-bubble {
         @keyframes stormBtnPulse {
             0% {
                 transform: translateY(0) scale(1);
+                box-shadow: inset 0 0 0 1px rgba(255, 217, 140, 0.18), 0 0 0 3px rgba(143, 109, 44, 0.34), 4px 4px 0 rgba(0, 0, 0, 0.2);
             }
             50% {
                 transform: translateY(-1px) scale(1.02);
+                box-shadow: inset 0 0 0 1px rgba(255, 224, 164, 0.22), 0 0 0 4px rgba(171, 129, 52, 0.5), 4px 4px 0 rgba(0, 0, 0, 0.22);
             }
             100% {
                 transform: translateY(0) scale(1);
+                box-shadow: inset 0 0 0 1px rgba(255, 217, 140, 0.18), 0 0 0 3px rgba(143, 109, 44, 0.34), 4px 4px 0 rgba(0, 0, 0, 0.2);
             }
         }
 
@@ -3770,6 +3882,16 @@ html.assistant-disabled .assistant-fallback-bubble {
             animation: levelOutBoard 220ms ease both !important;
             pointer-events: none !important;
         }
+
+
+
+
+
+
+
+
+
+
 
 
 

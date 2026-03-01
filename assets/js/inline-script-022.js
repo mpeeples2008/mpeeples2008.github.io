@@ -1,5 +1,6 @@
 ﻿
 (function(){
+  var MODAL_IDS = ['startModal', 'level5DynamicsModal'];
   // ensure AI_SFX_URLS exists or fallback
   var SFX = (typeof AI_SFX_URLS !== 'undefined' && Array.isArray(AI_SFX_URLS) && AI_SFX_URLS.length) ? AI_SFX_URLS.slice() : (window.AI_SFX_URLS && Array.isArray(window.AI_SFX_URLS) ? window.AI_SFX_URLS.slice() : [
     "https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3",
@@ -43,12 +44,21 @@
   if (!document.getElementById(jitterCssId)) {
     var css = document.createElement('style');
     css.id = jitterCssId;
-    css.textContent = "\n@keyframes modalJitterX { 0% { transform: translateX(0) } 25% { transform: translateX(-6px) rotate(-1deg)} 50% { transform: translateX(6px) rotate(1deg)} 75% { transform: translateX(-3px) rotate(-0.6deg)} 100% { transform: translateX(0) rotate(0)} }\n#startModal .modal-img.jitter { animation: modalJitterX 360ms ease-in-out; }\n";
+    css.textContent = "\n@keyframes modalJitterX { 0% { transform: translateX(0) } 25% { transform: translateX(-6px) rotate(-1deg)} 50% { transform: translateX(6px) rotate(1deg)} 75% { transform: translateX(-3px) rotate(-0.6deg)} 100% { transform: translateX(0) rotate(0)} }\n#startModal .modal-img.jitter, #level5DynamicsModal .modal-img.jitter { animation: modalJitterX 360ms ease-in-out; }\n";
     document.head.appendChild(css);
   }
 
   var jitterInterval = null;
-  var isModalShown = false;
+  var activeModalId = null;
+
+  function getActiveModalId() {
+    for (var i = 0; i < MODAL_IDS.length; i++) {
+      var id = MODAL_IDS[i];
+      var modal = document.getElementById(id);
+      if (modal && modal.classList.contains('show')) return id;
+    }
+    return null;
+  }
 
   function startJitterLoop() {
     if (jitterInterval) return;
@@ -62,12 +72,15 @@
   function stopJitterLoop() {
     if (jitterInterval) { clearInterval(jitterInterval); jitterInterval = null; }
     // ensure remove class if left on
-    var img = document.querySelector('#startModal .modal-img');
+    var img = document.querySelector('#startModal .modal-img, #level5DynamicsModal .modal-img');
     if (img) img.classList.remove('jitter');
+    activeModalId = null;
   }
 
   function triggerJitterAndSfx() {
-    var img = document.querySelector('#startModal .modal-img');
+    activeModalId = getActiveModalId();
+    if (!activeModalId) return;
+    var img = document.querySelector('#' + activeModalId + ' .modal-img');
     if (!img) return;
     // add jitter class (animation is 360ms); remove after animationend
     try {
@@ -94,23 +107,19 @@
     } catch (e) { console.warn('play sfx failed', e); }
   }
 
-  // Hook into modal show/hide - observe classList changes on #startModal to start/stop jitter
+  // Hook into modal show/hide - observe classList changes on start/tutorial modals
   function observeModal() {
-    var modal = document.getElementById('startModal');
-    if (!modal) return;
-    // Start when .show present; stop otherwise
-    var mo = new MutationObserver(function(muts){
-      muts.forEach(function(m){
-        if (m.attributeName === 'class') {
-          var has = modal.classList.contains('show');
-          if (has && !isModalShown) { isModalShown = true; startJitterLoop(); }
-          else if (!has && isModalShown) { isModalShown = false; stopJitterLoop(); }
-        }
+    MODAL_IDS.forEach(function(id){
+      var modal = document.getElementById(id);
+      if (!modal) return;
+      var mo = new MutationObserver(function(){
+        var nextActive = getActiveModalId();
+        if (nextActive) startJitterLoop();
+        else stopJitterLoop();
       });
+      mo.observe(modal, { attributes: true, attributeFilter: ['class'] });
     });
-    mo.observe(modal, { attributes: true, attributeFilter: ['class'] });
-    // if modal already visible at load, start
-    if (modal.classList.contains('show')) { isModalShown = true; startJitterLoop(); }
+    if (getActiveModalId()) startJitterLoop();
   }
 
   // Run on DOM ready

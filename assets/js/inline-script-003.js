@@ -206,6 +206,8 @@ function escapeHtmlAttr(str) {
                 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png',
                 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png'
             ];
+            const VIRUS1_SPRITE_SHEET_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus1_clean.png';
+            const VIRUS_SIZE_SCALES = [0.56, 0.6, 0.8, 1.0];
             const MINIBOSS_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss.png';
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
             const SFX_URLS = {
@@ -217,6 +219,7 @@ function escapeHtmlAttr(str) {
                 blocker_move_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil1.mp3',
                 nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3',
                 blocker_move: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil2.mp3',
+                zap: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/zap.mp3',
                 boss_level: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.mp3',
                 miniboss_laugh: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_laugh.mp3',
                 miniboss_dies: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_dies.mp3',
@@ -233,7 +236,9 @@ function escapeHtmlAttr(str) {
             // Background music playlist (hard-wired) — will be started on the user's first tap
             const MUSIC_PLAYLIST = [
                 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Voltaic.mp3',
-                'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Robobozo.mp3'
+                'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Robobozo.mp3',
+                'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Robo-Western.mp3',
+                'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Ouroboros.mp3'
             ];
             let musicOrder = [];
             let musicIndex = 0;
@@ -255,6 +260,7 @@ function escapeHtmlAttr(str) {
                 blocker_move_1: 140,
                 nanostorm: 180,
                 blocker_move: 140,
+                zap: 120,
                 boss_level: 350,
                 miniboss_laugh: 300,
                 miniboss_dies: 300,
@@ -268,7 +274,7 @@ function escapeHtmlAttr(str) {
                 blocker_move_1: 0.62
             };
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
-            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'zap', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
             const IMAGE_PREFETCH_MAX = 10;
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
@@ -450,6 +456,7 @@ function escapeHtmlAttr(str) {
                 if (PETRI_URL) images.push(PETRI_URL);
                 if (typeof PARTICLE_SPRITE !== 'undefined' && PARTICLE_SPRITE) images.push(PARTICLE_SPRITE);
                 if (MINIBOSS_SPRITE_URL && level >= 5) images.push(MINIBOSS_SPRITE_URL);
+                if (VIRUS1_SPRITE_SHEET_URL) images.push(VIRUS1_SPRITE_SHEET_URL);
                 if (level <= 4) {
                     images.push(SPRITE_URLS[3], SPRITE_URLS[2]);
                 } else if (level <= 9) {
@@ -461,7 +468,7 @@ function escapeHtmlAttr(str) {
                 if (level >= 4) sfx.push('nanostorm');
                 if (level === 5 || level === 10 || level === 15) sfx.push('boss_level');
                 if (level >= 5) sfx.push('miniboss_laugh', 'miniboss_dies');
-                if (level >= 10) sfx.push('blocker_move', 'blocker_move_1');
+                if (level >= 10) sfx.push('blocker_move', 'blocker_move_1', 'zap');
                 if ((level % 3) === 0) sfx.push('win');
                 if ((level % 4) === 0) sfx.push('lose');
                 return {
@@ -547,10 +554,12 @@ function escapeHtmlAttr(str) {
             function prepareMusicOrder() { musicOrder = MUSIC_PLAYLIST.slice(); shuffleArray(musicOrder); musicIndex = 0; }
             function playNextMusicTrack() {
                 if (!musicEnabled) return; if (musicAudio) { try { musicAudio.pause(); musicAudio.src = ''; } catch (e) { } musicAudio = null; }
-                if (musicOrder.length === 0) prepareMusicOrder(); const url = musicOrder[musicIndex % musicOrder.length]; musicAudio = new Audio(url); musicAudio.volume = 0.20; musicAudio.preload = 'auto'; musicAudio.crossOrigin = 'anonymous';
+                if (musicOrder.length === 0 || musicIndex >= musicOrder.length) prepareMusicOrder();
+                const url = musicOrder[musicIndex];
+                musicAudio = new Audio(url); musicAudio.volume = 0.20; musicAudio.preload = 'auto'; musicAudio.crossOrigin = 'anonymous';
                 const onEnded = () => { // schedule next after silence
                     musicAudio.removeEventListener('ended', onEnded);
-                    setTimeout(() => { musicIndex = (musicIndex + 1) % musicOrder.length; playNextMusicTrack(); }, musicSilenceMs);
+                    setTimeout(() => { musicIndex += 1; playNextMusicTrack(); }, musicSilenceMs);
                 };
                 musicAudio.addEventListener('ended', onEnded);
                 const playPromise = musicAudio.play(); if (playPromise && playPromise.catch) { playPromise.catch(() => { /* ignore */ }); }
@@ -682,7 +691,7 @@ function escapeHtmlAttr(str) {
                     badge: 'A',
                     className: 'special-armored',
                     enabled: true,
-                    unlockLevel: 4,
+                    unlockLevel: 5,
                     spawnWeight: 1.0,
                     hooks: {
                         onBeforeGrow: specialHookArmoredBeforeGrow
@@ -789,6 +798,7 @@ function escapeHtmlAttr(str) {
             let stormChainPops = 0;
             let stormChainResetTimer = null;
             let stormChargeFlashTimer = null;
+            const growthTweenByIndex = new Map();
             let comboInsurance = 0;
             const COMBO_INSURANCE_CAP = 1;
             const COMBO_INSURANCE_CHAIN_START = 15;
@@ -839,7 +849,8 @@ function escapeHtmlAttr(str) {
                     firstLevelClear: false,
                     firstStormReady: false,
                     firstStormUse: false,
-                    firstArmoredSeen: false
+                    firstArmoredSeen: false,
+                    level5Dynamics: false
                 };
             }
 
@@ -973,6 +984,94 @@ function escapeHtmlAttr(str) {
                 }
                 syncTutorialControls();
                 maybeShowTutorialIntro(true);
+            }
+
+            function showLevelDynamicsModal(config, onDone) {
+                const done = (typeof onDone === 'function') ? onDone : () => { };
+                const modal = document.getElementById('level5DynamicsModal');
+                const closeBtn = document.getElementById('level5DynamicsClose');
+                const body = document.getElementById('levelDynamicsBody');
+                if (!modal || !closeBtn) {
+                    done();
+                    return;
+                }
+                const lines = (config && Array.isArray(config.lines)) ? config.lines : [];
+                if (body && lines.length) {
+                    try {
+                        body.innerHTML = lines.map((line) => escapeHtml(String(line || ''))).join(' <br>\n');
+                    } catch (e) { }
+                }
+                let closed = false;
+                const close = () => {
+                    if (closed) return;
+                    closed = true;
+                    try {
+                        modal.classList.remove('show');
+                        modal.setAttribute('aria-hidden', 'true');
+                    } catch (e) { }
+                    try { closeBtn.removeEventListener('click', close); } catch (e) { }
+                    try { document.removeEventListener('keydown', onKeyDown, true); } catch (e) { }
+                    try { document.removeEventListener('pointerdown', onOutsidePointer, true); } catch (e) { }
+                    done();
+                };
+                const onKeyDown = (ev) => {
+                    if (ev && ev.key === 'Escape') close();
+                };
+                const onOutsidePointer = (ev) => {
+                    try {
+                        if (!modal.classList.contains('show')) return;
+                        if (modal.contains(ev.target)) return;
+                        close();
+                    } catch (e) { }
+                };
+                try {
+                    modal.classList.add('show');
+                    modal.setAttribute('aria-hidden', 'false');
+                } catch (e) { }
+                try { closeBtn.focus(); } catch (e) { }
+                closeBtn.addEventListener('click', close);
+                document.addEventListener('keydown', onKeyDown, true);
+                document.addEventListener('pointerdown', onOutsidePointer, true);
+            }
+
+            function getLevelDynamicsBriefing(nextLevelNum) {
+                const level = Number(nextLevelNum);
+                if (level === 5) {
+                    return {
+                        lines: [
+                            'NEW THREATS DETECTED',
+                            'Mutations introducing advanced pathogen behaviors.',
+                            'MINI-BOSS: takes multiple hits to eliminate and can generate new viruses while active.',
+                            'ARMORED SHELLS: some viruses are shielded; break the shell first before normal growth damage applies.'
+                        ]
+                    };
+                }
+                if (level === 10) {
+                    return {
+                        lines: [
+                            'ROGUE NANOBOTS DETECTED',
+                            'Hostile nanobots are introducing active countermeasures.',
+                            'LASER BLOCKER: rogue units project a beam that can intercept cascade particles.',
+                            'WATCH THEIR MOVES: time your chains around beam shifts to keep reactions alive.'
+                        ]
+                    };
+                }
+                return null;
+            }
+
+            function maybeShowLevelDynamicsIntro(nextLevelNum) {
+                const briefing = getLevelDynamicsBriefing(nextLevelNum);
+                if (!briefing) {
+                    return false;
+                }
+                if (tutorialMode === TUTORIAL_MODES.off) {
+                    return false;
+                }
+                try { inputLocked = true; } catch (e) { }
+                showLevelDynamicsModal(briefing, () => {
+                    try { inputLocked = false; } catch (e) { }
+                });
+                return true;
             }
 
             function createDefaultAchievementState() {
@@ -1831,14 +1930,16 @@ function escapeHtmlAttr(str) {
                     while (out.length < dims) out.push(0);
                     return out;
                 }
-                const levelNum = (levelOverride == null) ? getCurrentLevelNumber() : Math.max(1, Number(levelOverride) || getCurrentLevelNumber());
+                const rawLevel = (levelOverride == null) ? getCurrentLevelNumber() : Math.max(1, Number(levelOverride) || getCurrentLevelNumber());
+                const levelNum = Math.min(10, rawLevel);
                 const difficulty = getDifficultyForLevel(levelNum);
                 const S = ensureLen(Array.isArray(difficulty.sizeMixStart) ? difficulty.sizeMixStart : [0.05, 0.20, 0.35, 0.40]);
                 const M = ensureLen(Array.isArray(difficulty.sizeMixEven) ? difficulty.sizeMixEven : [0.15, 0.25, 0.30, 0.30]);
                 const E = ensureLen(Array.isArray(difficulty.sizeMixEnd) ? difficulty.sizeMixEnd : [0.32, 0.33, 0.23, 0.12]);
                 const levelsToEven = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToEven) || 6));
                 const levelsToEnd = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToEnd) || 12));
-                const completed = (completedOverride == null) ? Math.max(0, Number(screensPassed) || 0) : Math.max(0, Number(completedOverride) || 0);
+                const rawCompleted = (completedOverride == null) ? Math.max(0, Number(screensPassed) || 0) : Math.max(0, Number(completedOverride) || 0);
+                const completed = Math.min(9, rawCompleted);
 
                 let weights;
                 if (typeof screensPassed === 'undefined') {
@@ -2035,6 +2136,7 @@ function escapeHtmlAttr(str) {
                 el.classList.remove('blocked-hit');
                 void el.offsetWidth;
                 el.classList.add('blocked-hit');
+                try { playSfx('zap'); } catch (e) { }
                 clearTimeout(blockerFlashTimeout);
                 blockerFlashTimeout = setTimeout(() => {
                     try { el.classList.remove('blocked-hit'); } catch (e) { }
@@ -2447,6 +2549,28 @@ function escapeHtmlAttr(str) {
                 return spawnCount > 0;
             }
 
+            function ensureLevel5HasArmored() {
+                const levelNum = getCurrentLevelNumber();
+                if (levelNum !== 5) return;
+                let hasArmored = false;
+                for (let i = 0; i < specialState.length; i++) {
+                    if (specialState[i] === 'armored') {
+                        hasArmored = true;
+                        break;
+                    }
+                }
+                if (hasArmored) return;
+                const candidates = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (state[i] === null) continue;
+                    if (specialState[i] === 'boss') continue;
+                    candidates.push(i);
+                }
+                if (!candidates.length) return;
+                const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                setSpecialForCell(pick, 'armored');
+            }
+
 
             function randomizeBoard(preserveClicks = false) {
                 boardGeneration += 1;
@@ -2465,9 +2589,8 @@ function escapeHtmlAttr(str) {
                 }
                 const total = ROWS * COLS;
                 const levelNum = getCurrentLevelNumber();
-                const useLevel10SpawnProfile = (levelNum === 15);
-                const spawnProfileLevel = useLevel10SpawnProfile ? 10 : levelNum;
-                const spawnProfileCompleted = useLevel10SpawnProfile ? 9 : screensPassed;
+                const spawnProfileLevel = Math.min(10, levelNum);
+                const spawnProfileCompleted = Math.min(9, Math.max(0, Number(screensPassed) || 0));
                 const difficulty = getDifficultyForLevel(spawnProfileLevel);
                 const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
                 const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
@@ -2487,6 +2610,7 @@ function escapeHtmlAttr(str) {
                 } else {
                     clearMiniBossState();
                 }
+                ensureLevel5HasArmored();
                 queueLikelyAssetPrefetch(levelNum + 1, 'next-level');
                 scheduleRender();
                 updateHUD();
@@ -2499,9 +2623,31 @@ function escapeHtmlAttr(str) {
 
             function createPetriElement() { const pet = document.createElement('div'); pet.className = 'petri'; if (PETRI_URL) { const img = document.createElement('img'); img.src = PETRI_URL; img.alt = 'petri'; pet.appendChild(img); } return pet; }
 
-            function createVirusContainer(size, specialType = null, cellIndex = -1) {
+            function queueGrowthTween(index, fromSize, toSize) {
+                const i = Number(index);
+                if (!Number.isFinite(i)) return;
+                const from = Math.max(0, Math.min(3, Number(fromSize) || 0));
+                const to = Math.max(0, Math.min(3, Number(toSize) || 0));
+                if (to <= from) return;
+                const fromScale = Number(VIRUS_SIZE_SCALES[from]) || 1;
+                const toScale = Number(VIRUS_SIZE_SCALES[to]) || 1;
+                if (toScale <= 0) return;
+                growthTweenByIndex.set(i, {
+                    ratio: Math.max(0.7, Math.min(0.98, fromScale / toScale)),
+                    to
+                });
+            }
+
+            function createVirusContainer(size, specialType = null, cellIndex = -1, tweenCfg = null) {
                 const container = document.createElement('div');
                 container.className = 'virus virus--size-' + size;
+                if (tweenCfg && Number.isFinite(tweenCfg.ratio)) {
+                    container.classList.add('grow-tween');
+                    container.style.setProperty('--grow-from', String(tweenCfg.ratio));
+                    setTimeout(() => {
+                        try { container.classList.remove('grow-tween'); } catch (e) { }
+                    }, 190);
+                }
                 const def = getSpecialTypeDef(specialType);
                 if (def) {
                     container.classList.add('special-virus');
@@ -2517,14 +2663,23 @@ function escapeHtmlAttr(str) {
                     bossSheet.setAttribute('aria-hidden', 'true');
                     sprite.appendChild(bossSheet);
                 } else {
-                    const img = document.createElement('img');
-                    img.className = 'face-img';
-                    img.src = SPRITE_URLS[Math.max(0, Math.min(3, size))];
-                    img.alt = 'virus';
-                    const sizeScales = [0.4, 0.6, 0.8, 1.0];
-                    img.style.transform = 'scale(' + sizeScales[Math.max(0, Math.min(3, size))] + ')';
-                    img.style.transformOrigin = 'center center';
-                    sprite.appendChild(img);
+                    if (size === 0) {
+                        const sheet = document.createElement('div');
+                        sheet.className = 'virus1-sprite-sheet';
+                        sheet.style.backgroundImage = `url('${VIRUS1_SPRITE_SHEET_URL}')`;
+                        sheet.style.transform = 'scale(' + VIRUS_SIZE_SCALES[0] + ')';
+                        sheet.style.transformOrigin = 'center center';
+                        sheet.setAttribute('aria-hidden', 'true');
+                        sprite.appendChild(sheet);
+                    } else {
+                        const img = document.createElement('img');
+                        img.className = 'face-img';
+                        img.src = SPRITE_URLS[Math.max(0, Math.min(3, size))];
+                        img.alt = 'virus';
+                        img.style.transform = 'scale(' + VIRUS_SIZE_SCALES[Math.max(0, Math.min(3, size))] + ')';
+                        img.style.transformOrigin = 'center center';
+                        sprite.appendChild(img);
+                    }
                 }
                 container.appendChild(sprite);
                 if (def) {
@@ -2567,7 +2722,16 @@ function escapeHtmlAttr(str) {
                         if (specialDef.className) gridCell.classList.add(specialDef.className);
                     }
                     const pet = createPetriElement(); gridCell.appendChild(pet);
-                    if (val !== null) { const container = createVirusContainer(val, specialType, i); gridCell.appendChild(container); }
+                    if (val !== null) {
+                        let tweenCfg = null;
+                        const pending = growthTweenByIndex.get(i);
+                        if (pending && Number(pending.to) === Number(val)) {
+                            tweenCfg = pending;
+                        }
+                        growthTweenByIndex.delete(i);
+                        const container = createVirusContainer(val, specialType, i, tweenCfg);
+                        gridCell.appendChild(container);
+                    }
                     boardEl.appendChild(gridCell);
                 }
                 syncRotatingBlockerUI();
@@ -2604,10 +2768,14 @@ function escapeHtmlAttr(str) {
                                 title: `BOSS LEVEL ${nextLevelNum}`,
                                 imageUrl: BOSS_LEVEL_IMAGE_URL,
                                 emitAssistant: false,
-                                onDismiss: () => randomizeBoard(true)
+                                onDismiss: () => {
+                                    randomizeBoard(true);
+                                    maybeShowLevelDynamicsIntro(nextLevelNum);
+                                }
                             });
                         } catch (e) {
                             randomizeBoard(true);
+                            maybeShowLevelDynamicsIntro(nextLevelNum);
                         }
                     } else {
                         try {
@@ -2914,15 +3082,35 @@ function escapeHtmlAttr(str) {
                             // no element found, send particle off-screen based on fallback direction
                             const tx = sx + ox * (window.innerWidth * 0.8) + (Math.random() - 0.5) * 80;
                             const ty = sy + oy * (window.innerHeight * 0.8) + (Math.random() - 0.5) * 80;
+                            const block = getRotatingBlockerImpact(sx + jitterX, sy + jitterY, tx, ty);
                             const dur = 700 + Math.random() * 260;
-                            animateParticleTo(p, sx + jitterX, sy + jitterY, tx, ty, dur, null);
+                            if (block) {
+                                animateParticleTo(p, sx + jitterX, sy + jitterY, block.x, block.y, Math.max(220, dur * 0.72), () => {
+                                    try {
+                                        if (sourceBoardGeneration !== boardGeneration) return;
+                                        flashRotatingBlocker();
+                                    } catch (e) { }
+                                });
+                            } else {
+                                animateParticleTo(p, sx + jitterX, sy + jitterY, tx, ty, dur, null);
+                            }
                         }
                     } else {
                         // no target in that direction: send particle outwards visually
                         const tx = sx + ox * (window.innerWidth * 0.8) + (Math.random() - 0.5) * 80;
                         const ty = sy + oy * (window.innerHeight * 0.8) + (Math.random() - 0.5) * 80;
+                        const block = getRotatingBlockerImpact(sx + jitterX, sy + jitterY, tx, ty);
                         const dur = 700 + Math.random() * 260;
-                        animateParticleTo(p, sx + jitterX, sy + jitterY, tx, ty, dur, null);
+                        if (block) {
+                            animateParticleTo(p, sx + jitterX, sy + jitterY, block.x, block.y, Math.max(220, dur * 0.72), () => {
+                                try {
+                                    if (sourceBoardGeneration !== boardGeneration) return;
+                                    flashRotatingBlocker();
+                                } catch (e) { }
+                            });
+                        } else {
+                            animateParticleTo(p, sx + jitterX, sy + jitterY, tx, ty, dur, null);
+                        }
                     }
                 });
 
@@ -3515,6 +3703,7 @@ function escapeHtmlAttr(str) {
                     return;
                 }
                 playSfx('grow');
+                const prevSize = Number(state[index]);
                 state[index] += 1;
                 invokeSpecialHook(specialType, 'onAfterGrow', {
                     index,
@@ -3524,10 +3713,6 @@ function escapeHtmlAttr(str) {
                     specialMetaState,
                     tracker
                 });
-                // Immediate paint so players see the size change without waiting for the RAF queue
-                try { render(); } catch (e) { scheduleRender(); }
-
-
                 let maxStableSize = MAX_SIZE;
                 const currentTypeAfterGrow = specialState[index];
                 const maxStableOverride = invokeSpecialHook(currentTypeAfterGrow, 'getMaxStableSize', {
@@ -3544,6 +3729,9 @@ function escapeHtmlAttr(str) {
                 }
 
                 if (state[index] <= maxStableSize) {
+                    queueGrowthTween(index, prevSize, state[index]);
+                    // Immediate paint so players see the size change without waiting for the RAF queue
+                    try { render(); } catch (e) { scheduleRender(); }
                     scheduleRender();
                     if (suppressFinalize || stormResolving) return;
                     inputLocked = false;
@@ -3855,4 +4043,5 @@ function escapeHtmlAttr(str) {
 
         }); // end DOMContentLoaded
     
+
 
