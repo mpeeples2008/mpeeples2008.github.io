@@ -91,8 +91,8 @@
 
         /* Make wrap and board semi-transparent so background shows through
         Layout behavior:
-        - Default (mobile / narrow): vertical stack — board above, hud spans full width at bottom.
-        - Wide screens (min-width:900px): horizontal layout — board on left, hud fixed-width column on right. */
+        - Default (mobile / narrow): vertical stack � board above, hud spans full width at bottom.
+        - Wide screens (min-width:900px): horizontal layout � board on left, hud fixed-width column on right. */
         .wrap {
             display: flex;
             flex-direction: column;
@@ -365,7 +365,7 @@
             }
         }
 
-        /* HUD styling — responsive: full-width on narrow, right-column on wide, test on mobile and browser */
+        /* HUD styling � responsive: full-width on narrow, right-column on wide, test on mobile and browser */
         .hud {
             display: flex;
             gap: 12px;
@@ -1587,19 +1587,20 @@
             }
         }
 
-        /* Badge UI — retro styling using Press Start 2P */
+        /* Badge UI � retro styling using Press Start 2P */
         .chain-badge {
             position: fixed;
             left: 50%;
-            top: 12%;
-            transform: translateX(-50%) translateY(-6px) scale(0.85);
-            z-index: 40000;
+            top: 72px;
+            transform: translateX(-50%) translateY(0) scale(0.95);
+            z-index: 7000;
             font-family: 'Press Start 2P', monospace;
             background: linear-gradient(180deg, #0b3d91, #08306a);
             /* default deep-blue base for retro look */
             color: #ffd166;
             /* warm pixel color for text */
             padding: 10px 18px;
+            max-width: min(92vw, 460px);
             border-radius: 8px;
             border: 4px solid rgba(0, 0, 0, 0.45);
             /* thick pixel-like border */
@@ -1690,7 +1691,7 @@
             border-color: rgba(0, 0, 0, 0.6);
         }
 
-            /* pixel 'bevel' effect by adding layered box-shadows — subtle and GPU-friendly */
+            /* pixel 'bevel' effect by adding layered box-shadows � subtle and GPU-friendly */
             .chain-badge.great .cb-icon,
             .chain-badge.amazing .cb-icon,
             .chain-badge.stupendous .cb-icon,
@@ -1971,13 +1972,13 @@
         }
 
         .run-perk-popup {
-            --rp-card-back-url: url('../img/card_back_test.png');
+            --rp-card-back-url: url('assets/img/card_back_test.png');
             position: fixed;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%) scale(0.92);
             z-index: 95250;
-            width: min(440px, 92vw);
+            width: min(520px, 94vw);
             padding: 14px 14px 12px 14px;
             border-radius: 12px;
             border: 4px solid rgba(0, 0, 0, 0.48);
@@ -2087,114 +2088,169 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 0;
+            min-height: 290px;
         }
 
         .run-perk-popup .rp-card {
-            width: min(100%, 150px);
+            width: 190px;
+            max-width: 100%;
+            height: 285px;
             aspect-ratio: 2 / 3;
             perspective: 1100px;
+            -webkit-perspective: 1100px;
             filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.38));
             transition: transform 140ms ease, filter 140ms ease;
-        }
-
-        .run-perk-popup .rp-card-inner {
+            display: block;
             position: relative;
-            width: 100%;
-            height: 100%;
-            transform-style: preserve-3d;
-            transform: rotateY(0deg);
-            transition: transform 620ms cubic-bezier(.2, .72, .1, 1.02);
+            border-radius: 12px;
+            border: 3px solid #ffd94a;
+            background: var(--rp-card-back-url) center center / cover no-repeat, #113370;
+            box-shadow: 0 0 0 2px #07163a, 0 6px 10px rgba(0, 0, 0, 0.42);
+            overflow: hidden;
+            transform-origin: center center;
+            will-change: transform, filter;
         }
 
-        .run-perk-popup.cards-reveal .rp-item:nth-child(1) .rp-card-inner {
-            transition-delay: 80ms;
-            transform: rotateY(180deg);
+        .run-perk-popup .rp-card::after { content: none; }
+
+        .run-perk-popup .rp-card-back-inline,
+        .run-perk-popup .rp-card-front-inline {
+            position: absolute;
+            inset: 0;
+            border-radius: 9px;
+            background-position: center center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            will-change: opacity, transform;
+            pointer-events: none;
         }
 
-        .run-perk-popup.cards-reveal .rp-item:nth-child(2) .rp-card-inner {
-            transition-delay: 210ms;
-            transform: rotateY(180deg);
+        .run-perk-popup .rp-card-back-inline {
+            opacity: 1;
+            transform: translateZ(0);
+            z-index: 1;
         }
+
+        .run-perk-popup .rp-card-front-inline {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            gap: 6px;
+            padding: 10px 9px 9px 9px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(11, 20, 44, 0.18) 38%, rgba(6, 14, 36, 0.78) 100%),
+                linear-gradient(165deg, var(--rp-card-front-from), var(--rp-card-front-to));
+            color: #fff9d9;
+            opacity: 0;
+            transform: translateY(0) scale(1);
+            z-index: 2;
+        }
+
+        .run-perk-popup .rp-card-front-inline-badge {
+            font-size: 7px;
+            line-height: 1.2;
+            color: #f7fffe;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+            opacity: 0.95;
+        }
+
+        .run-perk-popup .rp-card-front-inline-title {
+            font-size: 10px;
+            line-height: 1.15;
+            color: #ffed9e;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.58);
+        }
+
+        .run-perk-popup .rp-card-front-inline.has-front-art .rp-card-front-inline-badge,
+        .run-perk-popup .rp-card-front-inline.has-front-art .rp-card-front-inline-title {
+            display: none;
+        }
+
+        .run-perk-popup.cards-reveal .rp-item:nth-child(1) .rp-card-back-inline {
+            animation: rpFaceFlip 700ms cubic-bezier(.22, .72, .12, 1) 80ms both, rpBackSwap 700ms linear 80ms both;
+        }
+
+        .run-perk-popup.cards-reveal .rp-item:nth-child(2) .rp-card-back-inline {
+            animation: rpFaceFlip 700ms cubic-bezier(.22, .72, .12, 1) 260ms both, rpBackSwap 700ms linear 260ms both;
+        }
+
+        .run-perk-popup.cards-reveal .rp-item:nth-child(1) .rp-card-front-inline {
+            animation: rpFaceFlip 700ms cubic-bezier(.22, .72, .12, 1) 80ms both, rpFrontSwap 700ms linear 80ms both;
+        }
+
+        .run-perk-popup.cards-reveal .rp-item:nth-child(2) .rp-card-front-inline {
+            animation: rpFaceFlip 700ms cubic-bezier(.22, .72, .12, 1) 260ms both, rpFrontSwap 700ms linear 260ms both;
+        }
+
+        @keyframes rpFaceFlip {
+            0% {
+                transform: perspective(900px) scaleX(1);
+            }
+            46% {
+                transform: perspective(900px) scaleX(0.08);
+            }
+            54% {
+                transform: perspective(900px) scaleX(0.08);
+            }
+            100% {
+                transform: perspective(900px) scaleX(1);
+            }
+        }
+
+        @keyframes rpBackSwap {
+            0%, 49% {
+                opacity: 1;
+            }
+            50%, 100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes rpFrontSwap {
+            0%, 49% {
+                opacity: 0;
+            }
+            50%, 100% {
+                opacity: 1;
+            }
+        }
+
+        .run-perk-popup .rp-card-inner { display: none !important; }
 
         .run-perk-popup .rp-card-face {
             position: absolute;
             inset: 0;
             border-radius: 12px;
             backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
             overflow: hidden;
             border: 3px solid #07163a;
         }
 
-        .run-perk-popup .rp-card-back {
-            background:
-                var(--rp-card-back-url),
-                radial-gradient(circle at 20% 22%, rgba(255, 237, 128, 0.95) 0 2px, transparent 2px 100%),
-                radial-gradient(circle at 71% 34%, rgba(203, 239, 255, 0.95) 0 1.5px, transparent 1.5px 100%),
-                radial-gradient(circle at 45% 70%, rgba(255, 237, 128, 0.9) 0 1.7px, transparent 1.7px 100%),
-                linear-gradient(180deg, #0c5ac7 0%, #09388f 56%, #0a2c78 100%);
-            background-size: 100% 100%, auto, auto, auto, auto;
-            background-position: center, center, center, center, center;
-            background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-            box-shadow: inset 0 0 0 3px #ffd94a, inset 0 0 0 8px #072255;
+        .run-perk-popup .rp-card-back { display: none !important; }
+        .run-perk-popup .rp-card-back-fill { display: none !important; }
+
+        .run-perk-popup .rp-card-back-img {
+            display: none !important;
         }
 
-        .run-perk-popup .rp-card-back::before {
-            content: "";
-            position: absolute;
-            inset: 14% 10%;
-            border-radius: 8px;
-            border: 3px solid rgba(255, 226, 92, 0.95);
-            box-shadow: inset 0 0 0 2px rgba(6, 25, 82, 0.9);
+        .run-perk-popup .rp-card-back::before,
+        .run-perk-popup .rp-card-back::after {
+            display: none;
         }
 
         .run-perk-popup .rp-card-back-core {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            width: 34%;
-            aspect-ratio: 1 / 1;
-            transform: translate(-50%, -50%);
-            border-radius: 8px;
-            border: 3px solid #ffdb4d;
-            background: rgba(8, 44, 116, 0.75);
-            box-shadow: 0 0 0 2px rgba(8, 31, 86, 0.95), inset 0 0 8px rgba(255, 242, 151, 0.25);
+            display: none !important;
         }
 
         .run-perk-popup .rp-card-back-core::before,
         .run-perk-popup .rp-card-back-core::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            background: #ffdb4d;
-            transform: translate(-50%, -50%);
-            border-radius: 2px;
+            display: none;
         }
 
-        .run-perk-popup .rp-card-back-core::before {
-            width: 45%;
-            height: 13%;
-        }
-
-        .run-perk-popup .rp-card-back-core::after {
-            width: 13%;
-            height: 45%;
-        }
-
-        .run-perk-popup .rp-card-front {
-            transform: rotateY(180deg);
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding: 10px 9px 9px 9px;
-            background:
-                linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 38%),
-                linear-gradient(165deg, var(--rp-card-front-from), var(--rp-card-front-to));
-            box-shadow: inset 0 0 0 3px var(--rp-accent), inset 0 0 0 8px rgba(6, 18, 56, 0.72);
-            color: #fff9d9;
-            gap: 6px;
-        }
+        .run-perk-popup .rp-card-front { display: none !important; }
 
         .run-perk-popup .rp-card-front-badge {
             font-size: 7px;
@@ -2261,10 +2317,18 @@
                 gap: 9px;
             }
 
+            .run-perk-popup .rp-card-wrap {
+                min-height: 318px;
+            }
+
             .run-perk-popup .rp-card {
-                width: min(100%, 170px);
+                width: 212px;
+                max-width: 100%;
+                height: 318px;
             }
         }
+
+        .run-perk-popup .rp-card-face { display: none !important; }
 
         @keyframes runPerkIn {
             0% {
@@ -4968,6 +5032,8 @@ html.assistant-disabled .assistant-fallback-bubble {
             animation: levelOutBoard 220ms ease both !important;
             pointer-events: none !important;
         }
+
+
 
 
 

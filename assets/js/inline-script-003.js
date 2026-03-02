@@ -13,6 +13,7 @@ function showLevelComplete(opts = {}) {
   const imgSrc = opts.imageUrl || levelCompleteImages[Math.floor(Math.random() * levelCompleteImages.length)] || '';
   const onDismiss = (typeof opts.onDismiss === 'function') ? opts.onDismiss : null;
   const emitAssistant = opts.emitAssistant !== false;
+  try { if (window.hideChainBadge) window.hideChainBadge(false); } catch (e) {}
 
   // remove any previous popup
   const prior = document.querySelector('.level-complete');
@@ -243,7 +244,7 @@ function escapeHtmlAttr(str) {
                 assistant_ai_6: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI7.mp3'
             };
 
-            // Background music playlist (hard-wired) — will be started on the user's first tap
+            // Background music playlist (hard-wired) � will be started on the user's first tap
             const MUSIC_PLAYLIST = [
                 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Voltaic.mp3',
                 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Robobozo.mp3',
@@ -1224,6 +1225,7 @@ function escapeHtmlAttr(str) {
                 const modal = document.getElementById('level5DynamicsModal');
                 const closeBtn = document.getElementById('level5DynamicsClose');
                 const body = document.getElementById('levelDynamicsBody');
+                try { hideActiveChainBadge(false); } catch (e) { }
                 if (!modal || !closeBtn) {
                     done();
                     return;
@@ -2057,27 +2059,41 @@ function escapeHtmlAttr(str) {
                 const pair = (Array.isArray(offers) ? offers.filter(Boolean) : []).slice(0, 2);
                 if (pair.length < 2) return false;
                 try {
+                    try { hideActiveChainBadge(false); } catch (e) { }
                     const hasViralVenture = pair.some((p) => String((p && p.source) || '') === 'broker');
                     const subTitleText = hasViralVenture
                         ? 'Choose wisely: PIXEL PERKS and VIRAL VENTURES'
                         : 'Choose wisely';
+                    const defaultCardBackUrl = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_back_test.png';
+                    const pixelCardBackUrl = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_pixel_back.png';
+                    const viralCardBackUrl = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_viral_back.png';
+                    const customFrontCardUrlById = {
+                        armor_piercer: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_armor_piecer.png',
+                        containment_freeze: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_containment_freeze.png',
+                        emergency_cells: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_emergency_cells.png',
+                        storm_capacitor: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_capacitor.png'
+                    };
                     const renderDealCard = (offer) => {
                         const source = escapeHtmlAttr(offer && offer.source ? offer.source : 'pixel');
                         const laneLabel = (String(offer && offer.source || '') === 'broker') ? 'VIRAL VENTURE' : 'PIXEL PERK';
                         const laneClass = source === 'broker' ? 'rp-broker' : 'rp-pixel';
+                        const cardBackUrl = source === 'broker' ? viralCardBackUrl : pixelCardBackUrl;
+                        const safeCardUrl = escapeHtmlAttr(cardBackUrl || defaultCardBackUrl);
+                        const cardInlineStyle = `border:3px solid #ffd94a;border-radius:12px;box-shadow:0 0 0 2px #07163a, 0 6px 10px rgba(0,0,0,.42);display:block;position:relative;overflow:hidden;width:190px;max-width:100%;height:285px;background:#113370;`;
+                        const backInlineStyle = `background-image:url('${safeCardUrl}');background-size:cover;background-position:center center;background-repeat:no-repeat;`;
+                        const offerId = String((offer && offer.id) || '');
+                        const frontCardUrl = customFrontCardUrlById[offerId] || defaultCardBackUrl;
+                        const safeFrontCardUrl = escapeHtmlAttr(frontCardUrl);
+                        const frontInlineStyle = `background-image:url('${safeFrontCardUrl}');background-size:cover;background-position:center center;background-repeat:no-repeat;`;
                         return `
                             <button type="button" class="rp-item ${laneClass}" data-perk="${escapeHtmlAttr(offer.id)}" data-source="${source}">
                                 <span class="rp-source rp-source-${source}">${escapeHtml(laneLabel)}</span>
                                 <span class="rp-card-wrap" aria-hidden="true">
-                                    <span class="rp-card">
-                                        <span class="rp-card-inner">
-                                            <span class="rp-card-face rp-card-back">
-                                                <span class="rp-card-back-core"></span>
-                                            </span>
-                                            <span class="rp-card-face rp-card-front">
-                                                <span class="rp-card-front-badge">${escapeHtml(laneLabel)}</span>
-                                                <span class="rp-card-front-name">${escapeHtml(offer.title)}</span>
-                                            </span>
+                                    <span class="rp-card" style="${cardInlineStyle}">
+                                        <span class="rp-card-back-inline" style="${backInlineStyle}"></span>
+                                        <span class="rp-card-front-inline has-front-art" style="${frontInlineStyle}">
+                                            <span class="rp-card-front-inline-badge">${escapeHtml(laneLabel)}</span>
+                                            <span class="rp-card-front-inline-title">${escapeHtml(offer.title)}</span>
                                         </span>
                                     </span>
                                 </span>
@@ -2130,7 +2146,7 @@ function escapeHtmlAttr(str) {
                     el.classList.add('show');
                     setTimeout(() => {
                         try { el.classList.add('cards-reveal'); } catch (e) { }
-                    }, 40);
+                    }, 700);
                     return true;
                 } catch (e) {
                     return false;
@@ -2377,6 +2393,7 @@ function escapeHtmlAttr(str) {
                 const subtitle = opts.subtitle || 'Try Again';
                 const duration = (typeof opts.duration === 'number') ? opts.duration : 1800;
                 const persistent = !!opts.persistent;
+                try { hideActiveChainBadge(false); } catch (e) { }
 
                 try {
                     triggerGameOverFeedback();
@@ -3653,7 +3670,7 @@ function escapeHtmlAttr(str) {
                         p.style.willChange = 'transform, opacity';
 
                         // --- assign randomized start rotation and optional flip ---
-                        const randExtra = (Math.random() - 0.5) * 120; // ±60° jitter
+                        const randExtra = (Math.random() - 0.5) * 120; // �60� jitter
                         const startRot = (rotationDeg + randExtra + 36000) % 360; // normalize
                         p._rotStart = startRot;
 
@@ -3952,7 +3969,7 @@ function escapeHtmlAttr(str) {
                     try { runPerkState.popupOpen = false; } catch (e) { }
                     try { playSfx('lose'); } catch (e) { }
 
-                    // Show persistent popup — will remain until the player clicks the existing restart button
+                    // Show persistent popup � will remain until the player clicks the existing restart button
                     showGameOverPopup({ title: 'GAME OVER', subtitle: 'Containment failed', persistent: true });
                     // wait a bit longer than popup animation
                 }
@@ -4361,6 +4378,117 @@ function escapeHtmlAttr(str) {
   return;
 }
 
+            var activeChainBadgeEl = null;
+            var chainBadgeHideTimer = null;
+            var chainBadgeRemoveTimer = null;
+
+            function isElementVisiblyOpen(el) {
+                if (!el) return false;
+                try {
+                    if (el.classList && el.classList.contains('hide')) return false;
+                    const ariaHidden = el.getAttribute ? el.getAttribute('aria-hidden') : null;
+                    if (ariaHidden === 'true') return false;
+                    if (el.classList && (el.classList.contains('show') || el.classList.contains('open'))) return true;
+                    const style = window.getComputedStyle ? window.getComputedStyle(el) : null;
+                    if (style) {
+                        if (style.display === 'none' || style.visibility === 'hidden') return false;
+                        if (Number(style.opacity) === 0) return false;
+                    }
+                    return !!(el.offsetWidth || el.offsetHeight || (el.getClientRects && el.getClientRects().length));
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function isBlockingPopupOpen() {
+                try {
+                    const modalIds = ['audioPopup', 'helpPopup', 'startModal', 'level5DynamicsModal', 'aiIntro'];
+                    for (let i = 0; i < modalIds.length; i++) {
+                        if (isElementVisiblyOpen(document.getElementById(modalIds[i]))) return true;
+                    }
+                    const modalSelectors = ['.level-complete', '.game-over-popup', '.run-perk-popup'];
+                    for (let i = 0; i < modalSelectors.length; i++) {
+                        if (isElementVisiblyOpen(document.querySelector(modalSelectors[i]))) return true;
+                    }
+                } catch (e) { }
+                return false;
+            }
+
+            function clearChainBadgeTimers() {
+                if (chainBadgeHideTimer) {
+                    clearTimeout(chainBadgeHideTimer);
+                    chainBadgeHideTimer = null;
+                }
+                if (chainBadgeRemoveTimer) {
+                    clearTimeout(chainBadgeRemoveTimer);
+                    chainBadgeRemoveTimer = null;
+                }
+            }
+
+            function cleanupChainBadgeInstance(badgeEl) {
+                if (!badgeEl) return;
+                try {
+                    if (typeof badgeEl._chainLaneCleanup === 'function') badgeEl._chainLaneCleanup();
+                } catch (e) { }
+                try { badgeEl._chainLaneCleanup = null; } catch (e) { }
+            }
+
+            function hideActiveChainBadge(immediate = false) {
+                clearChainBadgeTimers();
+                const badge = activeChainBadgeEl || document.querySelector('.chain-badge');
+                if (!badge) {
+                    activeChainBadgeEl = null;
+                    return;
+                }
+                cleanupChainBadgeInstance(badge);
+                if (immediate) {
+                    try { badge.remove(); } catch (e) { }
+                    if (activeChainBadgeEl === badge) activeChainBadgeEl = null;
+                    return;
+                }
+                try {
+                    badge.classList.remove('show');
+                    badge.classList.add('hide');
+                } catch (e) { }
+                chainBadgeRemoveTimer = setTimeout(() => {
+                    try { badge.remove(); } catch (e) { }
+                    if (activeChainBadgeEl === badge) activeChainBadgeEl = null;
+                    chainBadgeRemoveTimer = null;
+                }, 380);
+            }
+
+            function placeChainBadgeInLane(badgeEl) {
+                if (!badgeEl) return;
+                let cx = Math.round(window.innerWidth / 2);
+                let cy = 64;
+                try {
+                    const boardRect = boardEl && boardEl.getBoundingClientRect ? boardEl.getBoundingClientRect() : null;
+                    if (boardRect && Number.isFinite(boardRect.width) && boardRect.width > 0) {
+                        cx = Math.round(boardRect.left + (boardRect.width / 2));
+                        cy = Math.round(Math.max(10, boardRect.top + 14));
+                    }
+                } catch (e) { }
+                const rect = badgeEl.getBoundingClientRect();
+                const halfW = Math.ceil((rect.width || 0) / 2);
+                const minX = Math.max(12 + halfW, 24);
+                const maxX = Math.max(minX, Math.round(window.innerWidth - 12 - halfW));
+                if (cx < minX) cx = minX;
+                if (cx > maxX) cx = maxX;
+                const minY = 8;
+                const maxY = Math.max(minY, Math.round(window.innerHeight - 40));
+                if (cy < minY) cy = minY;
+                if (cy > maxY) cy = maxY;
+                badgeEl.style.left = cx + 'px';
+                badgeEl.style.top = cy + 'px';
+                badgeEl.style.transform = 'translateX(-50%) translateY(0) scale(0.95)';
+            }
+
+            try {
+                window.hideChainBadge = function (immediate = false) {
+                    hideActiveChainBadge(!!immediate);
+                };
+            } catch (e) { }
+
 
             /* ---------- showChainBadge with retro icon + confetti ---------- */
 
@@ -4380,6 +4508,12 @@ function escapeHtmlAttr(str) {
                         scheduleStormChainReset();
                         const rule = BADGE_RULES.find(r => count >= r.min);
                         if (!rule) return;
+                        if (isBlockingPopupOpen()) {
+                            hideActiveChainBadge(true);
+                            return;
+                        }
+
+                        hideActiveChainBadge(true);
 
                         const badge = document.createElement('div');
                         badge.className = 'chain-badge ' + rule.className;
@@ -4391,33 +4525,33 @@ function escapeHtmlAttr(str) {
                                                                                   <div style="font-size:12px;opacity:0.85">x${count} pops</div>
                                                                                 </div>`;
 
-                        const placeBadge = () => {
-                            let cx = window.innerWidth / 2;
-                            let cy = window.innerHeight * 0.12;
-                            try {
-                                if (Array.isArray(tracker.positions) && tracker.positions.length) {
-                                    const centers = tracker.positions.map(i => {
-                                        const el = boardEl.querySelector(`[data-index='${i}']`);
-                                        if (!el) return null;
-                                        const r = el.getBoundingClientRect();
-                                        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-                                    }).filter(Boolean);
-                                    if (centers.length) { cx = centers.reduce((s, p) => s + p.x, 0) / centers.length; cy = centers.reduce((s, p) => s + p.y, 0) / centers.length - 60; }
-                                }
-                            } catch (e) { }
-                            if (cy < 60) cy = 60; if (cx < 40) cx = 40; if (cx > window.innerWidth - 40) cx = window.innerWidth - 40;
-                            badge.style.left = cx + 'px'; badge.style.top = cy + 'px'; badge.style.transform = 'translateX(-50%) translateY(-6px) scale(0.85)';
-                            return { cx, cy };
-                        };
-
                         document.body.appendChild(badge);
-                        const pos = placeBadge();
-                        requestAnimationFrame(() => badge.classList.add('show'));
-                        try { const rect = badge.getBoundingClientRect(); const cx = pos.cx || (rect.left + rect.width / 2); const cy = pos.cy || (rect.top + rect.height / 2); void(cx, cy, rule.className); } catch (e) { }
+                        activeChainBadgeEl = badge;
+                        placeChainBadgeInLane(badge);
+                        const onLaneViewportChange = () => {
+                            if (activeChainBadgeEl === badge) placeChainBadgeInLane(badge);
+                        };
+                        window.addEventListener('resize', onLaneViewportChange);
+                        window.addEventListener('scroll', onLaneViewportChange, true);
+                        badge._chainLaneCleanup = () => {
+                            try { window.removeEventListener('resize', onLaneViewportChange); } catch (e) { }
+                            try { window.removeEventListener('scroll', onLaneViewportChange, true); } catch (e) { }
+                        };
+                        requestAnimationFrame(() => {
+                            if (activeChainBadgeEl !== badge || isBlockingPopupOpen()) {
+                                hideActiveChainBadge(true);
+                                return;
+                            }
+                            badge.classList.add('show');
+                        });
+                        try { const rect = badge.getBoundingClientRect(); const cx = rect.left + rect.width / 2; const cy = rect.top + rect.height / 2; void (cx, cy, rule.className); } catch (e) { }
                         if (rule.scoreBonus) totalScore += rule.scoreBonus;
                         if (rule.extraClicks) { clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + rule.extraClicks); playSfx('fill'); }
                         updateHUD();
-                        setTimeout(() => { badge.classList.remove('show'); badge.classList.add('hide'); setTimeout(() => { try { badge.remove(); } catch (e) { } }, 420); }, 2100);
+                        chainBadgeHideTimer = setTimeout(() => {
+                            if (activeChainBadgeEl !== badge) return;
+                            hideActiveChainBadge(false);
+                        }, 2100);
                     } catch (e) { console.warn('showChainBadge error', e); }
                 });
             }
@@ -4729,6 +4863,7 @@ function escapeHtmlAttr(str) {
             evaluateAchievements({ emitUnlock: false });
             scheduleAchievementsUIRender();
             const audioBtn = document.getElementById('audioBtn');
+            const helpBtn = document.getElementById('helpBtn');
             const settingsTabBtn = document.getElementById('settingsTabBtn');
             const achievementsTabBtn = document.getElementById('achievementsTabBtn');
             const settingsTabPane = document.getElementById('settingsTabPane');
@@ -4754,9 +4889,15 @@ function escapeHtmlAttr(str) {
             setSettingsPopupTab('settings');
             if (audioBtn) {
                 audioBtn.addEventListener('click', () => {
+                    try { hideActiveChainBadge(false); } catch (e) { }
                     setSettingsPopupTab('settings');
                     scheduleAchievementsUIRender();
                     syncAudioSettingsUI();
+                });
+            }
+            if (helpBtn) {
+                helpBtn.addEventListener('click', () => {
+                    try { hideActiveChainBadge(false); } catch (e) { }
                 });
             }
             const musicEnabledToggle = document.getElementById('musicEnabledToggle');
@@ -4834,5 +4975,8 @@ function escapeHtmlAttr(str) {
 
         }); // end DOMContentLoaded
     
+
+
+
 
 
