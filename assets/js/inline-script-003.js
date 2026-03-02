@@ -1882,28 +1882,32 @@ function escapeHtmlAttr(str) {
                     // create element
                     const el = document.createElement('div');
                     el.className = 'game-over-popup';
-                    el.setAttribute('role', 'alert');
+                    el.setAttribute('role', persistent ? 'alertdialog' : 'alert');
                     el.style.pointerEvents = persistent ? 'auto' : 'none';
                     const recapHtml = buildGameOverRecapHtml();
+                    const actionHtml = persistent
+                        ? `<div class="go-actions"><button type="button" class="go-restart-btn" aria-label="Try again">TRY AGAIN</button></div>`
+                        : '';
                     el.innerHTML = `
                                                                                   <div class="go-title">${title}</div>
                                                                                   <div class="go-sub">${subtitle}</div>
                                                                                   ${recapHtml}
+                                                                                  ${actionHtml}
                                                                                 `;
                     document.body.appendChild(el);
-                    // Make Game Over popup clickable to restart (Option A)
-                    try {
-                        el.style.cursor = 'pointer';
-                        el.title = 'Click to restart';
-                        el.addEventListener('click', function restartFromPopup(ev) {
-                            try {
-                                // reset game state
-                                if (typeof performGameReset === 'function') performGameReset();
-                                // remove popup element if still present
-                                try { if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { }
-                            } catch (e) { console.warn('restart click handler failed', e); }
-                        }, { once: true });
-                    } catch (e) { console.warn('could not attach restart click handler', e); }
+                    if (!persistent) {
+                        // Non-persistent flavor can still dismiss on tap/click.
+                        try {
+                            el.style.cursor = 'pointer';
+                            el.title = 'Click to continue';
+                            el.addEventListener('click', function restartFromPopup(ev) {
+                                try {
+                                    if (typeof performGameReset === 'function') performGameReset();
+                                    try { if (el && el.parentNode) el.parentNode.removeChild(el); } catch (e) { }
+                                } catch (e) { console.warn('restart click handler failed', e); }
+                            }, { once: true });
+                        } catch (e) { console.warn('could not attach restart click handler', e); }
+                    }
 
                     void el.offsetWidth;
                     el.classList.add('show');
@@ -1914,6 +1918,7 @@ function escapeHtmlAttr(str) {
                         // leave it on screen until user clicks the existing #restart button
                         // ensure restart button exists and wire a one-time handler
                         const restartBtn = document.getElementById('restart');
+                        const popupRestartBtn = el.querySelector('.go-restart-btn');
                         const cleanup = () => {
                             try {
                                 if (el) {
@@ -1951,6 +1956,17 @@ function escapeHtmlAttr(str) {
                         } else {
                             // If no restart button, leave the popup until manually removed
                             console.warn('showGameOverPopup: persistent requested but #restart button not found.');
+                        }
+                        if (popupRestartBtn) {
+                            popupRestartBtn.addEventListener('click', function onPopupRestartClick(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                cleanup();
+                                try { outOfClicksShown = false; } catch (e) { }
+                                if (typeof performGameReset === 'function') {
+                                    try { performGameReset(); } catch (e) { }
+                                }
+                            }, { once: true });
                         }
                         return;
                     }
@@ -3380,7 +3396,7 @@ function escapeHtmlAttr(str) {
                     try { playSfx('lose'); } catch (e) { }
 
                     // Show persistent popup — will remain until the player clicks the existing restart button
-                    showGameOverPopup({ title: 'GAME OVER', subtitle: 'click to try again', persistent: true });
+                    showGameOverPopup({ title: 'GAME OVER', subtitle: 'Containment failed', persistent: true });
                     // wait a bit longer than popup animation
                 }
             }
