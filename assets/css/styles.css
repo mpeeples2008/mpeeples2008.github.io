@@ -1971,6 +1971,7 @@
         }
 
         .run-perk-popup {
+            --rp-card-back-url: url('../img/card_back_test.png');
             position: fixed;
             left: 50%;
             top: 50%;
@@ -2013,35 +2014,55 @@
 
         .run-perk-popup .rp-list {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            align-items: start;
         }
 
         .run-perk-popup .rp-item {
+            appearance: none;
             width: 100%;
             text-align: left;
-            padding: 10px 10px 9px 10px;
-            border-radius: 8px;
-            border: 3px solid rgba(0, 0, 0, 0.42);
-            background: linear-gradient(180deg, #fff8dc, #f4d487);
-            color: #13213d;
-            box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.22);
+            padding: 0;
+            border: 0;
+            background: transparent;
+            color: inherit;
             font-family: 'Press Start 2P', monospace;
             cursor: pointer;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
+            align-items: stretch;
+            --rp-accent: #45b4ff;
+            --rp-soft: #bde8ff;
+            --rp-panel-from: #fff5df;
+            --rp-panel-to: #f2ddb0;
+            --rp-panel-title: #13213d;
+            --rp-panel-desc: #28385a;
+            --rp-card-front-from: #103f7d;
+            --rp-card-front-to: #0d2e60;
         }
 
         .run-perk-popup .rp-item.rp-pixel {
-            background: linear-gradient(180deg, #fff8dc, #f4d487);
-            color: #13213d;
+            --rp-accent: #45b4ff;
+            --rp-soft: #bde8ff;
+            --rp-panel-from: #fff5df;
+            --rp-panel-to: #f2ddb0;
+            --rp-panel-title: #13213d;
+            --rp-panel-desc: #28385a;
+            --rp-card-front-from: #113d77;
+            --rp-card-front-to: #0a264f;
         }
 
         .run-perk-popup .rp-item.rp-broker {
-            background: linear-gradient(180deg, #ffdfd8, #f3aa96);
-            color: #3a120b;
-            border-color: rgba(64, 18, 8, 0.45);
+            --rp-accent: #ff8b68;
+            --rp-soft: #ffd5c7;
+            --rp-panel-from: #ffe6dd;
+            --rp-panel-to: #f0b4a1;
+            --rp-panel-title: #3a120b;
+            --rp-panel-desc: #572218;
+            --rp-card-front-from: #7b2a1f;
+            --rp-card-front-to: #4d160f;
         }
 
         .run-perk-popup .rp-source {
@@ -2050,6 +2071,8 @@
             text-transform: uppercase;
             display: inline-block;
             opacity: 0.92;
+            text-align: center;
+            margin-bottom: 1px;
         }
 
         .run-perk-popup .rp-source.rp-source-pixel {
@@ -2060,28 +2083,187 @@
             color: #7a1a0f;
         }
 
-        .run-perk-popup .rp-item:hover {
-            filter: brightness(1.03);
+        .run-perk-popup .rp-card-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 0;
         }
 
-        .run-perk-popup .rp-item:active {
-            transform: translateY(1px);
+        .run-perk-popup .rp-card {
+            width: min(100%, 150px);
+            aspect-ratio: 2 / 3;
+            perspective: 1100px;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.38));
+            transition: transform 140ms ease, filter 140ms ease;
+        }
+
+        .run-perk-popup .rp-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transform: rotateY(0deg);
+            transition: transform 620ms cubic-bezier(.2, .72, .1, 1.02);
+        }
+
+        .run-perk-popup.cards-reveal .rp-item:nth-child(1) .rp-card-inner {
+            transition-delay: 80ms;
+            transform: rotateY(180deg);
+        }
+
+        .run-perk-popup.cards-reveal .rp-item:nth-child(2) .rp-card-inner {
+            transition-delay: 210ms;
+            transform: rotateY(180deg);
+        }
+
+        .run-perk-popup .rp-card-face {
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            backface-visibility: hidden;
+            overflow: hidden;
+            border: 3px solid #07163a;
+        }
+
+        .run-perk-popup .rp-card-back {
+            background:
+                var(--rp-card-back-url),
+                radial-gradient(circle at 20% 22%, rgba(255, 237, 128, 0.95) 0 2px, transparent 2px 100%),
+                radial-gradient(circle at 71% 34%, rgba(203, 239, 255, 0.95) 0 1.5px, transparent 1.5px 100%),
+                radial-gradient(circle at 45% 70%, rgba(255, 237, 128, 0.9) 0 1.7px, transparent 1.7px 100%),
+                linear-gradient(180deg, #0c5ac7 0%, #09388f 56%, #0a2c78 100%);
+            background-size: 100% 100%, auto, auto, auto, auto;
+            background-position: center, center, center, center, center;
+            background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+            box-shadow: inset 0 0 0 3px #ffd94a, inset 0 0 0 8px #072255;
+        }
+
+        .run-perk-popup .rp-card-back::before {
+            content: "";
+            position: absolute;
+            inset: 14% 10%;
+            border-radius: 8px;
+            border: 3px solid rgba(255, 226, 92, 0.95);
+            box-shadow: inset 0 0 0 2px rgba(6, 25, 82, 0.9);
+        }
+
+        .run-perk-popup .rp-card-back-core {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 34%;
+            aspect-ratio: 1 / 1;
+            transform: translate(-50%, -50%);
+            border-radius: 8px;
+            border: 3px solid #ffdb4d;
+            background: rgba(8, 44, 116, 0.75);
+            box-shadow: 0 0 0 2px rgba(8, 31, 86, 0.95), inset 0 0 8px rgba(255, 242, 151, 0.25);
+        }
+
+        .run-perk-popup .rp-card-back-core::before,
+        .run-perk-popup .rp-card-back-core::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            background: #ffdb4d;
+            transform: translate(-50%, -50%);
+            border-radius: 2px;
+        }
+
+        .run-perk-popup .rp-card-back-core::before {
+            width: 45%;
+            height: 13%;
+        }
+
+        .run-perk-popup .rp-card-back-core::after {
+            width: 13%;
+            height: 45%;
+        }
+
+        .run-perk-popup .rp-card-front {
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 10px 9px 9px 9px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 38%),
+                linear-gradient(165deg, var(--rp-card-front-from), var(--rp-card-front-to));
+            box-shadow: inset 0 0 0 3px var(--rp-accent), inset 0 0 0 8px rgba(6, 18, 56, 0.72);
+            color: #fff9d9;
+            gap: 6px;
+        }
+
+        .run-perk-popup .rp-card-front-badge {
+            font-size: 7px;
+            line-height: 1.2;
+            color: #f7fffe;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+            opacity: 0.95;
+        }
+
+        .run-perk-popup .rp-card-front-name {
+            font-size: 10px;
+            line-height: 1.15;
+            color: #ffed9e;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.58);
+        }
+
+        .run-perk-popup .rp-info {
+            border-radius: 8px;
+            border: 3px solid rgba(0, 0, 0, 0.44);
+            background: linear-gradient(180deg, var(--rp-panel-from), var(--rp-panel-to));
             box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+            padding: 8px 8px 7px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-height: 66px;
+        }
+
+        .run-perk-popup .rp-item:hover .rp-card {
+            transform: translateY(-2px);
+            filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.42));
+        }
+
+        .run-perk-popup .rp-item:hover .rp-info {
+            border-color: rgba(0, 0, 0, 0.54);
+            box-shadow: 0 0 0 2px var(--rp-soft), 2px 2px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .run-perk-popup .rp-item:active .rp-card {
+            transform: translateY(0);
+        }
+
+        .run-perk-popup .rp-item:focus-visible {
+            outline: 2px solid var(--rp-accent);
+            outline-offset: 4px;
+            border-radius: 10px;
         }
 
         .run-perk-popup .rp-item-title {
-            font-size: 10px;
+            font-size: 9px;
             line-height: 1.2;
+            color: var(--rp-panel-title);
         }
 
         .run-perk-popup .rp-item-desc {
             font-size: 8px;
             line-height: 1.35;
-            color: #28385a;
+            color: var(--rp-panel-desc);
         }
 
-        .run-perk-popup .rp-item.rp-broker .rp-item-desc {
-            color: #572218;
+        @media (max-width: 560px) {
+            .run-perk-popup .rp-list {
+                grid-template-columns: 1fr;
+                gap: 9px;
+            }
+
+            .run-perk-popup .rp-card {
+                width: min(100%, 170px);
+            }
         }
 
         @keyframes runPerkIn {

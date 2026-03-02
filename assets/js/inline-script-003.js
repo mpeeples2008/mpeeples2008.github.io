@@ -2061,6 +2061,33 @@ function escapeHtmlAttr(str) {
                     const subTitleText = hasViralVenture
                         ? 'Choose wisely: PIXEL PERKS and VIRAL VENTURES'
                         : 'Choose wisely';
+                    const renderDealCard = (offer) => {
+                        const source = escapeHtmlAttr(offer && offer.source ? offer.source : 'pixel');
+                        const laneLabel = (String(offer && offer.source || '') === 'broker') ? 'VIRAL VENTURE' : 'PIXEL PERK';
+                        const laneClass = source === 'broker' ? 'rp-broker' : 'rp-pixel';
+                        return `
+                            <button type="button" class="rp-item ${laneClass}" data-perk="${escapeHtmlAttr(offer.id)}" data-source="${source}">
+                                <span class="rp-source rp-source-${source}">${escapeHtml(laneLabel)}</span>
+                                <span class="rp-card-wrap" aria-hidden="true">
+                                    <span class="rp-card">
+                                        <span class="rp-card-inner">
+                                            <span class="rp-card-face rp-card-back">
+                                                <span class="rp-card-back-core"></span>
+                                            </span>
+                                            <span class="rp-card-face rp-card-front">
+                                                <span class="rp-card-front-badge">${escapeHtml(laneLabel)}</span>
+                                                <span class="rp-card-front-name">${escapeHtml(offer.title)}</span>
+                                            </span>
+                                        </span>
+                                    </span>
+                                </span>
+                                <span class="rp-info">
+                                    <span class="rp-item-title">${escapeHtml(offer.title)}</span>
+                                    <span class="rp-item-desc">${escapeHtml(offer.desc)}</span>
+                                </span>
+                            </button>
+                        `;
+                    };
                     hideRunPerkPopup(true);
                     const el = document.createElement('div');
                     el.className = 'run-perk-popup';
@@ -2070,16 +2097,8 @@ function escapeHtmlAttr(str) {
                         <div class="rp-title">DOUBLE DEAL</div>
                         <div class="rp-sub">${escapeHtml(subTitleText)}</div>
                         <div class="rp-list">
-                            <button type="button" class="rp-item rp-${escapeHtmlAttr(pair[0].source || 'pixel')}" data-perk="${escapeHtmlAttr(pair[0].id)}">
-                                <span class="rp-source rp-source-${escapeHtmlAttr(pair[0].source || 'pixel')}">${escapeHtml((pair[0].source || 'pixel') === 'broker' ? 'VIRAL VENTURE' : 'PIXEL PERK')}</span>
-                                <span class="rp-item-title">${escapeHtml(pair[0].title)}</span>
-                                <span class="rp-item-desc">${escapeHtml(pair[0].desc)}</span>
-                            </button>
-                            <button type="button" class="rp-item rp-${escapeHtmlAttr(pair[1].source || 'pixel')}" data-perk="${escapeHtmlAttr(pair[1].id)}">
-                                <span class="rp-source rp-source-${escapeHtmlAttr(pair[1].source || 'pixel')}">${escapeHtml((pair[1].source || 'pixel') === 'broker' ? 'VIRAL VENTURE' : 'PIXEL PERK')}</span>
-                                <span class="rp-item-title">${escapeHtml(pair[1].title)}</span>
-                                <span class="rp-item-desc">${escapeHtml(pair[1].desc)}</span>
-                            </button>
+                            ${renderDealCard(pair[0])}
+                            ${renderDealCard(pair[1])}
                         </div>
                     `;
                     const onPick = (ev) => {
@@ -2109,6 +2128,9 @@ function escapeHtmlAttr(str) {
                     try { document.body.classList.add('run-perk-open'); } catch (e) { }
                     void el.offsetWidth;
                     el.classList.add('show');
+                    setTimeout(() => {
+                        try { el.classList.add('cards-reveal'); } catch (e) { }
+                    }, 40);
                     return true;
                 } catch (e) {
                     return false;
