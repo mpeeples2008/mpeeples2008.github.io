@@ -12,7 +12,7 @@
         }
 
         :root {
-            --board-size: 720px
+            --board-size: 720px;
         }
 
         html,
@@ -21,7 +21,7 @@
             margin: 0;
             font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
             /* full-page background image, fixed centered - made to work in both narrow and wide configurations */
-            background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab.png') center center / cover no-repeat fixed;
+            background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab_bg.png') center center / cover no-repeat fixed;
             color: #0b3d91;
             box-sizing: border-box;
             padding-top: max(8px, env(safe-area-inset-top));
@@ -1046,9 +1046,130 @@
             pointer-events: none;
         }
 
-        .virus.grow-tween .face-sprite {
-            animation: virusGrowTween 300ms cubic-bezier(0.16, 0.82, 0.22, 1);
+        .virus2-sprite-sheet {
+            width: 100%;
+            height: 100%;
+            background-position: 0% 0%;
+            background-repeat: no-repeat;
+            background-size: calc(var(--virus2-cols, 1) * 100%) calc(var(--virus2-rows, 1) * 100%);
+            image-rendering: pixelated;
+            animation: virus2SpriteFrames calc(var(--virus2-duration-ms, 200) * 1ms) step-end infinite, virus2Float 1900ms ease-in-out infinite;
+            will-change: background-position;
+            pointer-events: none;
             transform-origin: center center;
+        }
+
+        .virus3-sprite-sheet {
+            width: 100%;
+            height: 100%;
+            background-position: 0% 0%;
+            background-repeat: no-repeat;
+            background-size: calc(var(--virus3-cols, 1) * 100%) calc(var(--virus3-rows, 2) * 100%);
+            image-rendering: pixelated;
+            animation: virus3SpriteFrames calc(var(--virus3-duration-ms, 333) * 1ms) step-end infinite;
+            will-change: background-position;
+            pointer-events: none;
+            transform-origin: center center;
+            transform: translateY(var(--virus3-offset-y, 8px)) scale(var(--virus3-scale, 1));
+        }
+
+        .virus4-sprite-sheet {
+            width: 100%;
+            height: 100%;
+            background-position: 0% 0%;
+            background-repeat: no-repeat;
+            background-size: calc(var(--virus4-cols, 2) * 100%) calc(var(--virus4-rows, 2) * 100%);
+            image-rendering: pixelated;
+            animation: virus4SpriteFrames calc(var(--virus4-duration-ms, 667) * 1ms) step-end infinite, virus4Jitter 0.45s ease-in-out infinite;
+            will-change: background-position, transform;
+            pointer-events: none;
+            transform-origin: center center;
+            margin-top: -22px;
+        }
+
+        @keyframes virus2Float {
+            0%, 100% {
+                transform: translateY(calc(var(--virus2-offset-y, 5px) + 0px)) rotate(-0.7deg) scale(var(--virus2-scale, 1));
+            }
+            50% {
+                transform: translateY(calc(var(--virus2-offset-y, 5px) - 1px)) rotate(0.7deg) scale(var(--virus2-scale, 1));
+            }
+        }
+
+        @keyframes virus3SpriteFrames {
+            0%, 49.999% {
+                background-position: 0% 0%;
+            }
+            50%, 100% {
+                background-position: 0% 100%;
+            }
+        }
+
+        @keyframes virus4SpriteFrames {
+            0%, 24.999% {
+                background-position: 0% 0%;
+            }
+            25%, 49.999% {
+                background-position: 100% 0%;
+            }
+            50%, 74.999% {
+                background-position: 0% 100%;
+            }
+            75%, 100% {
+                background-position: 100% 100%;
+            }
+        }
+
+        @keyframes virus4Jitter {
+            0%, 100% {
+                transform: scale(calc(var(--virus4-scale, 1) * 1)) translate(0, 0);
+            }
+            25% {
+                transform: scale(calc(var(--virus4-scale, 1) * 1.03)) translate(1px, -1px);
+            }
+            50% {
+                transform: scale(calc(var(--virus4-scale, 1) * 0.97)) translate(-1px, 1px);
+            }
+            75% {
+                transform: scale(calc(var(--virus4-scale, 1) * 1.02)) translate(-1px, -1px);
+            }
+        }
+
+        .virus.grow-tween > .face-sprite:not(.face-sprite--prev) {
+            animation: virusGrowTween 360ms cubic-bezier(0.14, 0.82, 0.2, 1);
+            transform-origin: center center;
+        }
+
+        .virus.grow-tween > .face-sprite--next {
+            animation: virusGrowTween 360ms cubic-bezier(0.14, 0.82, 0.2, 1), virusGrowNextFade 240ms ease-out forwards;
+        }
+
+        .virus.grow-tween > .face-sprite--prev {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            opacity: 1;
+            animation: virusGrowPrevFade 240ms ease-out forwards;
+        }
+
+        .growth-ring {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 58%;
+            height: 58%;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 248, 206, 0.86);
+            box-shadow: 0 0 10px rgba(255, 227, 140, 0.45);
+            pointer-events: none;
+            z-index: 2;
+            transform: translate(-50%, -50%) scale(0.58);
+            opacity: 0;
+            animation: growthRingPulse 360ms ease-out forwards;
+            will-change: transform, opacity;
         }
 
         /* Animate size-3 viruses with gentle jitter/pulse - make it look like it's ready to burst! */
@@ -1110,16 +1231,49 @@
 
         @keyframes virusGrowTween {
             0% {
-                transform: scale(calc(var(--grow-from, 0.84) * 0.9));
-                filter: brightness(0.9);
+                transform: scale(calc(var(--grow-from, 0.84) * 0.86));
+                filter: brightness(0.86);
             }
-            62% {
-                transform: scale(1.12);
-                filter: brightness(1.18);
+            46% {
+                transform: scale(1.14);
+                filter: brightness(1.2);
+            }
+            74% {
+                transform: scale(0.985);
+                filter: brightness(1.04);
             }
             100% {
                 transform: scale(1);
                 filter: brightness(1);
+            }
+        }
+
+        @keyframes growthRingPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0.56);
+                opacity: 0.82;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.55);
+                opacity: 0;
+            }
+        }
+
+        @keyframes virusGrowNextFade {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes virusGrowPrevFade {
+            0% {
+                opacity: 0.95;
+            }
+            100% {
+                opacity: 0;
             }
         }
 
@@ -1618,6 +1772,15 @@
             color: #e8c68e;
             font-size: 9px;
             text-align: right;
+        }
+
+        .game-over-popup .go-tip {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 223, 166, 0.24);
+            color: #cfe8ff;
+            font-size: 9px;
+            line-height: 1.45;
         }
 
             .game-over-popup.show .go-title {

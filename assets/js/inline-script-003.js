@@ -1,34 +1,10 @@
 ﻿
 
         // Put this near top of your script (edit paths to your images)
-const levelCompleteImages = [
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster01.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster02.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster03.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster04.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster05.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster06.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster07.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster08.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster09.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster13.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster14.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster15.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster16.png',
-  'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster17.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster20.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster21.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster22.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster26.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster27.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster28.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster32.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster33.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster34.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster35.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster36.png',
-    'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/poster38.png'
-];
+const levelCompleteImages = Array.from({ length: 36 }, (_, i) => {
+  const n = String(i + 1).padStart(2, '0');
+  return `https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/levelcomplete_${n}.png`;
+});
 const BOSS_LEVEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.png';
 
 
@@ -207,7 +183,41 @@ function escapeHtmlAttr(str) {
                 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png'
             ];
             const VIRUS1_SPRITE_SHEET_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus1_clean.png';
-            const VIRUS_SIZE_SCALES = [0.56, 0.6, 0.8, 1.0];
+            const VIRUS2_SPRITE_SHEET_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus_2_animation.png';
+            const VIRUS2_SPRITE_CELL_PX = 200;
+            const VIRUS2_SPRITE_COLS = 2;
+            const VIRUS2_SPRITE_ROWS = 2;
+            const VIRUS2_SPRITE_FPS = 5;
+            const VIRUS2_SPRITE_FRAME_COUNT = 4;
+            const VIRUS3_SPRITE_SHEET_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus_3_animation.png';
+            const VIRUS3_SPRITE_COLS = 1;
+            const VIRUS3_SPRITE_ROWS = 2;
+            const VIRUS3_SPRITE_FPS = 3;
+            const VIRUS3_SPRITE_FRAME_COUNT = 2;
+            const VIRUS4_SPRITE_SHEET_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus_4_animated.png';
+            const VIRUS4_SPRITE_COLS = 2;
+            const VIRUS4_SPRITE_ROWS = 2;
+            const VIRUS4_SPRITE_FPS = 6;
+            const VIRUS4_SPRITE_FRAME_COUNT = 4;
+            const VIRUS_SIZE_SCALES = [0.56, 0.6, 0.85, 1.05];
+            let virus2SpriteLayout = {
+                cols: 1,
+                rows: 1,
+                frames: 1,
+                durationMs: 200
+            };
+            const virus3SpriteLayout = {
+                cols: VIRUS3_SPRITE_COLS,
+                rows: VIRUS3_SPRITE_ROWS,
+                frames: VIRUS3_SPRITE_FRAME_COUNT,
+                durationMs: Math.round((VIRUS3_SPRITE_FRAME_COUNT / Math.max(1, VIRUS3_SPRITE_FPS)) * 1000)
+            };
+            const virus4SpriteLayout = {
+                cols: VIRUS4_SPRITE_COLS,
+                rows: VIRUS4_SPRITE_ROWS,
+                frames: VIRUS4_SPRITE_FRAME_COUNT,
+                durationMs: Math.round((VIRUS4_SPRITE_FRAME_COUNT / Math.max(1, VIRUS4_SPRITE_FPS)) * 1000)
+            };
             const MINIBOSS_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss.png';
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
             const SFX_URLS = {
@@ -457,6 +467,9 @@ function escapeHtmlAttr(str) {
                 if (typeof PARTICLE_SPRITE !== 'undefined' && PARTICLE_SPRITE) images.push(PARTICLE_SPRITE);
                 if (MINIBOSS_SPRITE_URL && level >= 5) images.push(MINIBOSS_SPRITE_URL);
                 if (VIRUS1_SPRITE_SHEET_URL) images.push(VIRUS1_SPRITE_SHEET_URL);
+                if (VIRUS2_SPRITE_SHEET_URL) images.push(VIRUS2_SPRITE_SHEET_URL);
+                if (VIRUS3_SPRITE_SHEET_URL) images.push(VIRUS3_SPRITE_SHEET_URL);
+                if (VIRUS4_SPRITE_SHEET_URL) images.push(VIRUS4_SPRITE_SHEET_URL);
                 if (level <= 4) {
                     images.push(SPRITE_URLS[3], SPRITE_URLS[2]);
                 } else if (level <= 9) {
@@ -499,6 +512,65 @@ function escapeHtmlAttr(str) {
                     setTimeout(run, 220);
                 }
             }
+            function buildSpriteSheetKeyframes(name, cols, rows, frames) {
+                const c = Math.max(1, Number(cols) || 1);
+                const r = Math.max(1, Number(rows) || 1);
+                const f = Math.max(1, Number(frames) || 1);
+                const out = ['@keyframes ' + name + ' {'];
+                for (let i = 0; i < f; i++) {
+                    const start = (i / f) * 100;
+                    const end = ((i + 1) / f) * 100;
+                    const col = i % c;
+                    const row = Math.floor(i / c);
+                    const x = c > 1 ? (col / (c - 1)) * 100 : 0;
+                    const y = r > 1 ? (row / (r - 1)) * 100 : 0;
+                    out.push('  ' + start.toFixed(3) + '%, ' + end.toFixed(3) + '% { background-position: ' + x.toFixed(3) + '% ' + y.toFixed(3) + '%; }');
+                }
+                out.push('}');
+                return out.join('\n');
+            }
+            function initVirus2SpriteAnimation() {
+                if (!VIRUS2_SPRITE_SHEET_URL) return;
+                const applyLayout = (cols, rows, frames) => {
+                    const safeCols = Math.max(1, Number(cols) || 1);
+                    const safeRows = Math.max(1, Number(rows) || 1);
+                    const safeFrames = Math.max(1, Number(frames) || (safeCols * safeRows));
+                    virus2SpriteLayout = {
+                        cols: safeCols,
+                        rows: safeRows,
+                        frames: safeFrames,
+                        durationMs: Math.round((safeFrames / Math.max(1, VIRUS2_SPRITE_FPS)) * 1000)
+                    };
+                    const id = 'virus2-sprite-keyframes';
+                    let styleEl = document.getElementById(id);
+                    if (!styleEl) {
+                        styleEl = document.createElement('style');
+                        styleEl.id = id;
+                        document.head.appendChild(styleEl);
+                    }
+                    styleEl.textContent = buildSpriteSheetKeyframes('virus2SpriteFrames', safeCols, safeRows, safeFrames);
+                    try { scheduleRender(); } catch (e) { }
+                };
+
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const w = Number(img.naturalWidth) || 0;
+                    const h = Number(img.naturalHeight) || 0;
+                    const autoCols = Math.max(1, Math.floor(w / VIRUS2_SPRITE_CELL_PX));
+                    const autoRows = Math.max(1, Math.floor(h / VIRUS2_SPRITE_CELL_PX));
+                    const cols = Math.max(1, Number(VIRUS2_SPRITE_COLS) || autoCols);
+                    const rows = Math.max(1, Number(VIRUS2_SPRITE_ROWS) || autoRows);
+                    const sheetFrames = Math.max(1, cols * rows);
+                    const frames = Math.max(1, Math.min(VIRUS2_SPRITE_FRAME_COUNT, sheetFrames));
+                    applyLayout(cols, rows, frames);
+                };
+                img.onerror = () => {
+                    applyLayout(1, 1, 1);
+                };
+                img.src = VIRUS2_SPRITE_SHEET_URL;
+            }
+            initVirus2SpriteAnimation();
             function canPlaySfxNow(key) {
                 const now = Date.now();
                 while (sfxRecentPlays.length && (now - sfxRecentPlays[0]) > SFX_BURST_WINDOW_MS) {
@@ -831,6 +903,7 @@ function escapeHtmlAttr(str) {
             let gameOverMusicRestoreTimer = null;
             let gameOverPrevMusicVolume = null;
             let specialTelegraphIndex = null;
+            let lastGameOverTipIndex = -1;
             const ACHIEVEMENT_STORAGE_KEY = 'goneViral_achievements_v1';
             const ACHIEVEMENT_SCHEMA_VERSION = 1;
             const ACHIEVEMENT_DEFS = [
@@ -1758,6 +1831,20 @@ function escapeHtmlAttr(str) {
                 const extraCount = Math.max(0, unlockedNames.length - shownNames.length);
                 const chips = shownNames.map((name) => `<span>${escapeHtml(name)}</span>`).join('');
                 const more = extraCount > 0 ? `<div class="go-recap-more">+${extraCount} more</div>` : '';
+                const tips = [
+                    'Prioritize chain setup over single pops.',
+                    'Clear armored viruses early so they do not stall cascades.',
+                    'Use Nano Storm on dense clusters, not isolated targets.',
+                    'Pop near center to open more chain directions.',
+                    'When clicks are low, play for guaranteed clears over risky setups.',
+                    'Watch blocker lanes before committing high-value pops.'
+                ];
+                let tipIndex = Math.floor(Math.random() * tips.length);
+                if (tips.length > 1 && tipIndex === lastGameOverTipIndex) {
+                    tipIndex = (tipIndex + 1 + Math.floor(Math.random() * (tips.length - 1))) % tips.length;
+                }
+                lastGameOverTipIndex = tipIndex;
+                const tipLine = tips[tipIndex] || tips[0];
                 return `
                     <div class="go-recap">
                         <div class="go-recap-title">Run Recap</div>
@@ -1771,6 +1858,7 @@ function escapeHtmlAttr(str) {
                         <div class="go-recap-achv">Achievements this run: <b>${unlockedNames.length}</b></div>
                         ${chips ? `<div class="go-recap-list">${chips}</div>` : ''}
                         ${more}
+                        <div class="go-tip"><b>PIXEL tip:</b> ${escapeHtml(tipLine)}</div>
                     </div>
                 `;
             }
@@ -2664,6 +2752,7 @@ function escapeHtmlAttr(str) {
                 if (toScale <= 0) return;
                 growthTweenByIndex.set(i, {
                     ratio: Math.max(0.7, Math.min(0.98, fromScale / toScale)),
+                    from,
                     to
                 });
             }
@@ -2676,7 +2765,7 @@ function escapeHtmlAttr(str) {
                     container.style.setProperty('--grow-from', String(tweenCfg.ratio));
                     setTimeout(() => {
                         try { container.classList.remove('grow-tween'); } catch (e) { }
-                    }, 190);
+                    }, 380);
                 }
                 const def = getSpecialTypeDef(specialType);
                 if (def) {
@@ -2686,6 +2775,55 @@ function escapeHtmlAttr(str) {
                 }
                 const sprite = document.createElement('div');
                 sprite.className = 'face-sprite';
+                const appendSpriteVisual = (target, spriteSize) => {
+                    if (spriteSize === 0) {
+                        const sheet = document.createElement('div');
+                        sheet.className = 'virus1-sprite-sheet';
+                        sheet.style.backgroundImage = `url('${VIRUS1_SPRITE_SHEET_URL}')`;
+                        sheet.style.transform = 'scale(' + VIRUS_SIZE_SCALES[0] + ')';
+                        sheet.style.transformOrigin = 'center center';
+                        sheet.setAttribute('aria-hidden', 'true');
+                        target.appendChild(sheet);
+                    } else if (spriteSize === 1 && VIRUS2_SPRITE_SHEET_URL) {
+                        const sheet = document.createElement('div');
+                        sheet.className = 'virus2-sprite-sheet';
+                        sheet.style.backgroundImage = `url('${VIRUS2_SPRITE_SHEET_URL}')`;
+                        sheet.style.setProperty('--virus2-cols', String(virus2SpriteLayout.cols || 1));
+                        sheet.style.setProperty('--virus2-rows', String(virus2SpriteLayout.rows || 1));
+                        sheet.style.setProperty('--virus2-duration-ms', String(virus2SpriteLayout.durationMs || 200));
+                        sheet.style.setProperty('--virus2-scale', String(VIRUS_SIZE_SCALES[1]));
+                        sheet.setAttribute('aria-hidden', 'true');
+                        target.appendChild(sheet);
+                    } else if (spriteSize === 2 && VIRUS3_SPRITE_SHEET_URL) {
+                        const sheet = document.createElement('div');
+                        sheet.className = 'virus3-sprite-sheet';
+                        sheet.style.backgroundImage = `url('${VIRUS3_SPRITE_SHEET_URL}')`;
+                        sheet.style.setProperty('--virus3-cols', String(virus3SpriteLayout.cols || 1));
+                        sheet.style.setProperty('--virus3-rows', String(virus3SpriteLayout.rows || 2));
+                        sheet.style.setProperty('--virus3-duration-ms', String(virus3SpriteLayout.durationMs || 333));
+                        sheet.style.setProperty('--virus3-scale', String(VIRUS_SIZE_SCALES[2]));
+                        sheet.setAttribute('aria-hidden', 'true');
+                        target.appendChild(sheet);
+                    } else if (spriteSize === 3 && VIRUS4_SPRITE_SHEET_URL) {
+                        const sheet = document.createElement('div');
+                        sheet.className = 'virus4-sprite-sheet';
+                        sheet.style.backgroundImage = `url('${VIRUS4_SPRITE_SHEET_URL}')`;
+                        sheet.style.setProperty('--virus4-cols', String(virus4SpriteLayout.cols || 2));
+                        sheet.style.setProperty('--virus4-rows', String(virus4SpriteLayout.rows || 2));
+                        sheet.style.setProperty('--virus4-duration-ms', String(virus4SpriteLayout.durationMs || 667));
+                        sheet.style.setProperty('--virus4-scale', String(VIRUS_SIZE_SCALES[3]));
+                        sheet.setAttribute('aria-hidden', 'true');
+                        target.appendChild(sheet);
+                    } else {
+                        const img = document.createElement('img');
+                        img.className = 'face-img';
+                        img.src = SPRITE_URLS[Math.max(0, Math.min(3, spriteSize))];
+                        img.alt = 'virus';
+                        img.style.transform = 'scale(' + VIRUS_SIZE_SCALES[Math.max(0, Math.min(3, spriteSize))] + ')';
+                        img.style.transformOrigin = 'center center';
+                        target.appendChild(img);
+                    }
+                };
                 if (specialType === 'boss') {
                     const bossSheet = document.createElement('div');
                     bossSheet.className = 'boss-sprite-sheet';
@@ -2693,25 +2831,22 @@ function escapeHtmlAttr(str) {
                     bossSheet.setAttribute('aria-hidden', 'true');
                     sprite.appendChild(bossSheet);
                 } else {
-                    if (size === 0) {
-                        const sheet = document.createElement('div');
-                        sheet.className = 'virus1-sprite-sheet';
-                        sheet.style.backgroundImage = `url('${VIRUS1_SPRITE_SHEET_URL}')`;
-                        sheet.style.transform = 'scale(' + VIRUS_SIZE_SCALES[0] + ')';
-                        sheet.style.transformOrigin = 'center center';
-                        sheet.setAttribute('aria-hidden', 'true');
-                        sprite.appendChild(sheet);
-                    } else {
-                        const img = document.createElement('img');
-                        img.className = 'face-img';
-                        img.src = SPRITE_URLS[Math.max(0, Math.min(3, size))];
-                        img.alt = 'virus';
-                        img.style.transform = 'scale(' + VIRUS_SIZE_SCALES[Math.max(0, Math.min(3, size))] + ')';
-                        img.style.transformOrigin = 'center center';
-                        sprite.appendChild(img);
+                    if (tweenCfg && Number.isFinite(tweenCfg.from) && tweenCfg.from >= 0 && tweenCfg.from !== size) {
+                        const prevSprite = document.createElement('div');
+                        prevSprite.className = 'face-sprite face-sprite--prev';
+                        appendSpriteVisual(prevSprite, Math.max(0, Math.min(3, Number(tweenCfg.from) || 0)));
+                        container.appendChild(prevSprite);
+                        sprite.classList.add('face-sprite--next');
                     }
+                    appendSpriteVisual(sprite, Math.max(0, Math.min(3, Number(size) || 0)));
                 }
                 container.appendChild(sprite);
+                if (tweenCfg && Number.isFinite(tweenCfg.ratio)) {
+                    const growthRing = document.createElement('div');
+                    growthRing.className = 'growth-ring';
+                    growthRing.setAttribute('aria-hidden', 'true');
+                    container.appendChild(growthRing);
+                }
                 if (def) {
                     const marker = document.createElement('div');
                     marker.className = 'special-badge';
