@@ -3514,6 +3514,7 @@ function escapeHtmlAttr(str) {
             function updateStormUI() {
                 if (!stormBtn) return;
                 if (stormCharges <= 0 && stormArmed) stormArmed = false;
+                try { document.body.classList.toggle('storm-armed-mode', !!stormArmed && stormCharges > 0); } catch (e) { }
                 stormBtn.classList.remove('ready', 'armed', 'empty', 'charged');
                 if (stormCharges <= 0) stormBtn.classList.add('empty');
                 else if (stormArmed) stormBtn.classList.add('armed');
@@ -3579,6 +3580,7 @@ function escapeHtmlAttr(str) {
 
             function setStormArmed(val) {
                 stormArmed = !!val && stormCharges > 0;
+                try { document.body.classList.toggle('storm-armed-mode', !!stormArmed && stormCharges > 0); } catch (e) { }
                 if (!stormArmed) {
                     stormHoverIndex = null;
                     clearStormPreview();
@@ -3626,6 +3628,17 @@ function escapeHtmlAttr(str) {
                         const r = centerCell.getBoundingClientRect();
                         const cx = Math.round(r.left + (r.width / 2));
                         const cy = Math.round(r.top + (r.height / 2));
+                        try {
+                            const fx = document.createElement('div');
+                            fx.className = 'storm-electricity';
+                            fx.style.left = cx + 'px';
+                            fx.style.top = cy + 'px';
+                            const fxSize = Math.max(96, Math.round(Math.max(r.width, r.height) * 2.9));
+                            fx.style.width = fxSize + 'px';
+                            fx.style.height = fxSize + 'px';
+                            document.body.appendChild(fx);
+                            setTimeout(() => { try { fx.remove(); } catch (e) { } }, 540);
+                        } catch (e) { }
                         const addRing = (cls, delayMs = 0) => {
                             setTimeout(() => {
                                 try {

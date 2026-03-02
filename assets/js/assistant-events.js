@@ -188,24 +188,24 @@
                     if (window.assistantMuted) return;
                     if (eventName === 'levelComplete') {
                         const line = pick('levelComplete');
-                        if (line) Assistant.show(line, { priority: 1 });
+                        if (line) Assistant.show(line, { priority: 1, event: 'levelComplete' });
                     } else if (eventName === 'gameOver') {
                         // prefer a game-over specific pool line, but include title/subtitle if helpful
                         const line = pick('gameOver') || (data && data.title ? data.title + ' — ' + (data.subtitle || '') : null);
-                        if (line) Assistant.show(line, { priority: 3, sticky: true });
+                        if (line) Assistant.show(line, { priority: 3, sticky: true, event: 'gameOver' });
                     } else if (eventName === 'postGameWelcome') {
                         const line = pick('postGameWelcome');
-                        if (line) Assistant.show(line, { priority: 2, sticky: false });
+                        if (line) Assistant.show(line, { priority: 2, sticky: false, event: 'postGameWelcome' });
                     } else if (eventName === 'cascade') {
                         const now = Date.now();
                         if (now - _lastCascadeAt < CASCADE_COOLDOWN) return; // cooldown
                         if (Math.random() > CASCADE_PROBABILITY) return; // probabilistic suppression
                         _lastCascadeAt = now;
                         const line = pick('cascade');
-                        if (line) Assistant.show(line, { priority: 1 });
+                        if (line) Assistant.show(line, { priority: 1, event: 'cascade' });
                     } else if (eventName === 'lowClicks') {
                         const line = pick('lowClicks');
-                        if (line) Assistant.show(line, { priority: 2, sticky: false });
+                        if (line) Assistant.show(line, { priority: 2, sticky: false, event: 'lowClicks' });
                     } else {
                         // fallback: show text if provided
                         if (typeof data === 'string') Assistant.show(data, {});

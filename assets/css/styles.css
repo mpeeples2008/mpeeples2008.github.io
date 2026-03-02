@@ -557,6 +557,24 @@
             animation: stormRingExpand 280ms ease-out forwards;
         }
 
+        .storm-electricity {
+            position: fixed;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 26006;
+            background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/electricity.png');
+            background-repeat: no-repeat;
+            background-size: 200% 200%;
+            background-position: 0% 0%;
+            image-rendering: pixelated;
+            opacity: 0.58;
+            filter: drop-shadow(0 0 9px rgba(142, 225, 255, 0.55));
+            will-change: transform, opacity, background-position;
+            animation:
+                stormElectricityFrames 240ms step-end forwards,
+                stormElectricityJitterFade 300ms ease-out 200ms forwards;
+        }
+
         .storm-ring.storm-ring-inner {
             border-width: 3px;
             animation-duration: 250ms;
@@ -592,6 +610,40 @@
             }
             100% {
                 transform: translate(-50%, -50%) scale(3.3);
+                opacity: 0;
+            }
+        }
+
+        @keyframes stormElectricityFrames {
+            0%, 24.999% { background-position: 0% 0%; }
+            25%, 49.999% { background-position: 100% 0%; }
+            50%, 74.999% { background-position: 0% 100%; }
+            75%, 100% { background-position: 100% 100%; }
+        }
+
+        @keyframes stormElectricityJitterFade {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.56;
+            }
+            18% {
+                transform: translate(calc(-50% - 1px), calc(-50% + 1px)) scale(1.03);
+                opacity: 0.52;
+            }
+            36% {
+                transform: translate(calc(-50% + 1px), calc(-50% - 1px)) scale(0.99);
+                opacity: 0.46;
+            }
+            56% {
+                transform: translate(calc(-50% - 1px), calc(-50% - 1px)) scale(1.02);
+                opacity: 0.34;
+            }
+            78% {
+                transform: translate(calc(-50% + 1px), calc(-50% + 1px)) scale(0.98);
+                opacity: 0.22;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(0.95);
                 opacity: 0;
             }
         }
@@ -3376,6 +3428,43 @@
             animation: brow-flick 160ms ease-out 1;
         }
 
+        @keyframes idle-brow-left-lift {
+            0% { transform: translateY(0) rotate(0deg); }
+            45% { transform: translateY(-3px) rotate(-6deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        @keyframes idle-brow-right-lift {
+            0% { transform: translateY(0) rotate(0deg); }
+            45% { transform: translateY(-3px) rotate(6deg); }
+            100% { transform: translateY(0) rotate(0deg); }
+        }
+
+        #assist-badge.idle-brow-left #brow-left {
+            opacity: 1;
+            animation: idle-brow-left-lift 260ms ease-out 1;
+        }
+
+        #assist-badge.idle-brow-right #brow-right {
+            opacity: 1;
+            animation: idle-brow-right-lift 260ms ease-out 1;
+        }
+
+        #assist-badge.idle-mouth-smirk .mouth-shape.neutral,
+        #assist-badge.idle-mouth-pout .mouth-shape.neutral {
+            opacity: 0 !important;
+        }
+
+        #assist-badge.idle-mouth-smirk .mouth-shape.smirk {
+            opacity: 1 !important;
+            transform: translateY(0) scale(1.02) !important;
+        }
+
+        #assist-badge.idle-mouth-pout .mouth-shape.pout {
+            opacity: 1 !important;
+            transform: translateY(0) scale(1.01) !important;
+        }
+
         /* hide all mouths by default */
         .mouth-shape {
             opacity: 0;
@@ -3420,6 +3509,38 @@
             /* interaction remains at badge level */
         }
 
+        /* V1: green phosphor CRT palette for assistant screen */
+        .assist-badge .retro-monitor #screenGrad stop:first-child {
+            stop-color: #0f2a16 !important;
+            stop-opacity: 0.96 !important;
+        }
+
+        .assist-badge .retro-monitor #screenGrad stop:last-child {
+            stop-color: #06130b !important;
+            stop-opacity: 0.98 !important;
+        }
+
+        .assist-badge .retro-monitor .retro-screen {
+            filter: drop-shadow(0 0 5px rgba(94, 255, 160, 0.18)) saturate(1.08);
+        }
+
+        .assist-badge .retro-monitor .retro-screen > g:first-of-type {
+            opacity: 0.14 !important;
+        }
+
+        .assist-badge .retro-monitor #monitor-face circle,
+        .assist-badge .retro-monitor #monitor-face .mouth-shape,
+        .assist-badge .retro-monitor #brow-left,
+        .assist-badge .retro-monitor #brow-right {
+            stroke: #ffd166 !important;
+            fill: #ffd166 !important;
+        }
+
+        .assist-badge .retro-monitor #monitor-face .mouth-shape {
+            fill: none !important;
+            filter: drop-shadow(0 0 1px rgba(255, 209, 102, 0.65));
+        }
+
         /* screen outer/inner visuals (applied to the wrapper, not SVG internal) */
         .retro-screen {
             /* scanlines and subtle CRT curvature via SVG shapes, but we add a CSS overlay for scanlines glow */
@@ -3430,7 +3551,7 @@
 
         /* small glow when speaking */
         #assist-badge.speaking .retro-screen {
-            box-shadow: 0 6px 18px rgba(255, 210, 100, 0.12), inset 0 0 12px rgba(255, 210, 100, 0.03);
+            box-shadow: 0 6px 18px rgba(120, 255, 170, 0.16), inset 0 0 12px rgba(120, 255, 170, 0.05);
             transform: translateZ(0);
             transition: box-shadow 180ms ease;
         }
@@ -3861,6 +3982,12 @@
 #assist-badge:not(.expr-neutral) .mouth-shape.neutral { opacity: 0 !important; }
 #assist-badge.expr-neutral .mouth-shape.neutral { opacity: 1 !important; stroke: #ffd166; }
 
+/* Idle mouth micro-expression override: hide neutral mouth during idle smirk/pout flashes */
+#assist-badge.expr-neutral.idle-mouth-smirk .mouth-shape.neutral,
+#assist-badge.expr-neutral.idle-mouth-pout .mouth-shape.neutral {
+    opacity: 0 !important;
+}
+
 
 /* Assistant disabled helper */
 body.assistant-disabled #assist-badge,
@@ -4021,7 +4148,28 @@ html.assistant-disabled .assistant-fallback-bubble {
                 box-shadow: 0 0 8px rgba(94, 216, 255, 0.28);
                 pointer-events: none;
                 z-index: 3;
-            }
+             }
+
+             .control-trio .storm-btn .storm-armed-label {
+                position: absolute;
+                left: 50%;
+                top: 3px;
+                transform: translateX(-50%);
+                font-family: 'Press Start 2P', monospace;
+                font-size: 6px;
+                line-height: 1;
+                letter-spacing: 0.06em;
+                color: #ffe799;
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55), 0 0 4px rgba(255, 220, 120, 0.32);
+                opacity: 0;
+                transition: opacity 120ms linear;
+                pointer-events: none;
+                z-index: 4;
+             }
+
+             .control-trio .storm-btn.armed .storm-armed-label {
+                opacity: 1;
+             }
 
              .control-trio .storm-btn.combo-tracking::after {
                 opacity: 0.96;
@@ -4092,14 +4240,14 @@ html.assistant-disabled .assistant-fallback-bubble {
              .control-trio .storm-btn.armed {
                 border-color: #7a5a1e;
                 box-shadow: 0 0 0 3px rgba(143, 109, 44, 0.45);
-                animation: stormBtnPulse 760ms ease-in-out infinite;
+                animation: stormBtnPulse 760ms ease-in-out infinite, stormArmedHalo 520ms ease-in-out infinite;
              }
 
              .control-trio .storm-btn.charged.armed {
                 border-color: transparent;
                 box-shadow: none;
                 filter: drop-shadow(0 6px 8px rgba(78, 182, 255, 0.42)) drop-shadow(0 0 8px rgba(101, 210, 255, 0.34));
-                animation: stormMeterSpriteFramesCharged 640ms steps(4, end) infinite, stormChargedCorePulse 320ms ease-in-out infinite;
+                animation: stormMeterSpriteFramesCharged 640ms steps(4, end) infinite, stormChargedCorePulse 320ms ease-in-out infinite, stormArmedHalo 520ms ease-in-out infinite;
              }
 
              .control-trio .storm-btn.empty {
@@ -4207,6 +4355,27 @@ html.assistant-disabled .assistant-fallback-bubble {
                 box-shadow: 0 0 0 0 rgba(148, 238, 255, 0.0), 4px 4px 0 rgba(0, 0, 0, 0.12);
                 transform: scale(1);
             }
+        }
+
+        @keyframes stormArmedHalo {
+            0%, 100% {
+                outline: 2px solid rgba(134, 221, 255, 0.85);
+                outline-offset: 1px;
+            }
+            50% {
+                outline: 2px solid rgba(255, 233, 144, 0.95);
+                outline-offset: 3px;
+            }
+        }
+
+        body.storm-armed-mode .board,
+        body.storm-armed-mode #board {
+            box-shadow: inset 0 0 0 2px rgba(118, 210, 255, 0.56), 0 0 16px rgba(118, 210, 255, 0.35);
+            transition: box-shadow 120ms linear;
+        }
+
+        body.storm-armed-mode #board .cell {
+            cursor: crosshair;
         }
 
 
