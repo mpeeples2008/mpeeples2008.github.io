@@ -266,6 +266,17 @@
             filter: drop-shadow(0 0 3px rgba(255, 132, 110, 0.62)) saturate(1.08);
         }
 
+        .rotating-blocker.frozen {
+            background: linear-gradient(90deg, rgba(72, 140, 188, 0.95), rgba(168, 226, 255, 0.95), rgba(72, 140, 188, 0.95));
+            box-shadow: 0 0 0 2px rgba(170, 227, 255, 0.82), 0 0 16px rgba(132, 209, 255, 0.58), inset 0 0 10px rgba(216, 246, 255, 0.48);
+            animation-duration: 1300ms, 1200ms;
+        }
+
+        .rotating-blocker.frozen::after {
+            background: linear-gradient(90deg, rgba(210, 242, 255, 0.22), rgba(237, 251, 255, 0.95), rgba(210, 242, 255, 0.22));
+            box-shadow: 0 0 10px rgba(190, 238, 255, 0.76);
+        }
+
         @keyframes blockerBeamBodyBob {
             0%, 100% {
                 translate: 0 -2px;
@@ -1957,6 +1968,142 @@
         .game-over-popup .go-restart-btn:active {
             transform: translateY(1px);
             box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.22);
+        }
+
+        .run-perk-popup {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.92);
+            z-index: 95250;
+            width: min(440px, 92vw);
+            padding: 14px 14px 12px 14px;
+            border-radius: 12px;
+            border: 4px solid rgba(0, 0, 0, 0.48);
+            background: linear-gradient(180deg, #10233e, #09162a);
+            box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.26);
+            color: #ffe5ac;
+            font-family: 'Press Start 2P', monospace;
+            opacity: 0;
+            pointer-events: auto;
+        }
+
+        .run-perk-popup.show {
+            animation: runPerkIn 180ms ease-out forwards;
+        }
+
+        .run-perk-popup.hide {
+            animation: runPerkOut 160ms ease-in forwards;
+        }
+
+        .run-perk-popup .rp-title {
+            font-size: 13px;
+            text-align: center;
+            color: #ffd166;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .run-perk-popup .rp-sub {
+            font-size: 9px;
+            text-align: center;
+            color: #d6ebff;
+            margin-bottom: 10px;
+        }
+
+        .run-perk-popup .rp-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .run-perk-popup .rp-item {
+            width: 100%;
+            text-align: left;
+            padding: 10px 10px 9px 10px;
+            border-radius: 8px;
+            border: 3px solid rgba(0, 0, 0, 0.42);
+            background: linear-gradient(180deg, #fff8dc, #f4d487);
+            color: #13213d;
+            box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.22);
+            font-family: 'Press Start 2P', monospace;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .run-perk-popup .rp-item.rp-pixel {
+            background: linear-gradient(180deg, #fff8dc, #f4d487);
+            color: #13213d;
+        }
+
+        .run-perk-popup .rp-item.rp-broker {
+            background: linear-gradient(180deg, #ffdfd8, #f3aa96);
+            color: #3a120b;
+            border-color: rgba(64, 18, 8, 0.45);
+        }
+
+        .run-perk-popup .rp-source {
+            font-size: 7px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            display: inline-block;
+            opacity: 0.92;
+        }
+
+        .run-perk-popup .rp-source.rp-source-pixel {
+            color: #20508a;
+        }
+
+        .run-perk-popup .rp-source.rp-source-broker {
+            color: #7a1a0f;
+        }
+
+        .run-perk-popup .rp-item:hover {
+            filter: brightness(1.03);
+        }
+
+        .run-perk-popup .rp-item:active {
+            transform: translateY(1px);
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .run-perk-popup .rp-item-title {
+            font-size: 10px;
+            line-height: 1.2;
+        }
+
+        .run-perk-popup .rp-item-desc {
+            font-size: 8px;
+            line-height: 1.35;
+            color: #28385a;
+        }
+
+        .run-perk-popup .rp-item.rp-broker .rp-item-desc {
+            color: #572218;
+        }
+
+        @keyframes runPerkIn {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        @keyframes runPerkOut {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
         }
 
             .game-over-popup.show .go-title {

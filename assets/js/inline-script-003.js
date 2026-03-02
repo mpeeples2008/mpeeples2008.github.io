@@ -875,6 +875,27 @@ function escapeHtmlAttr(str) {
                 window.getLevel = function () {
                     return getCurrentLevelNumber();
                 };
+                window.RunPerks = {
+                    state: function () {
+                        return JSON.parse(JSON.stringify(runPerkState));
+                    },
+                    queue: function (count = 1) {
+                        const n = Math.max(0, Math.floor(Number(count) || 0));
+                        runPerkState.pendingOffers = Math.max(0, Number(runPerkState.pendingOffers) || 0) + n;
+                        setTimeout(() => { try { maybeShowPendingRunPerkPopup(); } catch (e) { } }, 0);
+                        return { pendingOffers: runPerkState.pendingOffers };
+                    },
+                    grant: function (perkId) {
+                        const id = applyRunPerkChoice(perkId);
+                        updateHUD();
+                        return { granted: id, state: JSON.parse(JSON.stringify(runPerkState)) };
+                    },
+                    reset: function () {
+                        resetRunPerkState();
+                        updateHUD();
+                        return JSON.parse(JSON.stringify(runPerkState));
+                    }
+                };
             } catch (e) { }
             let blockerOrientationDeg = 0; // only 0 or 90
             let blockerLaneIndex = 2; // boundary between rows/cols (0-based lane index)
@@ -905,6 +926,134 @@ function escapeHtmlAttr(str) {
             let gameOverPrevMusicVolume = null;
             let specialTelegraphIndex = null;
             let lastGameOverTipIndex = -1;
+            const RUN_PERK_PROFILE = {
+                thresholds: [1800, 4200, 7200, 11000, 15500],
+                maxPicks: 5
+            };
+            const RUN_PERK_DEFS = {
+                emergency_cells: {
+                    id: 'emergency_cells',
+                    source: 'pixel',
+                    title: 'Emergency Cells',
+                    desc: '+2 clicks now.'
+                },
+                storm_capacitor: {
+                    id: 'storm_capacitor',
+                    source: 'pixel',
+                    title: 'Storm Capacitor',
+                    desc: 'Next Nano Storm charge needs 16 pops.'
+                },
+                armor_piercer: {
+                    id: 'armor_piercer',
+                    source: 'pixel',
+                    title: 'Armor Piercer',
+                    desc: 'Store 3 shell-piercing hits (saved until used).'
+                },
+                containment_freeze: {
+                    id: 'containment_freeze',
+                    source: 'pixel',
+                    title: 'Containment Freeze',
+                    desc: 'Pause blocker for 4.5 seconds.'
+                },
+                laser_jammer: {
+                    id: 'laser_jammer',
+                    source: 'broker',
+                    title: 'Laser Jammer',
+                    desc: 'Disable blocker beam for 5s, but blocker moves 25% faster for the rest of this run.'
+                },
+                boss_breaker: {
+                    id: 'boss_breaker',
+                    source: 'pixel',
+                    title: 'Boss Breaker',
+                    desc: 'Next 2 boss hits deal +1 damage.'
+                },
+                overclocked_reserve: {
+                    id: 'overclocked_reserve',
+                    source: 'pixel',
+                    title: 'Overclocked Reserve',
+                    desc: '+1 click at next level start.'
+                },
+                reserve_expansion: {
+                    id: 'reserve_expansion',
+                    source: 'pixel',
+                    title: 'Reserve Expansion',
+                    desc: '+2 max clicks this run.'
+                },
+                storm_tuning: {
+                    id: 'storm_tuning',
+                    source: 'pixel',
+                    title: 'Storm Tuning',
+                    desc: 'Nano Storm charge requirement -3 (run passive).'
+                },
+                broker_quickfix: {
+                    id: 'broker_quickfix',
+                    source: 'broker',
+                    title: 'Quickfix',
+                    desc: '+3 clicks now, but level-clear click bonus -1 for the rest of this run.'
+                },
+                broker_hotwire: {
+                    id: 'broker_hotwire',
+                    source: 'broker',
+                    title: 'Black-Market Hotwire',
+                    desc: '+1 Nano Storm now (instant charge), but future recharge +3 pops.'
+                },
+                broker_heavy_armor: {
+                    id: 'broker_heavy_armor',
+                    source: 'broker',
+                    title: 'Razor Payload',
+                    desc: '+5 Armor Piercer hits, but max clicks -2.'
+                },
+                broker_risky_cache: {
+                    id: 'broker_risky_cache',
+                    source: 'broker',
+                    title: 'Risky Cache',
+                    desc: '+2 next-level clicks, but score gain -12%.'
+                },
+                broker_borrowed_time: {
+                    id: 'broker_borrowed_time',
+                    source: 'broker',
+                    title: 'Borrowed Time',
+                    desc: '+4 clicks now, but mini-boss kill reward -2 this run.'
+                },
+                broker_dirty_reactor: {
+                    id: 'broker_dirty_reactor',
+                    source: 'broker',
+                    title: 'Dirty Reactor',
+                    desc: '+1 Nano Storm now, but Nano Storm loses diagonals this run.'
+                },
+                broker_hazard_infusion: {
+                    id: 'broker_hazard_infusion',
+                    source: 'broker',
+                    title: 'Hazard Infusion',
+                    desc: '+2 next-level clicks, but special virus spawn chance +5% this run.'
+                }
+            };
+            let runPerkPopupEl = null;
+            function createDefaultRunPerkState() {
+                return {
+                    nextThresholdIndex: 0,
+                    pendingOffers: 0,
+                    picksCount: 0,
+                    lastOfferedRound: {},
+                    stormCapacitorCharges: 0,
+                    armorPiercerHits: 0,
+                    bossBreakerHits: 0,
+                    overclockedReservePending: 0,
+                    blockerFrozenUntil: 0,
+                    blockerDisabledUntil: 0,
+                    blockerSpeedFactor: 1,
+                    clickCapDelta: 0,
+                    stormRechargeDelta: 0,
+                    levelClearClicksPenalty: 0,
+                    scoreMultiplier: 1,
+                    miniBossBonusPenalty: 0,
+                    stormNoDiagonals: false,
+                    specialVirusChanceDelta: 0,
+                    acceptedDeals: 0,
+                    popupOpen: false
+                };
+            }
+            let runPerkState = createDefaultRunPerkState();
             const ACHIEVEMENT_STORAGE_KEY = 'goneViral_achievements_v1';
             const ACHIEVEMENT_SCHEMA_VERSION = 1;
             const ACHIEVEMENT_DEFS = [
@@ -1668,6 +1817,334 @@ function escapeHtmlAttr(str) {
                 return true;
             }
 
+            function isBlockerTemporarilyFrozen() {
+                return !!(runPerkState && Number(runPerkState.blockerFrozenUntil) > Date.now());
+            }
+
+            function isBlockerTemporarilyDisabled() {
+                return !!(runPerkState && Number(runPerkState.blockerDisabledUntil) > Date.now());
+            }
+
+            function getMaxClicksCap() {
+                const delta = Math.floor(Number(runPerkState && runPerkState.clickCapDelta) || 0);
+                return Math.max(6, MAX_CLICKS + delta);
+            }
+
+            function clampClicksToCap() {
+                clicksLeft = Math.max(0, Math.min(getMaxClicksCap(), Number(clicksLeft) || 0));
+                return clicksLeft;
+            }
+
+            function hideRunPerkPopup(immediate = false) {
+                try {
+                    const el = runPerkPopupEl || document.querySelector('.run-perk-popup');
+                    if (!el) {
+                        runPerkPopupEl = null;
+                        if (runPerkState) runPerkState.popupOpen = false;
+                        try { document.body.classList.remove('run-perk-open'); } catch (e) { }
+                        return;
+                    }
+                    const cleanup = () => {
+                        try { el.remove(); } catch (e) { }
+                        runPerkPopupEl = null;
+                        if (runPerkState) runPerkState.popupOpen = false;
+                        try { document.body.classList.remove('run-perk-open'); } catch (e) { }
+                    };
+                    if (immediate) {
+                        cleanup();
+                        return;
+                    }
+                    el.classList.remove('show');
+                    el.classList.add('hide');
+                    el.addEventListener('animationend', cleanup, { once: true });
+                } catch (e) { }
+            }
+
+            function resetRunPerkState() {
+                runPerkState = createDefaultRunPerkState();
+                hideRunPerkPopup(true);
+            }
+
+            function getRunPerkPoolForSource(source, levelNum = getCurrentLevelNumber()) {
+                const src = String(source || 'pixel');
+                const lvl = Math.max(1, Number(levelNum) || 1);
+                if (src === 'broker') {
+                    const pool = [];
+                    if (lvl >= 5) pool.push('broker_quickfix');
+                    if (lvl >= 8) pool.push('broker_hotwire');
+                    if (lvl >= 10) pool.push('broker_heavy_armor', 'laser_jammer');
+                    if (lvl >= 12) pool.push('broker_risky_cache');
+                    if (lvl >= 10) pool.push('broker_borrowed_time');
+                    if (lvl >= 11) pool.push('broker_dirty_reactor');
+                    if (lvl >= 12) pool.push('broker_hazard_infusion');
+                    return pool;
+                }
+                const pool = ['emergency_cells', 'storm_capacitor', 'overclocked_reserve'];
+                if (lvl >= 5) pool.push('armor_piercer');
+                if (lvl >= 6) pool.push('reserve_expansion');
+                if (lvl >= 8) pool.push('storm_tuning');
+                if (lvl >= 10) pool.push('containment_freeze', 'boss_breaker');
+                return pool;
+            }
+
+            function isRunPerkRelevant(perkId, levelNum = getCurrentLevelNumber()) {
+                const id = String(perkId || '');
+                if (id === 'emergency_cells') return true;
+                if (id === 'storm_capacitor') return (runPerkState.stormCapacitorCharges <= 0);
+                if (id === 'armor_piercer') return true;
+                if (id === 'containment_freeze') return isRotatingBlockerActive(levelNum) && !isBlockerTemporarilyDisabled();
+                if (id === 'laser_jammer') return isRotatingBlockerActive(levelNum) && !isBlockerTemporarilyDisabled() && (Number(runPerkState.blockerSpeedFactor) || 1) <= 1.01;
+                if (id === 'boss_breaker') return true;
+                if (id === 'overclocked_reserve') return (runPerkState.overclockedReservePending <= 0);
+                if (id === 'reserve_expansion') return (Number(runPerkState.clickCapDelta) || 0) < 6;
+                if (id === 'storm_tuning') return (Number(runPerkState.stormRechargeDelta) || 0) > -9;
+                if (id === 'broker_quickfix') return (Number(runPerkState.levelClearClicksPenalty) || 0) < 3;
+                if (id === 'broker_hotwire') return (Number(runPerkState.stormRechargeDelta) || 0) < 12;
+                if (id === 'broker_heavy_armor') return (Number(runPerkState.clickCapDelta) || 0) > -8;
+                if (id === 'broker_risky_cache') return (Number(runPerkState.scoreMultiplier) || 1) > 0.66;
+                if (id === 'broker_borrowed_time') return (Number(runPerkState.miniBossBonusPenalty) || 0) < 6;
+                if (id === 'broker_dirty_reactor') return !runPerkState.stormNoDiagonals;
+                if (id === 'broker_hazard_infusion') return (Number(runPerkState.specialVirusChanceDelta) || 0) < 0.20;
+                return false;
+            }
+
+            function pickRandomPerkId(ids, excluded = new Set()) {
+                const list = (Array.isArray(ids) ? ids : []).filter((id) => !excluded.has(id));
+                if (!list.length) return null;
+                return list[Math.floor(Math.random() * list.length)] || null;
+            }
+
+            function pickRunPerkForSource(source, levelNum, round, excluded = new Set()) {
+                const pool = getRunPerkPoolForSource(source, levelNum).filter((id) => isRunPerkRelevant(id, levelNum) && !excluded.has(id));
+                if (!pool.length) return null;
+                const cooled = pool.filter((id) => {
+                    const key = `${source}:${id}`;
+                    const last = runPerkState.lastOfferedRound[key];
+                    if (!Number.isFinite(last)) return true;
+                    return (round - last) > 1;
+                });
+                const sourcePool = cooled.length ? cooled : pool;
+                const picked = pickRandomPerkId(sourcePool, new Set());
+                if (!picked) return null;
+                runPerkState.lastOfferedRound[`${source}:${picked}`] = round;
+                return picked;
+            }
+
+            function buildRunPerkOfferPair(levelNum = getCurrentLevelNumber()) {
+                const round = Math.max(0, Number(runPerkState.picksCount) || 0);
+                const picked = [];
+                const used = new Set();
+                let pixelId = pickRunPerkForSource('pixel', levelNum, round, used) || 'emergency_cells';
+                if (!isRunPerkRelevant(pixelId, levelNum)) pixelId = 'emergency_cells';
+                used.add(pixelId);
+                picked.push(pixelId);
+
+                let brokerId = pickRunPerkForSource('broker', levelNum, round, used);
+                if (!brokerId) {
+                    brokerId = pickRunPerkForSource('pixel', levelNum, round, used);
+                }
+                if (!brokerId || !RUN_PERK_DEFS[brokerId]) brokerId = 'overclocked_reserve';
+                if (!isRunPerkRelevant(brokerId, levelNum)) brokerId = 'emergency_cells';
+                if (brokerId === pixelId) {
+                    const fallbackPool = getRunPerkPoolForSource('pixel', levelNum)
+                        .concat(getRunPerkPoolForSource('broker', levelNum))
+                        .filter((id) => id !== pixelId && isRunPerkRelevant(id, levelNum));
+                    brokerId = fallbackPool[0] || 'overclocked_reserve';
+                }
+                picked.push(brokerId);
+                return picked.map((id) => RUN_PERK_DEFS[id]).filter(Boolean).slice(0, 2);
+            }
+
+            function applyRunPerkChoice(perkId) {
+                let id = String(perkId || '');
+                if (!RUN_PERK_DEFS[id]) id = 'emergency_cells';
+                if (!isRunPerkRelevant(id, getCurrentLevelNumber())) id = 'emergency_cells';
+                if (id === 'emergency_cells') {
+                    clicksLeft = clicksLeft + 2;
+                } else if (id === 'storm_capacitor') {
+                    runPerkState.stormCapacitorCharges = Math.max(1, Number(runPerkState.stormCapacitorCharges) || 0);
+                } else if (id === 'armor_piercer') {
+                    runPerkState.armorPiercerHits = Math.max(0, Number(runPerkState.armorPiercerHits) || 0) + 3;
+                } else if (id === 'containment_freeze') {
+                    if (isRotatingBlockerActive()) {
+                        runPerkState.blockerFrozenUntil = Math.max(Number(runPerkState.blockerFrozenUntil) || 0, Date.now() + 4500);
+                        try { syncRotatingBlockerUI(); } catch (e) { }
+                        try { scheduleRotatingBlockerTick(); } catch (e) { }
+                    } else {
+                        clicksLeft = clicksLeft + 2;
+                        id = 'emergency_cells';
+                    }
+                } else if (id === 'laser_jammer') {
+                    if (isRotatingBlockerActive()) {
+                        runPerkState.blockerDisabledUntil = Math.max(Number(runPerkState.blockerDisabledUntil) || 0, Date.now() + 5000);
+                        runPerkState.blockerSpeedFactor = Math.min(1.8, Math.max(1, (Number(runPerkState.blockerSpeedFactor) || 1) * 1.25));
+                        runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                        try { syncRotatingBlockerUI(); } catch (e) { }
+                        try { scheduleRotatingBlockerTick(); } catch (e) { }
+                    } else {
+                        clicksLeft = clicksLeft + 2;
+                        id = 'emergency_cells';
+                    }
+                } else if (id === 'boss_breaker') {
+                    runPerkState.bossBreakerHits = Math.max(0, Number(runPerkState.bossBreakerHits) || 0) + 2;
+                } else if (id === 'overclocked_reserve') {
+                    runPerkState.overclockedReservePending = Math.max(1, Number(runPerkState.overclockedReservePending) || 0);
+                } else if (id === 'reserve_expansion') {
+                    runPerkState.clickCapDelta = Math.min(6, (Number(runPerkState.clickCapDelta) || 0) + 2);
+                } else if (id === 'storm_tuning') {
+                    runPerkState.stormRechargeDelta = Math.max(-9, (Number(runPerkState.stormRechargeDelta) || 0) - 3);
+                } else if (id === 'broker_quickfix') {
+                    clicksLeft = clicksLeft + 3;
+                    runPerkState.levelClearClicksPenalty = Math.min(3, (Number(runPerkState.levelClearClicksPenalty) || 0) + 1);
+                    runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                } else if (id === 'broker_hotwire') {
+                    const beforeStorm = Math.max(0, Number(stormCharges) || 0);
+                    stormCharges = Math.min(MAX_STORM_CHARGES, (Number(stormCharges) || 0) + 1);
+                    if (stormCharges > beforeStorm) {
+                        try { flashStormChargeGain(); } catch (e) { }
+                        try { updateStormUI(); } catch (e) { }
+                    }
+                    runPerkState.stormRechargeDelta = Math.min(12, (Number(runPerkState.stormRechargeDelta) || 0) + 3);
+                    runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                } else if (id === 'broker_heavy_armor') {
+                    runPerkState.armorPiercerHits = Math.max(0, Number(runPerkState.armorPiercerHits) || 0) + 5;
+                    runPerkState.clickCapDelta = Math.max(-8, (Number(runPerkState.clickCapDelta) || 0) - 2);
+                    runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                } else if (id === 'broker_risky_cache') {
+                    runPerkState.overclockedReservePending = Math.max(2, Number(runPerkState.overclockedReservePending) || 0);
+                    const nextMult = (Number(runPerkState.scoreMultiplier) || 1) * 0.88;
+                    runPerkState.scoreMultiplier = Math.max(0.65, Math.min(1, nextMult));
+                    runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                } else if (id === 'broker_borrowed_time') {
+                    clicksLeft = clicksLeft + 4;
+                    runPerkState.miniBossBonusPenalty = Math.min(8, (Number(runPerkState.miniBossBonusPenalty) || 0) + 2);
+                    runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                } else if (id === 'broker_dirty_reactor') {
+                    const beforeStorm = Math.max(0, Number(stormCharges) || 0);
+                    stormCharges = Math.min(MAX_STORM_CHARGES, (Number(stormCharges) || 0) + 1);
+                    if (stormCharges > beforeStorm) {
+                        try { flashStormChargeGain(); } catch (e) { }
+                        try { updateStormUI(); } catch (e) { }
+                    }
+                    runPerkState.stormNoDiagonals = true;
+                    runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                } else if (id === 'broker_hazard_infusion') {
+                    runPerkState.overclockedReservePending = Math.max(2, (Number(runPerkState.overclockedReservePending) || 0) + 2);
+                    runPerkState.specialVirusChanceDelta = Math.min(0.20, (Number(runPerkState.specialVirusChanceDelta) || 0) + 0.05);
+                    runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                }
+                clampClicksToCap();
+                try { playSfx('fill'); } catch (e) { }
+                return id;
+            }
+
+            function canShowRunPerkPopup() {
+                if (!runPerkState || runPerkState.pendingOffers <= 0 || runPerkState.popupOpen) return false;
+                if (inputLocked || stormResolving || outOfClicksShown) return false;
+                if (typeof particlesActive === 'function' && particlesActive()) return false;
+                try {
+                    if (document.querySelector('.level-complete')) return false;
+                    if (document.querySelector('.game-over-popup')) return false;
+                    const audioPopup = document.getElementById('audioPopup');
+                    const helpPopup = document.getElementById('helpPopup');
+                    if (audioPopup && audioPopup.classList.contains('show')) return false;
+                    if (helpPopup && helpPopup.classList.contains('show')) return false;
+                } catch (e) { }
+                return true;
+            }
+
+            function showRunPerkPopup(offers) {
+                const pair = (Array.isArray(offers) ? offers.filter(Boolean) : []).slice(0, 2);
+                if (pair.length < 2) return false;
+                try {
+                    const hasViralVenture = pair.some((p) => String((p && p.source) || '') === 'broker');
+                    const subTitleText = hasViralVenture
+                        ? 'Choose wisely: PIXEL PERKS and VIRAL VENTURES'
+                        : 'Choose wisely';
+                    hideRunPerkPopup(true);
+                    const el = document.createElement('div');
+                    el.className = 'run-perk-popup';
+                    el.setAttribute('role', 'dialog');
+                    el.setAttribute('aria-modal', 'true');
+                    el.innerHTML = `
+                        <div class="rp-title">DOUBLE DEAL</div>
+                        <div class="rp-sub">${escapeHtml(subTitleText)}</div>
+                        <div class="rp-list">
+                            <button type="button" class="rp-item rp-${escapeHtmlAttr(pair[0].source || 'pixel')}" data-perk="${escapeHtmlAttr(pair[0].id)}">
+                                <span class="rp-source rp-source-${escapeHtmlAttr(pair[0].source || 'pixel')}">${escapeHtml((pair[0].source || 'pixel') === 'broker' ? 'VIRAL VENTURE' : 'PIXEL PERK')}</span>
+                                <span class="rp-item-title">${escapeHtml(pair[0].title)}</span>
+                                <span class="rp-item-desc">${escapeHtml(pair[0].desc)}</span>
+                            </button>
+                            <button type="button" class="rp-item rp-${escapeHtmlAttr(pair[1].source || 'pixel')}" data-perk="${escapeHtmlAttr(pair[1].id)}">
+                                <span class="rp-source rp-source-${escapeHtmlAttr(pair[1].source || 'pixel')}">${escapeHtml((pair[1].source || 'pixel') === 'broker' ? 'VIRAL VENTURE' : 'PIXEL PERK')}</span>
+                                <span class="rp-item-title">${escapeHtml(pair[1].title)}</span>
+                                <span class="rp-item-desc">${escapeHtml(pair[1].desc)}</span>
+                            </button>
+                        </div>
+                    `;
+                    const onPick = (ev) => {
+                        const btn = ev.target && ev.target.closest ? ev.target.closest('.rp-item[data-perk]') : null;
+                        if (!btn) return;
+                        const chosenId = applyRunPerkChoice(btn.getAttribute('data-perk'));
+                        runPerkState.pendingOffers = Math.max(0, runPerkState.pendingOffers - 1);
+                        runPerkState.picksCount = Math.min(RUN_PERK_PROFILE.maxPicks, (Number(runPerkState.picksCount) || 0) + 1);
+                        hideRunPerkPopup(false);
+                        runPerkState.popupOpen = false;
+                        inputLocked = false;
+                        updateHUD();
+                        try {
+                            const def = RUN_PERK_DEFS[chosenId];
+                            if (window.Assistant && Assistant.show && def) {
+                                const prefix = def.source === 'broker' ? 'Viral venture accepted' : 'Perk acquired';
+                                Assistant.show(`${prefix}: ${def.title}.`, { priority: 1 });
+                            }
+                        } catch (e) { }
+                        setTimeout(() => { try { maybeShowPendingRunPerkPopup(); } catch (e) { } }, 80);
+                    };
+                    el.addEventListener('click', onPick);
+                    document.body.appendChild(el);
+                    runPerkPopupEl = el;
+                    runPerkState.popupOpen = true;
+                    inputLocked = true;
+                    try { document.body.classList.add('run-perk-open'); } catch (e) { }
+                    void el.offsetWidth;
+                    el.classList.add('show');
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function maybeShowPendingRunPerkPopup() {
+                if (!canShowRunPerkPopup()) return false;
+                const offers = buildRunPerkOfferPair(getCurrentLevelNumber());
+                if (!offers.length) return false;
+                return showRunPerkPopup(offers);
+            }
+
+            function scheduleRunPerkPopupAttempt(delayMs = 0) {
+                const wait = Math.max(0, Number(delayMs) || 0);
+                setTimeout(() => {
+                    try {
+                        if (!inputLocked && !stormResolving) maybeShowPendingRunPerkPopup();
+                    } catch (e) { }
+                }, wait);
+            }
+
+            function queueRunPerkMilestonesFromScore() {
+                if (!runPerkState || runPerkState.picksCount >= RUN_PERK_PROFILE.maxPicks) return;
+                const thresholds = Array.isArray(RUN_PERK_PROFILE.thresholds) ? RUN_PERK_PROFILE.thresholds : [];
+                while (runPerkState.nextThresholdIndex < thresholds.length) {
+                    const nextScore = Number(thresholds[runPerkState.nextThresholdIndex]) || 0;
+                    if (totalScore < nextScore) break;
+                    const alreadyQueued = Math.max(0, Number(runPerkState.pendingOffers) || 0);
+                    const alreadyPicked = Math.max(0, Number(runPerkState.picksCount) || 0);
+                    if ((alreadyQueued + alreadyPicked) >= RUN_PERK_PROFILE.maxPicks) break;
+                    runPerkState.pendingOffers += 1;
+                    runPerkState.nextThresholdIndex += 1;
+                }
+            }
+
             function updateHUD() {
 
                 // ensure high score element is available
@@ -1723,6 +2200,8 @@ function escapeHtmlAttr(str) {
                 // update pixel meter visualization (10 segments)
                 try { updateClicksMeter(clicksLeft); } catch (e) { }
                 try { updateStormUI(); } catch (e) { }
+                try { queueRunPerkMilestonesFromScore(); } catch (e) { }
+                try { maybeShowPendingRunPerkPopup(); } catch (e) { }
             }
 
             function getActiveMusicAudio() {
@@ -1989,7 +2468,7 @@ function escapeHtmlAttr(str) {
 
             // Create and update meter functions
             function createClicksMeter(segmentsCount = 10) { const container = document.querySelector('.meter-segments'); if (!container) return; container.innerHTML = ''; for (let i = 0; i < segmentsCount; i++) { const s = document.createElement('div'); s.className = 'seg'; s.dataset.idx = i; container.appendChild(s); } }
-            function updateClicksMeter(clicks) { const container = document.querySelector('.meter-segments'); if (!container) return; const segs = Array.from(container.children); const segCount = segs.length || 10; const toFill = Math.round((clicks / MAX_CLICKS) * segCount); segs.forEach((el, i) => { const should = i < toFill; if (should && !el.classList.contains('filled')) { el.classList.add('filled'); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } else if (!should && el.classList.contains('filled')) { el.classList.remove('filled'); el.classList.remove('pop'); } }); }
+            function updateClicksMeter(clicks) { const container = document.querySelector('.meter-segments'); if (!container) return; const segs = Array.from(container.children); const segCount = segs.length || 10; const cap = Math.max(1, getMaxClicksCap()); const toFill = Math.round((Math.max(0, clicks) / cap) * segCount); segs.forEach((el, i) => { const should = i < toFill; if (should && !el.classList.contains('filled')) { el.classList.add('filled'); el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); } else if (!should && el.classList.contains('filled')) { el.classList.remove('filled'); el.classList.remove('pop'); } }); }
 
             function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
 
@@ -2098,9 +2577,11 @@ function escapeHtmlAttr(str) {
 
             function getLevelClearBonusClicks(levelNum) {
                 const phase = getVisualPhaseForLevel(levelNum);
-                if (phase >= 3) return 2;
-                if (phase >= 2) return 1;
-                return 0;
+                let base = 0;
+                if (phase >= 3) base = 2;
+                else if (phase >= 2) base = 1;
+                const penalty = Math.max(0, Math.floor(Number(runPerkState && runPerkState.levelClearClicksPenalty) || 0));
+                return Math.max(0, base - penalty);
             }
 
             function applyVisualPhase(levelNum = getCurrentLevelNumber()) {
@@ -2145,11 +2626,12 @@ function escapeHtmlAttr(str) {
 
             function getBlockerSettings(levelNum = getCurrentLevelNumber()) {
                 const d = getDifficultyForLevel(levelNum);
+                const speedFactor = Math.max(1, Number(runPerkState && runPerkState.blockerSpeedFactor) || 1);
                 return {
                     unlockLevel: Math.max(1, Math.floor(Number(d.blockerUnlockLevel) || 1)),
-                    tickMs: Math.max(800, Math.floor(Number(d.blockerTickMs) || 1500)),
+                    tickMs: Math.max(650, Math.floor((Number(d.blockerTickMs) || 1500) / speedFactor)),
                     tickJitterMs: Math.max(0, Math.floor(Number(d.blockerTickJitterMs) || 550)),
-                    postUserTickMs: Math.max(280, Math.floor(Number(d.blockerPostUserTickMs) || 520)),
+                    postUserTickMs: Math.max(220, Math.floor((Number(d.blockerPostUserTickMs) || 520) / speedFactor)),
                     userBoostWindowMs: Math.max(250, Math.floor(Number(d.blockerUserBoostWindowMs) || 1300)),
                     thicknessRatio: Math.max(0.004, Math.min(0.04, Number(d.blockerThicknessRatio) || 0.010))
                 };
@@ -2157,6 +2639,10 @@ function escapeHtmlAttr(str) {
 
             function nudgeRotatingBlockerAfterUserMove() {
                 if (!isRotatingBlockerActive()) return;
+                if (isBlockerTemporarilyFrozen() || isBlockerTemporarilyDisabled()) {
+                    scheduleRotatingBlockerTick();
+                    return;
+                }
                 const cfg = getBlockerSettings();
                 blockerUserBoostUntil = Date.now() + cfg.userBoostWindowMs;
                 scheduleRotatingBlockerTick();
@@ -2164,6 +2650,10 @@ function escapeHtmlAttr(str) {
 
             function moveBlockerAfterResolution() {
                 if (!isRotatingBlockerActive()) return;
+                if (isBlockerTemporarilyFrozen() || isBlockerTemporarilyDisabled()) {
+                    try { scheduleRotatingBlockerTick(); } catch (e) { }
+                    return;
+                }
                 try {
                     advanceRotatingBlockerOverTime();
                     syncRotatingBlockerUI();
@@ -2199,6 +2689,7 @@ function escapeHtmlAttr(str) {
 
             function getRotatingBlockerSegment() {
                 if (!boardEl || !isRotatingBlockerActive()) return null;
+                if (isBlockerTemporarilyDisabled()) return null;
                 const br = boardEl.getBoundingClientRect();
                 if (!br || !br.width || !br.height) return null;
                 const cfg = getBlockerSettings();
@@ -2244,6 +2735,7 @@ function escapeHtmlAttr(str) {
 
             function advanceRotatingBlockerOverTime() {
                 if (!isRotatingBlockerActive()) return;
+                if (isBlockerTemporarilyFrozen() || isBlockerTemporarilyDisabled()) return;
                 const prevOrientation = blockerOrientationDeg;
                 const prevLane = blockerLaneIndex;
                 const laneCount = Math.max(1, (prevOrientation === 90 ? COLS : ROWS) - 1);
@@ -2275,7 +2767,15 @@ function escapeHtmlAttr(str) {
                 if (!isRotatingBlockerActive()) return;
                 const cfg = getBlockerSettings();
                 let delay = cfg.tickMs + Math.floor(Math.random() * (cfg.tickJitterMs + 1));
-                if (Date.now() < blockerUserBoostUntil) {
+                if (isBlockerTemporarilyDisabled()) {
+                    const restoreIn = Math.max(80, Number(runPerkState.blockerDisabledUntil) - Date.now());
+                    delay = Math.max(delay, Math.floor(restoreIn + 40));
+                }
+                if (isBlockerTemporarilyFrozen()) {
+                    const thawIn = Math.max(80, Number(runPerkState.blockerFrozenUntil) - Date.now());
+                    delay = Math.max(delay, Math.floor(thawIn + 40));
+                }
+                if (!isBlockerTemporarilyFrozen() && !isBlockerTemporarilyDisabled() && Date.now() < blockerUserBoostUntil) {
                     const fastJitter = Math.max(50, Math.floor(cfg.postUserTickMs * 0.35));
                     const boostedDelay = cfg.postUserTickMs + Math.floor(Math.random() * (fastJitter + 1));
                     delay = Math.min(delay, boostedDelay);
@@ -2284,7 +2784,7 @@ function escapeHtmlAttr(str) {
                     blockerTickTimer = null;
                     try {
                         if (!document.hidden && isRotatingBlockerActive()) {
-                            advanceRotatingBlockerOverTime();
+                            if (!isBlockerTemporarilyDisabled()) advanceRotatingBlockerOverTime();
                             syncRotatingBlockerUI();
                         }
                     } catch (e) { }
@@ -2294,6 +2794,7 @@ function escapeHtmlAttr(str) {
 
             function flashRotatingBlocker() {
                 if (!boardEl || !isRotatingBlockerActive()) return;
+                if (isBlockerTemporarilyDisabled()) return;
                 const el = document.getElementById('rotatingBlocker');
                 if (!el) return;
                 el.classList.remove('blocked-hit');
@@ -2325,6 +2826,11 @@ function escapeHtmlAttr(str) {
                     try { el.remove(); } catch (e) { }
                     return;
                 }
+                if (isBlockerTemporarilyDisabled()) {
+                    try { el.remove(); } catch (e) { }
+                    scheduleRotatingBlockerTick();
+                    return;
+                }
                 scheduleRotatingBlockerTick();
                 const br = boardEl.getBoundingClientRect();
                 const cfg = getBlockerSettings();
@@ -2339,12 +2845,17 @@ function escapeHtmlAttr(str) {
                 el.style.left = blockerOrientationDeg === 90 ? `${Math.round(br.left + xPx)}px` : `${Math.round(br.left + (br.width * 0.5))}px`;
                 el.style.top = blockerOrientationDeg === 90 ? `${Math.round(br.top + (br.height * 0.5))}px` : `${Math.round(br.top + yPx)}px`;
                 el.style.transform = `translate(-50%, -50%) rotate(${blockerOrientationDeg === 90 ? 90 : 0}deg)`;
+                el.classList.toggle('frozen', isBlockerTemporarilyFrozen());
                 if (!document.body.contains(el)) document.body.appendChild(el);
             }
 
             function getStormRechargeChainMin(levelNum = getCurrentLevelNumber()) {
                 const d = getDifficultyForLevel(levelNum);
-                return Math.max(1, Math.floor(Number(d.stormRechargeChainMin) || 21));
+                let base = Math.max(1, Math.floor(Number(d.stormRechargeChainMin) || 21));
+                base += Math.floor(Number(runPerkState && runPerkState.stormRechargeDelta) || 0);
+                base = Math.max(10, Math.min(42, base));
+                if ((Number(runPerkState.stormCapacitorCharges) || 0) > 0) return Math.min(base, 16);
+                return base;
             }
 
             function getStormNearThreshold(levelNum = getCurrentLevelNumber()) {
@@ -2408,12 +2919,13 @@ function escapeHtmlAttr(str) {
                 const base = Math.max(0, Math.min(1, Number(d.specialVirusBaseChance) || 0));
                 const levelBonus = Math.max(0, Number(d.specialVirusLevelBonus) || 0);
                 const maxChance = Math.max(0, Math.min(1, Number(d.specialVirusMaxChance) || 1));
+                const perkChanceDelta = Math.max(0, Number(runPerkState && runPerkState.specialVirusChanceDelta) || 0);
                 const unlockFloor = active.reduce((min, def) => {
                     const unlock = Math.max(1, Number(def && def.unlockLevel) || 1);
                     return Math.min(min, unlock);
                 }, Infinity);
                 const growthLevels = Math.max(0, level - (Number.isFinite(unlockFloor) ? unlockFloor : level));
-                const chance = Math.min(maxChance, base + (growthLevels * levelBonus));
+                const chance = Math.min(1, Math.min(maxChance, base + (growthLevels * levelBonus)) + perkChanceDelta);
                 if (Math.random() > chance) return null;
                 const totalWeight = active.reduce((sum, def) => sum + Math.max(0, Number(def.spawnWeight) || 0), 0);
                 if (totalWeight <= 0) return null;
@@ -2528,6 +3040,14 @@ function escapeHtmlAttr(str) {
                 const meta = ensureSpecialMeta(ctx.index);
                 const remaining = Math.max(0, Number(meta && meta.shieldHitsRemaining) || 0);
                 if (remaining <= 0) return null;
+                if ((Number(runPerkState.armorPiercerHits) || 0) > 0) {
+                    runPerkState.armorPiercerHits = Math.max(0, Number(runPerkState.armorPiercerHits) - 1);
+                    playShieldBreakEffect(ctx.index);
+                    clearSpecialForCell(ctx.index);
+                    incrementAchievementStat('runArmoredShellsBroken', 1, 'run');
+                    incrementAchievementStat('armoredShellsLifetime', 1, 'lifetime');
+                    return null;
+                }
                 meta.shieldHitsRemaining = remaining - 1;
                 playShieldBlockFlash(ctx.index);
                 if (meta.shieldHitsRemaining <= 0) {
@@ -2672,14 +3192,21 @@ function escapeHtmlAttr(str) {
                 const meta = ensureSpecialMeta(idx) || {};
                 if (!meta.isBoss) return null;
                 const hpNow = Math.max(0, Number(meta.hp) || Number(meta.maxHp) || 1);
-                meta.hp = Math.max(0, hpNow - 1);
+                let extraDamage = 0;
+                if ((Number(runPerkState.bossBreakerHits) || 0) > 0) {
+                    extraDamage = 1;
+                    runPerkState.bossBreakerHits = Math.max(0, Number(runPerkState.bossBreakerHits) - 1);
+                }
+                meta.hp = Math.max(0, hpNow - 1 - extraDamage);
                 if (meta.hp <= 0) {
                     playMiniBossBurstEffect(idx, true);
                     try { popAt(idx, ctx.tracker); } catch (e) { }
                     if (Array.isArray(ctx.state)) ctx.state[idx] = null;
                     clearSpecialForCell(idx);
                     syncMiniBossStateFromBoard();
-                    clicksLeft = Math.min(MAX_CLICKS, clicksLeft + MINI_BOSS_CLICK_BONUS);
+                    const bossBonusPenalty = Math.max(0, Number(runPerkState && runPerkState.miniBossBonusPenalty) || 0);
+                    const bossBonus = Math.max(0, MINI_BOSS_CLICK_BONUS - bossBonusPenalty);
+                    clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + bossBonus);
                     updateHUD();
                     try { playSfx('miniboss_dies'); } catch (e) { }
                 } else {
@@ -2741,6 +3268,7 @@ function escapeHtmlAttr(str) {
                 specialState.fill(null);
                 specialMetaState.fill(null);
                 if (!preserveClicks) {
+                    resetRunPerkState();
                     clicksLeft = 10;
                     stormResolving = false;
                     stormCharges = 1;
@@ -2776,6 +3304,10 @@ function escapeHtmlAttr(str) {
                 }
                 ensureLevel5HasArmored();
                 queueLikelyAssetPrefetch(levelNum + 1, 'next-level');
+                if (preserveClicks && (Number(runPerkState.overclockedReservePending) || 0) > 0) {
+                    clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + 1);
+                    runPerkState.overclockedReservePending = Math.max(0, Number(runPerkState.overclockedReservePending) - 1);
+                }
                 scheduleRender();
                 updateHUD();
                 if (!preserveClicks) {
@@ -2964,7 +3496,7 @@ function escapeHtmlAttr(str) {
                     if (clicksLeft === 1) incrementAchievementStat('runClutchClears', 1, 'run');
                     const clearedLevelNum = getCurrentLevelNumber();
                     const clearBonusClicks = getLevelClearBonusClicks(clearedLevelNum);
-                    clicksLeft = Math.min(MAX_CLICKS, clicksLeft + 1 + clearBonusClicks);
+                    clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + 1 + clearBonusClicks);
                     playSfx('win');
                     screensPassed += 1;
                     incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
@@ -3373,13 +3905,14 @@ function escapeHtmlAttr(str) {
                         // Chain click rewards are profile-driven (start pop + cadence).
                         const difficulty = getCurrentDifficulty();
                         if (shouldAwardChainClick(tracker.pops)) {
-                            clicksLeft = Math.min(MAX_CLICKS, clicksLeft + 1);
+                            clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + 1);
                             playSfx('fill');
                         }
                         const chainScoreStep = Math.max(0, Number(difficulty.chainScoreStep) || 0.5);
                         const levelScoreScaleStep = Math.max(0, Number(difficulty.levelScoreScaleStep) || 0.1);
                         const chainMultiplier = 1 + (tracker.pops - 1) * chainScoreStep;
-                        const earned = Math.round(10 * chainMultiplier * (1 + screensPassed * levelScoreScaleStep));
+                        const runScoreMult = Math.max(0.65, Math.min(1, Number(runPerkState && runPerkState.scoreMultiplier) || 1));
+                        const earned = Math.round(10 * chainMultiplier * (1 + screensPassed * levelScoreScaleStep) * runScoreMult);
                         totalScore += earned;
                         updateHUD();
                         try { if (window.Assistant && (tracker.pops || 0) > 10) Assistant.emit && Assistant.emit('cascade', { pops: tracker.pops }); } catch (e) { }
@@ -3393,6 +3926,8 @@ function escapeHtmlAttr(str) {
             function checkOutOfClicks() {
                 if (clicksLeft <= 0 && !outOfClicksShown) {
                     outOfClicksShown = true;
+                    try { hideRunPerkPopup(true); } catch (e) { }
+                    try { runPerkState.popupOpen = false; } catch (e) { }
                     try { playSfx('lose'); } catch (e) { }
 
                     // Show persistent popup — will remain until the player clicks the existing restart button
@@ -3501,6 +4036,9 @@ function escapeHtmlAttr(str) {
                 const before = stormCharges;
                 stormCharges = Math.min(MAX_STORM_CHARGES, stormCharges + 1);
                 if (stormCharges > before) {
+                    if ((Number(runPerkState.stormCapacitorCharges) || 0) > 0) {
+                        runPerkState.stormCapacitorCharges = Math.max(0, Number(runPerkState.stormCapacitorCharges) - 1);
+                    }
                     try { playSfx('fill'); } catch (e) { }
                     flashStormChargeGain();
                     updateStormUI();
@@ -3532,16 +4070,19 @@ function escapeHtmlAttr(str) {
                 const out = [idx];
                 const cardinal = [[-1, 0], [1, 0], [0, -1], [0, 1]];
                 const diagonal = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+                const includeDiagonals = !(runPerkState && runPerkState.stormNoDiagonals);
                 cardinal.forEach(([dr, dc]) => {
                     const nr = r + dr;
                     const nc = c + dc;
                     if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) out.push(nr * COLS + nc);
                 });
-                diagonal.forEach(([dr, dc]) => {
-                    const nr = r + dr;
-                    const nc = c + dc;
-                    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) out.push(nr * COLS + nc);
-                });
+                if (includeDiagonals) {
+                    diagonal.forEach(([dr, dc]) => {
+                        const nr = r + dr;
+                        const nc = c + dc;
+                        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) out.push(nr * COLS + nc);
+                    });
+                }
                 return out;
             }
 
@@ -3852,7 +4393,7 @@ function escapeHtmlAttr(str) {
                         requestAnimationFrame(() => badge.classList.add('show'));
                         try { const rect = badge.getBoundingClientRect(); const cx = pos.cx || (rect.left + rect.width / 2); const cy = pos.cy || (rect.top + rect.height / 2); void(cx, cy, rule.className); } catch (e) { }
                         if (rule.scoreBonus) totalScore += rule.scoreBonus;
-                        if (rule.extraClicks) { clicksLeft = Math.min(MAX_CLICKS, clicksLeft + rule.extraClicks); playSfx('fill'); }
+                        if (rule.extraClicks) { clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + rule.extraClicks); playSfx('fill'); }
                         updateHUD();
                         setTimeout(() => { badge.classList.remove('show'); badge.classList.add('hide'); setTimeout(() => { try { badge.remove(); } catch (e) { } }, 420); }, 2100);
                     } catch (e) { console.warn('showChainBadge error', e); }
@@ -3914,6 +4455,7 @@ function escapeHtmlAttr(str) {
                     if (suppressFinalize || stormResolving) return;
                     // unlock since nothing actually happened
                     inputLocked = false;
+                    scheduleRunPerkPopupAttempt(0);
                     // If we just consumed the last click and there are no particles, check game over now
                     // Use requestAnimationFrame so DOM updates settle first
                     requestAnimationFrame(() => {
@@ -3935,6 +4477,7 @@ function escapeHtmlAttr(str) {
                     scheduleRender();
                     if (suppressFinalize || stormResolving) return;
                     inputLocked = false;
+                    scheduleRunPerkPopupAttempt(0);
                     requestAnimationFrame(() => {
                         if (!particlesActive() && clicksLeft <= 0) checkOutOfClicks();
                     });
@@ -3973,6 +4516,7 @@ function escapeHtmlAttr(str) {
                     scheduleRender();
                     if (suppressFinalize || stormResolving) return;
                     inputLocked = false;
+                    scheduleRunPerkPopupAttempt(0);
                     // same immediate check as above
                     requestAnimationFrame(() => {
                         if (!particlesActive() && clicksLeft <= 0) checkOutOfClicks();
@@ -4014,6 +4558,7 @@ function escapeHtmlAttr(str) {
                         try { moveBlockerAfterResolution(); } catch (e) { }
                     }
                     inputLocked = false; // allow next click
+                    scheduleRunPerkPopupAttempt(0);
                     if (clicksLeft <= 0) checkOutOfClicks();
                 };
 
@@ -4030,6 +4575,7 @@ function escapeHtmlAttr(str) {
                     // In case helper functions are missing, fall back to immediate unlock + check
                     if (!stormResolving) {
                         inputLocked = false;
+                        scheduleRunPerkPopupAttempt(0);
                         if (clicksLeft <= 0) checkOutOfClicks();
                     }
                 }
@@ -4075,6 +4621,7 @@ function escapeHtmlAttr(str) {
                         try { moveBlockerAfterResolution(); } catch (e) { }
                         stormResolving = false;
                         inputLocked = false;
+                        scheduleRunPerkPopupAttempt(0);
                         if (clicksLeft <= 0) checkOutOfClicks();
                     };
                     try {
