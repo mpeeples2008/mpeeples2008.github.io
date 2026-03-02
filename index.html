@@ -57,9 +57,7 @@
             </div>
 
             <div class="small meter" id="clicksMeter">
-                <img class="meter-icon"
-                    src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanobot.png"
-                    alt="Nano Bot Icon" width="28" height="28">
+                <div class="meter-icon meter-icon--nanobot" role="img" aria-label="Nano Bot Icon"></div>
 
                 <div class="meter-segments">
                     <div class="seg filled pop" data-idx="0"></div>
@@ -78,22 +76,18 @@
 
             <div class="control-trio" role="group" aria-label="Controls">
                 <button id="startBtn" class="ctrl small-ctrl" aria-label="S">
-                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/start.png"
-                        alt="Start" class="btn-icon">
+                    <span class="hud-glyph hud-glyph-start" aria-hidden="true">▶</span>
                 </button>
                 <button id="restart" class="ctrl small-ctrl" aria-label="Restart">
-                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/reset.png"
-                        alt="Retart" class="btn-icon">
+                    <span class="hud-glyph hud-glyph-reset" aria-hidden="true">↻</span>
                 </button>
 
                 <button id="audioBtn" class="ctrl small-ctrl" aria-label="Audio Settings" title="Audio Settings"
                     data-modal-open="audioPopup">
-                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/gear.png"
-                        alt="Audio" class="btn-icon">
+                    <span class="hud-glyph hud-glyph-settings" aria-hidden="true">⚙</span>
                 </button>
                 <button id="helpBtn" class="ctrl small-ctrl" aria-label="How to Play" title="How to Play">
-                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/question.png"
-                        alt="Question" class="btn-icon">
+                    <span class="hud-glyph hud-glyph-help" aria-hidden="true">?</span>
                 </button>
                 <button id="stormBtn" class="ctrl storm-btn" aria-label="Nano Storm" aria-pressed="false"
                     title="Nano Storm"></button>
@@ -398,20 +392,17 @@
                         board to reach the next level.</p>
                     <div class="howto-step-row">
                         <div class="howto-step">
-                            <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Test_pixel.png"
-                                alt="Small virus">
+                            <div class="howto-sprite howto-sprite-s1" role="img" aria-label="Small virus"></div>
                             <span>Tap to Grow</span>
                         </div>
                         <div class="howto-arrow">→</div>
                         <div class="howto-step">
-                            <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png"
-                                alt="Larger virus">
+                            <div class="howto-sprite howto-sprite-s3" role="img" aria-label="Larger virus"></div>
                             <span>Reach Critical</span>
                         </div>
                         <div class="howto-arrow">→</div>
                         <div class="howto-step">
-                            <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png"
-                                alt="Popped virus">
+                            <div class="howto-sprite howto-sprite-s4" role="img" aria-label="Critical virus"></div>
                             <span>Pop + Chain</span>
                         </div>
                     </div>
@@ -421,18 +412,10 @@
                     <h3>Virus Sizes</h3>
                     <p>Viruses increase one size per tap. At max size, the next growth causes a pop.</p>
                     <div class="howto-size-grid">
-                        <div><img
-                                src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Test_pixel.png"
-                                alt="Size 1"><span>S1</span></div>
-                        <div><img
-                                src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus2.png"
-                                alt="Size 2"><span>S2</span></div>
-                        <div><img
-                                src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus3.png"
-                                alt="Size 3"><span>S3</span></div>
-                        <div><img
-                                src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png"
-                                alt="Size 4"><span>S4</span></div>
+                        <div><div class="howto-sprite howto-sprite-s1" role="img" aria-label="Size 1"></div><span>S1</span></div>
+                        <div><div class="howto-sprite howto-sprite-s2" role="img" aria-label="Size 2"></div><span>S2</span></div>
+                        <div><div class="howto-sprite howto-sprite-s3" role="img" aria-label="Size 3"></div><span>S3</span></div>
+                        <div><div class="howto-sprite howto-sprite-s4" role="img" aria-label="Size 4"></div><span>S4</span></div>
                     </div>
                 </section>
 
@@ -442,9 +425,12 @@
                     </p>
                     <div class="howto-armored-visual" aria-hidden="true">
                         <div class="howto-armored-preview">
-                            <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus4.png"
-                                alt="Armored virus example">
+                            <div class="howto-sprite howto-sprite-s4"></div>
                         </div>
+                    </div>
+                    <p><strong>Rogue Nanobots:</strong> From later levels, hostile bots project a laser barrier that can block cascade particles.</p>
+                    <div class="howto-nanobot-visual" aria-hidden="true">
+                        <div class="howto-nanobot-preview"></div>
                     </div>
                     <div class="howto-inline-note">Tip: clear armored viruses early when they block chains.</div>
                 </section>
@@ -477,18 +463,50 @@
                 </section>
 
                 <section class="howto-card">
-                    <h3>Scoring and Survival</h3>
+                    <h3>Nano-Bot Counter + Scoring</h3>
+                    <p><strong>Nano-Bot Counter:</strong> This is your move fuel. Each tap uses 1 nano-bot, and level
+                        clears restore clicks.</p>
+                    <div class="meter howto-live-meter" aria-hidden="true">
+                        <div class="meter-icon meter-icon--nanobot"></div>
+                        <div class="meter-segments">
+                            <div class="seg filled"></div><div class="seg filled"></div><div class="seg filled"></div><div class="seg filled"></div><div class="seg filled"></div>
+                            <div class="seg filled"></div><div class="seg filled"></div><div class="seg"></div><div class="seg"></div><div class="seg"></div>
+                        </div>
+                        <div class="meter-count"><span>7</span></div>
+                    </div>
+                    <div class="howto-counter-labels">
+                        <span>10 max</span>
+                        <span>Tap = -1</span>
+                        <span>0 = Game Over</span>
+                    </div>
+                    <p><strong>Scoring:</strong> Bigger chains are worth more points and can award bonus clicks.</p>
+                    <div class="howto-score-visual" aria-hidden="true">
+                        <div class="howto-score-pill"><span>Chain</span><b>x14</b></div>
+                        <div class="howto-score-arrow">→</div>
+                        <div class="howto-score-pill"><span>Score</span><b>+70</b></div>
+                        <img class="howto-score-sprite"
+                            src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/antibody.png"
+                            alt="">
+                    </div>
                     <ul>
-                        <li>Longer chains score more and improve recovery.</li>
-                        <li>Clear every virus to complete a level and gain 1 click.</li>
-                        <li>If clicks reach 0, it is game over.</li>
+                        <li>Longer chains increase score and improve click recovery.</li>
+                        <li>High combo badges grant bonus score and can award extra clicks.</li>
+                    </ul>
+                </section>
+
+                <section class="howto-card">
+                    <h3>Survival Tips</h3>
+                    <ul>
                         <li>Use Nano Storm on crowded clusters or armored pressure zones.</li>
+                        <li>Break armored shells early so they do not stall chain routes.</li>
+                        <li>Plan around blocker lanes at higher levels before tapping.</li>
+                        <li>Do not chase tiny pops if your click counter is low.</li>
                     </ul>
                 </section>
             </div>
             <button id="helpNext" class="btn howto-nav" type="button" aria-label="Next section">▶</button>
         </div>
-        <div class="howto-carousel-meta"><span id="helpPage">1 / 5</span></div>
+        <div class="howto-carousel-meta"><span id="helpPage">1 / 6</span></div>
     </div>
     <!-- END HOW TO PLAY POPUP -->
 

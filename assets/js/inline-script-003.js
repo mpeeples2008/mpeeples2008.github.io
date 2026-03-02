@@ -2080,6 +2080,13 @@ function escapeHtmlAttr(str) {
                 return 1;
             }
 
+            function getLevelClearBonusClicks(levelNum) {
+                const phase = getVisualPhaseForLevel(levelNum);
+                if (phase >= 3) return 2;
+                if (phase >= 2) return 1;
+                return 0;
+            }
+
             function applyVisualPhase(levelNum = getCurrentLevelNumber()) {
                 try {
                     const body = document.body;
@@ -2939,7 +2946,9 @@ function escapeHtmlAttr(str) {
                 if (remaining === 0) {
                     // single, unified "level complete" path
                     if (clicksLeft === 1) incrementAchievementStat('runClutchClears', 1, 'run');
-                    clicksLeft = Math.min(MAX_CLICKS, clicksLeft + 1);
+                    const clearedLevelNum = getCurrentLevelNumber();
+                    const clearBonusClicks = getLevelClearBonusClicks(clearedLevelNum);
+                    clicksLeft = Math.min(MAX_CLICKS, clicksLeft + 1 + clearBonusClicks);
                     playSfx('win');
                     screensPassed += 1;
                     incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
@@ -3716,17 +3725,19 @@ function escapeHtmlAttr(str) {
 
             /* ---------- Retro 8-bit SVG icons ---------- */
             function getRetroIconSVG(name) {
+                // Normalize to one visual style: use the 12-pop icon (GREAT tier / pixel-star) for all badges.
+                name = 'pixel-star';
                 if (name === 'pixel-star') {
-                    return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#ffd166"/><rect x="7" y="2" width="2" height="2" fill="#ffb84d"/><rect x="5" y="2" width="6" height="2" fill="#ffd166"/><rect x="4" y="4" width="8" height="2" fill="#ffb84d"/><rect x="3" y="6" width="10" height="2" fill="#ffd166"/><rect x="5" y="8" width="6" height="2" fill="#ffb84d"/></svg>`;
+                    return `<svg width="34" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="10" r="7" fill="#ffcf68"/><circle cx="12" cy="10" r="5.2" fill="#ffe19a"/><path d="M12 5.4l1.5 3.1 3.4.5-2.4 2.4.6 3.4-3.1-1.6-3.1 1.6.6-3.4L7.1 9l3.4-.5z" fill="#ff9e3d"/><rect x="7.2" y="16.3" width="3.2" height="6" rx="0.8" fill="#ffb24a"/><rect x="13.6" y="16.3" width="3.2" height="6" rx="0.8" fill="#ffb24a"/></svg>`;
                 }
                 if (name === 'spark') {
-                    return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#ffe07a"/><rect x="6" y="2" width="4" height="1" fill="#ffd166"/><rect x="4" y="3" width="8" height="1" fill="#ffd166"/><rect x="7" y="4" width="2" height="2" fill="#ffd166"/><rect x="2" y="6" width="12" height="1" fill="#ffb84d"/><rect x="7" y="10" width="2" height="2" fill="#ffe07a"/><rect x="7" y="0" width="2" height="2" fill="#ffe07a"/><rect x="6" y="8" width="4" height="1" fill="#ffd166"/><rect x="4" y="7" width="8" height="1" fill="#ffd166"/><rect x="7" y="9" width="2" height="2" fill="#ffd166"/><rect x="2" y="6" width="12" height="1" fill="#ffb84d"/><rect x="4" y="5" width="8" height="1" fill="#ffd166"/><rect x="5" y="4" width="6" height="1" fill="#ffb84d"/><rect x="4" y="9" width="8" height="1" fill="#ffb84d"/></svg>`;
+                    return `<svg width="34" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="#ffe295"/><path d="M13.6 3.4l1 4.2 4.1 1.3-3.1 3.1.7 4.4-4.2-2.1-4.2 2.1.7-4.4-3.1-3.1 4.1-1.3 1-4.2z" fill="#ffbe4f"/><path d="M12.4 6.6l-2.8 5.2h2.5l-1 5.6 4.1-6.8h-2.6l1.3-4z" fill="#ff7f3f"/></svg>`;
                 }
                 if (name === 'starburst') {
-                    return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#fff2a6"/><rect x="6" y="2" width="4" height="1" fill="#ffd166"/><rect x="4" y="3" width="8" height="1" fill="#ffd166"/><rect x="7" y="4" width="2" height="2" fill="#ffd166"/><rect x="0" y="5" width="16" height="1" fill="#ffb84d"/><rect x="5" y="6" width="6" height="1" fill="#ffd166"/></svg>`;
+                    return `<svg width="34" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2l2.2 4.8 5.2-1.4-1.5 5.1 5.1 1.5-4.2 3.3 3.3 4.2-5.1.9.9 5.1-4.6-2.4-4.6 2.4.9-5.1-5.1-.9 3.3-4.2L1 12l5.1-1.5-1.5-5.1 5.2 1.4z" fill="#ffd46a"/><circle cx="12" cy="12" r="3.3" fill="#ff9642"/></svg>`;
                 }
                 if (name === 'explosion') {
-                    return `<svg width="36" height="28" viewBox="0 0 16 12" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges"><rect x="7" y="0" width="2" height="2" fill="#ffdf6d"/><rect x="5" y="2" width="6" height="1" fill="#ffd166"/><rect x="3" y="3" width="10" height="1" fill="#ffb84d"/><rect x="2" y="4" width="12" height="1" fill="#ff6f3f"/><rect x="4" y="5" width="8" height="2" fill="#ffb84d"/><rect x="6" y="7" width="4" height="1" fill="#ffd166"/></svg>`;
+                    return `<svg width="34" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2.2l2.2 4.2 4.8-1.8-1 5 5 .8-3.7 3.5 3.7 3.5-5 .8 1 5-4.8-1.8-2.2 4.2-2.2-4.2-4.8 1.8 1-5-5-.8 3.7-3.5L1 10.4l5-.8-1-5 4.8 1.8z" fill="#ff8d46"/><circle cx="12" cy="12" r="3.7" fill="#ffd26b"/></svg>`;
                 }
                 return '';
             }
@@ -3816,6 +3827,20 @@ function escapeHtmlAttr(str) {
                     } catch (e) { console.warn('showChainBadge error', e); }
                 });
             }
+            try {
+                window.previewBadge = function (pops = 8) {
+                    const n = Math.max(0, Math.floor(Number(pops) || 0));
+                    const tracker = {
+                        pops: n,
+                        positions: [],
+                        finalized: true,
+                        poppedSet: new Set(),
+                        hitSet: new Set()
+                    };
+                    showChainBadge(tracker);
+                    return n;
+                };
+            } catch (e) { }
 
             // ----- Core interaction -----
             // ----- Core interaction -----
