@@ -858,6 +858,7 @@ function escapeHtmlAttr(str) {
                 window.setLevel = function (levelNum) {
                     const targetLevel = Math.max(1, Math.floor(Number(levelNum) || 1));
                     screensPassed = targetLevel - 1;
+                    try { applyVisualPhase(targetLevel); } catch (e) { }
                     try {
                         const levelPopup = document.querySelector('.level-complete');
                         if (levelPopup) levelPopup.remove();
@@ -2072,6 +2073,27 @@ function escapeHtmlAttr(str) {
                 return Math.max(1, (Number(screensPassed) || 0) + 1);
             }
 
+            function getVisualPhaseForLevel(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Number(levelNum) || 1);
+                if (lvl >= 11) return 3;
+                if (lvl >= 6) return 2;
+                return 1;
+            }
+
+            function applyVisualPhase(levelNum = getCurrentLevelNumber()) {
+                try {
+                    const body = document.body;
+                    if (!body) return 1;
+                    const phase = getVisualPhaseForLevel(levelNum);
+                    body.classList.remove('phase-1', 'phase-2', 'phase-3');
+                    body.classList.add('phase-' + phase);
+                    body.dataset.visualPhase = String(phase);
+                    return phase;
+                } catch (e) {
+                    return 1;
+                }
+            }
+
             function getDifficultyForLevel(levelNum = getCurrentLevelNumber()) {
                 const level = Math.max(1, Number(levelNum) || 1);
                 const base = Object.assign({}, DIFFICULTY_PROFILE.defaults || {});
@@ -2707,6 +2729,7 @@ function escapeHtmlAttr(str) {
                 }
                 const total = ROWS * COLS;
                 const levelNum = getCurrentLevelNumber();
+                applyVisualPhase(levelNum);
                 const spawnProfileLevel = getSpawnProfileLevel(levelNum);
                 const spawnProfileCompleted = Math.max(0, Math.min(9, spawnProfileLevel - 1));
                 const difficulty = getDifficultyForLevel(spawnProfileLevel);
