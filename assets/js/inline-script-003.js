@@ -3911,11 +3911,6 @@ function escapeHtmlAttr(str) {
 
                 // handle empty cell (no virus)
                 if (state[index] === null) {
-                    if (isUser) {
-                        state[index] = 0;
-                        clearSpecialForCell(index);
-                        scheduleRender();
-                    }
                     if (suppressFinalize || stormResolving) return;
                     // unlock since nothing actually happened
                     inputLocked = false;

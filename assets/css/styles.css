@@ -4443,6 +4443,28 @@ html.assistant-disabled .assistant-fallback-bubble {
             box-sizing: border-box;
         }
 
+        /* Lock HUD row stacking so controls never share the same row as the nano-bot meter. */
+        .hud > .hud-row {
+            order: 1;
+            flex: 0 0 100%;
+            width: 100%;
+        }
+
+        .hud > #clicksMeter {
+            order: 2;
+            flex: 0 0 100%;
+            width: 100%;
+        }
+
+        .hud > .control-trio {
+            order: 3;
+            flex: 0 0 100%;
+            width: 100%;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
         /* Ensure board and wrap sizing predictable and prevent overflow from transient particles */
         .wrap {
             box-sizing: border-box;
