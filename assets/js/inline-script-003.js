@@ -7,10 +7,12 @@ const levelCompleteImages = Array.from({ length: 36 }, (_, i) => {
 });
 const BOSS_LEVEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.png';
 const BOSS_LEVEL10_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level2.png';
+const BOSS_LEVEL15_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level_3.png';
 
 function getBossLevelIntroImageUrl(levelNum) {
   const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
   if (lvl === 10) return BOSS_LEVEL10_IMAGE_URL || BOSS_LEVEL_IMAGE_URL;
+  if (lvl === 15) return BOSS_LEVEL15_IMAGE_URL || BOSS_LEVEL_IMAGE_URL;
   return BOSS_LEVEL_IMAGE_URL;
 }
 
@@ -123,7 +125,7 @@ function escapeHtmlAttr(str) {
                 chainClickBonusEvery: 2,
                 chainScoreStep: 0.5,
                 levelScoreScaleStep: 0.1,
-                blockerUnlockLevel: 10,
+                blockerUnlockLevel: 15,
                 blockerTickMs: 1500,
                 blockerTickJitterMs: 550,
                 blockerPostUserTickMs: 520,
@@ -164,9 +166,10 @@ function escapeHtmlAttr(str) {
             try { highScoreEl = document.getElementById('highScoreValue'); if (highScoreEl) highScoreEl.textContent = String(highScore); } catch (e) { }
             // Full game script preserved from original with badge/confetti and 8-bit icons added
             const ROWS = 6, COLS = 6, MAX_SIZE = 3, MAX_CLICKS = 20;
-            const FEATURE_FLAGS = window.GameFeatureFlags || { rotatingBlocker: true, miniBoss: true };
+            const FEATURE_FLAGS = window.GameFeatureFlags || { rotatingBlocker: true, miniBoss: true, bossGooShields: true };
             window.GameFeatureFlags = FEATURE_FLAGS;
             if (typeof FEATURE_FLAGS.miniBoss === 'undefined') FEATURE_FLAGS.miniBoss = true;
+            if (typeof FEATURE_FLAGS.bossGooShields === 'undefined') FEATURE_FLAGS.bossGooShields = true;
 
             // ---------- Render scheduling (prevents redundant reflows) ----------
             const IS_MOBILE_COARSE = !!((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
@@ -234,6 +237,7 @@ function escapeHtmlAttr(str) {
             };
             const MINIBOSS_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss.png';
             const MINIBOSS_LEVEL10_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss2_new.png';
+            const MINIBOSS_LEVEL15_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techy-goblin.png';
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
             const SFX_URLS = {
                 pop: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/pop2.mp3',
@@ -248,6 +252,8 @@ function escapeHtmlAttr(str) {
                 boss_level: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.mp3',
                 miniboss_laugh: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_laugh.mp3',
                 miniboss_dies: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_dies.mp3',
+                goop: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/goop.mp3',
+                goop_be_dead: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/goop_be_dead.mp3',
                 achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3',
                 assistant_ai_0: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3',
                 assistant_ai_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI2.mp3',
@@ -290,6 +296,8 @@ function escapeHtmlAttr(str) {
                 boss_level: 350,
                 miniboss_laugh: 300,
                 miniboss_dies: 300,
+                goop: 320,
+                goop_be_dead: 420,
                 win: 250,
                 lose: 250,
                 achievement: 220
@@ -300,7 +308,7 @@ function escapeHtmlAttr(str) {
                 blocker_move_1: 0.62
             };
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
-            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'zap', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'zap', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'goop', 'goop_be_dead', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
             const IMAGE_PREFETCH_MAX = 10;
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
@@ -485,6 +493,7 @@ function escapeHtmlAttr(str) {
                 if (typeof PARTICLE_SPRITE !== 'undefined' && PARTICLE_SPRITE) images.push(PARTICLE_SPRITE);
                 if (MINIBOSS_SPRITE_URL && level >= 5) images.push(MINIBOSS_SPRITE_URL);
                 if (MINIBOSS_LEVEL10_SPRITE_URL && level >= 10) images.push(MINIBOSS_LEVEL10_SPRITE_URL);
+                if (MINIBOSS_LEVEL15_SPRITE_URL && level >= 15) images.push(MINIBOSS_LEVEL15_SPRITE_URL);
                 if (VIRUS1_SPRITE_SHEET_URL) images.push(VIRUS1_SPRITE_SHEET_URL);
                 if (VIRUS2_SPRITE_SHEET_URL) images.push(VIRUS2_SPRITE_SHEET_URL);
                 if (VIRUS3_SPRITE_SHEET_URL) images.push(VIRUS3_SPRITE_SHEET_URL);
@@ -500,6 +509,7 @@ function escapeHtmlAttr(str) {
                 if (level >= 4) sfx.push('nanostorm');
                 if (level === 5 || level === 10 || level === 15) sfx.push('boss_level');
                 if (level >= 5) sfx.push('miniboss_laugh', 'miniboss_dies');
+                if (level >= 10) sfx.push('goop', 'goop_be_dead');
                 if (level >= 10) sfx.push('blocker_move', 'blocker_move_1', 'zap');
                 if ((level % 3) === 0) sfx.push('win');
                 if ((level % 4) === 0) sfx.push('lose');
@@ -788,6 +798,19 @@ function escapeHtmlAttr(str) {
             let specialMetaState = new Array(ROWS * COLS).fill(null);
             let inputLocked = false;
             const MAX_STORM_CHARGES = 1;
+            const BOSS_GOO_SHIELD_CONFIG = {
+                enabled: true,
+                level: 10,
+                tickMinMs: 3000,
+                tickMaxMs: 3000,
+                minTargets: 1,
+                maxTargets: 1,
+                firstSpitDelayMs: 1100,
+                freshPulseMs: 650
+            };
+            let bossGooShieldHits = new Array(ROWS * COLS).fill(0);
+            let bossGooShieldStyle = new Array(ROWS * COLS).fill(null);
+            let bossGooShieldTimer = null;
             // Modular special-virus registry:
             // - set `unlockLevel` per type to gate by progression
             // - tune `spawnWeight` to bias frequency among unlocked types
@@ -873,6 +896,29 @@ function escapeHtmlAttr(str) {
                     FEATURE_FLAGS.miniBoss = !!enabled;
                     try { randomizeBoard(false); } catch (e) { }
                     return FEATURE_FLAGS.miniBoss;
+                };
+                window.setBossGooShieldsEnabled = function (enabled) {
+                    FEATURE_FLAGS.bossGooShields = !!enabled;
+                    if (!FEATURE_FLAGS.bossGooShields) {
+                        resetBossGooShieldState(true);
+                    } else {
+                        ensureBossGooShieldTimer();
+                    }
+                    scheduleRender();
+                    return FEATURE_FLAGS.bossGooShields;
+                };
+                window.BossGooShields = {
+                    config: BOSS_GOO_SHIELD_CONFIG,
+                    setEnabled: function (enabled) { return window.setBossGooShieldsEnabled(enabled); },
+                    trigger: function () { return triggerBossGooShieldSpit('debug'); },
+                    clear: function () { resetBossGooShieldState(false); scheduleRender(); return true; },
+                    activeCells: function () {
+                        const out = [];
+                        for (let i = 0; i < bossGooShieldHits.length; i++) {
+                            if ((Number(bossGooShieldHits[i]) || 0) > 0 && state[i] !== null) out.push(i);
+                        }
+                        return out;
+                    }
                 };
                 window.setLevel = function (levelNum) {
                     const targetLevel = Math.max(1, Math.floor(Number(levelNum) || 1));
@@ -1305,7 +1351,7 @@ function escapeHtmlAttr(str) {
                         ]
                     };
                 }
-                if (level === 10) {
+                if (level === 15) {
                     return {
                         lines: [
                             'ROGUE NANOBOTS DETECTED',
@@ -2682,6 +2728,7 @@ function escapeHtmlAttr(str) {
             function getMiniBossSpriteUrlForLevel(levelNum) {
                 const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
                 if (lvl === 10) return MINIBOSS_LEVEL10_SPRITE_URL || MINIBOSS_SPRITE_URL;
+                if (lvl === 15) return MINIBOSS_LEVEL15_SPRITE_URL || MINIBOSS_SPRITE_URL;
                 return MINIBOSS_SPRITE_URL;
             }
 
@@ -3261,6 +3308,92 @@ function escapeHtmlAttr(str) {
                 } catch (e) { }
             }
 
+            function playBossGooShieldProjectile(fromIndex, toIndex, onArrive = null) {
+                if (!boardEl || !Number.isFinite(fromIndex) || !Number.isFinite(toIndex)) {
+                    try { if (typeof onArrive === 'function') onArrive(); } catch (e) { }
+                    return;
+                }
+                try {
+                    const fromCell = boardEl.querySelector(`[data-index='${fromIndex}']`);
+                    const toCell = boardEl.querySelector(`[data-index='${toIndex}']`);
+                    if (!fromCell || !toCell) {
+                        if (typeof onArrive === 'function') onArrive();
+                        return;
+                    }
+                    const fr = fromCell.getBoundingClientRect();
+                    const tr = toCell.getBoundingClientRect();
+                    const sx = fr.left + (fr.width * 0.5);
+                    const sy = fr.top + (fr.height * 0.5);
+                    const tx = tr.left + (tr.width * 0.5);
+                    const ty = tr.top + (tr.height * 0.5);
+                    const rawDx = tx - sx;
+                    const rawDy = ty - sy;
+                    const dist = Math.max(1, Math.hypot(rawDx, rawDy));
+                    const ux = rawDx / dist;
+                    const uy = rawDy / dist;
+                    const muzzleDist = Math.max(10, Math.min(24, fr.width * 0.22));
+                    const startX = sx + (ux * muzzleDist);
+                    const startY = sy + (uy * muzzleDist) - 2;
+                    const dx = tx - startX;
+                    const dy = ty - startY;
+                    const arcY = -Math.max(18, Math.min(72, (Math.abs(dx) * 0.08) + (Math.abs(dy) * 0.1)));
+                    const swayX = Math.max(-12, Math.min(12, (Math.random() - 0.5) * 20));
+                    const spinA = Math.round(-24 + (Math.random() * 48));
+                    const spinB = spinA + Math.round(90 + (Math.random() * 80));
+                    const spinC = spinB + Math.round(80 + (Math.random() * 60));
+                    try {
+                        const muzzle = document.createElement('div');
+                        muzzle.className = 'boss-goo-muzzle-fx';
+                        muzzle.style.left = Math.round(startX - (ux * 8)) + 'px';
+                        muzzle.style.top = Math.round(startY - (uy * 8)) + 'px';
+                        muzzle.style.setProperty('--spit-ang', `${Math.round(Math.atan2(uy, ux) * (180 / Math.PI))}deg`);
+                        document.body.appendChild(muzzle);
+                        setTimeout(() => { try { muzzle.remove(); } catch (e) { } }, 240);
+                    } catch (e) { }
+                    const fx = document.createElement('div');
+                    fx.className = 'boss-goo-spit-fx';
+                    fx.style.left = Math.round(startX) + 'px';
+                    fx.style.top = Math.round(startY) + 'px';
+                    fx.style.setProperty('--goo-rot', `${Math.round(-18 + (Math.random() * 36))}deg`);
+                    document.body.appendChild(fx);
+                    let finished = false;
+                    const finish = () => {
+                        if (finished) return;
+                        finished = true;
+                        try { fx.remove(); } catch (e) { }
+                        try {
+                            const splat = document.createElement('div');
+                            splat.className = 'boss-goo-impact-fx';
+                            splat.style.left = Math.round(tx) + 'px';
+                            splat.style.top = Math.round(ty) + 'px';
+                            document.body.appendChild(splat);
+                            setTimeout(() => { try { splat.remove(); } catch (e) { } }, 260);
+                        } catch (e) { }
+                        try { if (typeof onArrive === 'function') onArrive(); } catch (e) { }
+                    };
+                    const duration = 450 + Math.round(Math.random() * 120);
+                    if (typeof fx.animate === 'function') {
+                        const a = fx.animate([
+                            { transform: `translate(-50%, -50%) scale(0.38, 0.82) rotate(${spinA}deg)`, opacity: 0.08, offset: 0 },
+                            { transform: `translate(${Math.round((ux * 30) + (swayX * 0.15))}px, ${Math.round((uy * 30) - 6)}px) translate(-50%, -50%) scale(1.26, 0.62) rotate(${spinA + 36}deg)`, opacity: 1, offset: 0.18 },
+                            { transform: `translate(${Math.round((dx * 0.36) + swayX)}px, ${Math.round((dy * 0.34) + (arcY * 0.86))}px) translate(-50%, -50%) scale(1.08, 0.8) rotate(${spinB}deg)`, opacity: 1, offset: 0.44 },
+                            { transform: `translate(${Math.round((dx * 0.74) - (swayX * 0.25))}px, ${Math.round((dy * 0.72) + (arcY * 0.24))}px) translate(-50%, -50%) scale(0.9, 1.14) rotate(${spinC}deg)`, opacity: 0.98, offset: 0.8 },
+                            { transform: `translate(${Math.round(dx)}px, ${Math.round(dy)}px) translate(-50%, -50%) scale(0.82, 0.92) rotate(${spinC + 36}deg)`, opacity: 0.95, offset: 1 }
+                        ], {
+                            duration,
+                            easing: 'cubic-bezier(0.22, 0.78, 0.2, 1)',
+                            fill: 'forwards'
+                        });
+                        a.onfinish = finish;
+                        a.oncancel = finish;
+                    } else {
+                        setTimeout(finish, duration);
+                    }
+                } catch (e) {
+                    try { if (typeof onArrive === 'function') onArrive(); } catch (x) { }
+                }
+            }
+
             function specialHookArmoredBeforeGrow(ctx) {
                 if (!ctx || !Number.isFinite(ctx.index)) return null;
                 const meta = ensureSpecialMeta(ctx.index);
@@ -3319,8 +3452,6 @@ function escapeHtmlAttr(str) {
             }
 
             function getMiniBossCountForLevel(levelNum = getCurrentLevelNumber()) {
-                const lvl = Math.max(1, Number(levelNum) || 1);
-                if (lvl === 15) return 2;
                 return 1;
             }
 
@@ -3328,6 +3459,177 @@ function escapeHtmlAttr(str) {
                 const lvl = Math.max(1, Number(levelNum) || 1);
                 const tier = Math.max(1, Math.floor(lvl / 5));
                 return 5 + tier;
+            }
+
+            function isBossGooShieldEnabled() {
+                return !!(FEATURE_FLAGS && FEATURE_FLAGS.bossGooShields !== false && BOSS_GOO_SHIELD_CONFIG && BOSS_GOO_SHIELD_CONFIG.enabled !== false);
+            }
+
+            function isBossGooShieldLevel(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                return isBossGooShieldEnabled() && lvl === Math.max(1, Math.floor(Number(BOSS_GOO_SHIELD_CONFIG.level) || 10));
+            }
+
+            function getBossIndicesForLevel(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                const out = [];
+                for (let i = 0; i < specialState.length; i++) {
+                    if (specialState[i] !== 'boss') continue;
+                    const meta = specialMetaState[i] || {};
+                    const bossLvl = Math.max(1, Math.floor(Number(meta.bossLevel) || lvl));
+                    const hp = Math.max(0, Number(meta.hp) || 0);
+                    if (bossLvl === lvl && hp > 0) out.push(i);
+                }
+                return out;
+            }
+
+            function hasActiveBossForLevel(levelNum = getCurrentLevelNumber()) {
+                return getBossIndicesForLevel(levelNum).length > 0;
+            }
+
+            function stopBossGooShieldTimer() {
+                if (!bossGooShieldTimer) return;
+                clearTimeout(bossGooShieldTimer);
+                bossGooShieldTimer = null;
+            }
+
+            function resetBossGooShieldState(stopTimer = true) {
+                for (let i = 0; i < bossGooShieldHits.length; i++) bossGooShieldHits[i] = 0;
+                for (let i = 0; i < bossGooShieldStyle.length; i++) bossGooShieldStyle[i] = null;
+                if (stopTimer) stopBossGooShieldTimer();
+            }
+
+            function clearBossGooShieldAt(index) {
+                const i = Math.floor(Number(index));
+                if (!Number.isFinite(i) || i < 0 || i >= bossGooShieldHits.length) return false;
+                if ((Number(bossGooShieldHits[i]) || 0) <= 0) return false;
+                bossGooShieldHits[i] = 0;
+                bossGooShieldStyle[i] = null;
+                return true;
+            }
+
+            function hasBossGooShield(index) {
+                const i = Math.floor(Number(index));
+                if (!Number.isFinite(i) || i < 0 || i >= bossGooShieldHits.length) return false;
+                if (state[i] === null) return false;
+                return (Number(bossGooShieldHits[i]) || 0) > 0;
+            }
+
+            function makeBossGooShieldStyle() {
+                const pct = () => `${Math.round(28 + (Math.random() * 44))}%`;
+                const rot = `${Math.round(-18 + (Math.random() * 36))}deg`;
+                const scale = (0.9 + (Math.random() * 0.3)).toFixed(2);
+                const ox = `${Math.round(-6 + (Math.random() * 12))}%`;
+                const oy = `${Math.round(-6 + (Math.random() * 12))}%`;
+                const shineX = `${Math.round(24 + (Math.random() * 40))}%`;
+                const shineY = `${Math.round(18 + (Math.random() * 34))}%`;
+                const radius = `${pct()} ${pct()} ${pct()} ${pct()} / ${pct()} ${pct()} ${pct()} ${pct()}`;
+                return {
+                    radius,
+                    rot,
+                    scale,
+                    ox,
+                    oy,
+                    shineX,
+                    shineY,
+                    appliedAt: Date.now()
+                };
+            }
+
+            function applyBossGooShieldAt(index) {
+                const i = Math.floor(Number(index));
+                if (!Number.isFinite(i) || i < 0 || i >= state.length) return false;
+                if (state[i] === null) return false;
+                if (specialState[i] === 'boss') return false;
+                bossGooShieldHits[i] = 1;
+                bossGooShieldStyle[i] = makeBossGooShieldStyle();
+                return true;
+            }
+
+            function consumeBossGooShieldHit(index) {
+                const i = Math.floor(Number(index));
+                if (!Number.isFinite(i) || i < 0 || i >= state.length) return false;
+                if ((Number(bossGooShieldHits[i]) || 0) <= 0) return false;
+                bossGooShieldHits[i] = Math.max(0, Number(bossGooShieldHits[i]) - 1);
+                if (bossGooShieldHits[i] <= 0) {
+                    bossGooShieldStyle[i] = null;
+                }
+                return true;
+            }
+
+            function pruneBossGooShields() {
+                let changed = false;
+                for (let i = 0; i < bossGooShieldHits.length; i++) {
+                    if ((Number(bossGooShieldHits[i]) || 0) <= 0) continue;
+                    if (state[i] === null) {
+                        bossGooShieldHits[i] = 0;
+                        bossGooShieldStyle[i] = null;
+                        changed = true;
+                    }
+                }
+                return changed;
+            }
+
+            function triggerBossGooShieldSpit(reason = 'timer') {
+                if (!isBossGooShieldLevel()) return 0;
+                if (isBlockingPopupOpen()) return 0;
+                const bosses = getBossIndicesForLevel(BOSS_GOO_SHIELD_CONFIG.level);
+                if (!bosses.length) return 0;
+                const preferred = [];
+                const fallback = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (state[i] === null) continue;
+                    if (specialState[i] === 'boss') continue;
+                    if ((Number(bossGooShieldHits[i]) || 0) > 0) fallback.push(i);
+                    else preferred.push(i);
+                }
+                const pool = preferred.length ? preferred : fallback;
+                if (!pool.length) return 0;
+                const sourceBoardGeneration = boardGeneration;
+                const bossIndex = bosses[Math.floor(Math.random() * bosses.length)];
+                const bossMeta = specialMetaState[bossIndex] || {};
+                const bossLevel = Math.max(1, Math.floor(Number(bossMeta.bossLevel) || getCurrentLevelNumber()));
+                const targetIndex = pool[Math.floor(Math.random() * pool.length)];
+                const applyAtImpact = () => {
+                    if (sourceBoardGeneration !== boardGeneration) return;
+                    if (isBlockingPopupOpen()) return;
+                    if (applyBossGooShieldAt(targetIndex)) {
+                        try { playSfx(bossLevel === 10 ? 'goop' : 'miniboss_laugh'); } catch (e) { }
+                        scheduleRender();
+                    }
+                };
+                playBossGooShieldProjectile(bossIndex, targetIndex, applyAtImpact);
+                return 1;
+            }
+
+            function ensureBossGooShieldTimer() {
+                if (!isBossGooShieldLevel() || !hasActiveBossForLevel(BOSS_GOO_SHIELD_CONFIG.level)) {
+                    stopBossGooShieldTimer();
+                    return;
+                }
+                if (bossGooShieldTimer) return;
+                if (isBlockingPopupOpen()) {
+                    bossGooShieldTimer = setTimeout(() => {
+                        bossGooShieldTimer = null;
+                        ensureBossGooShieldTimer();
+                    }, 420);
+                    return;
+                }
+                const minMs = Math.max(350, Math.floor(Number(BOSS_GOO_SHIELD_CONFIG.tickMinMs) || 2100));
+                const maxMs = Math.max(minMs, Math.floor(Number(BOSS_GOO_SHIELD_CONFIG.tickMaxMs) || 3400));
+                const delay = minMs + Math.floor(Math.random() * (maxMs - minMs + 1));
+                const sourceBoardGeneration = boardGeneration;
+                bossGooShieldTimer = setTimeout(() => {
+                    bossGooShieldTimer = null;
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        ensureBossGooShieldTimer();
+                        return;
+                    }
+                    if (isBossGooShieldLevel() && hasActiveBossForLevel(BOSS_GOO_SHIELD_CONFIG.level)) {
+                        triggerBossGooShieldSpit('timer');
+                    }
+                    ensureBossGooShieldTimer();
+                }, delay);
             }
 
             function setMiniBossStateFromMeta(index, meta) {
@@ -3399,7 +3701,12 @@ function escapeHtmlAttr(str) {
                     playMiniBossBurstEffect(idx, false);
                 }
                 if (n > 0) {
-                    try { playSfx('miniboss_laugh'); } catch (e) { }
+                    let bossLevel = getCurrentLevelNumber();
+                    if (Number.isFinite(originIndex)) {
+                        const bossMeta = specialMetaState[Math.floor(Number(originIndex))] || {};
+                        bossLevel = Math.max(1, Math.floor(Number(bossMeta.bossLevel) || bossLevel));
+                    }
+                    try { playSfx(bossLevel === 10 ? 'goop' : 'miniboss_laugh'); } catch (e) { }
                     scheduleRender();
                 }
                 return n;
@@ -3419,6 +3726,7 @@ function escapeHtmlAttr(str) {
                 const idx = Number(ctx.index);
                 const meta = ensureSpecialMeta(idx) || {};
                 if (!meta.isBoss) return null;
+                const bossLevel = Math.max(1, Math.floor(Number(meta.bossLevel) || getCurrentLevelNumber()));
                 const hpNow = Math.max(0, Number(meta.hp) || Number(meta.maxHp) || 1);
                 let extraDamage = 0;
                 if ((Number(runPerkState.bossBreakerHits) || 0) > 0) {
@@ -3436,7 +3744,7 @@ function escapeHtmlAttr(str) {
                     const bossBonus = Math.max(0, MINI_BOSS_CLICK_BONUS - bossBonusPenalty);
                     clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + bossBonus);
                     updateHUD();
-                    try { playSfx('miniboss_dies'); } catch (e) { }
+                    try { playSfx(bossLevel === 10 ? 'goop_be_dead' : 'miniboss_dies'); } catch (e) { }
                 } else {
                     setMiniBossStateFromMeta(idx, meta);
                     maybeTriggerBossBreakpoint(meta, idx);
@@ -3501,6 +3809,7 @@ function escapeHtmlAttr(str) {
                 state.fill(null);
                 specialState.fill(null);
                 specialMetaState.fill(null);
+                resetBossGooShieldState(true);
                 if (!preserveClicks) {
                     resetRunPerkState();
                     clicksLeft = 10;
@@ -3536,6 +3845,17 @@ function escapeHtmlAttr(str) {
                 } else {
                     clearMiniBossState();
                 }
+                if (isBossGooShieldLevel(levelNum) && hasActiveBossForLevel(levelNum)) {
+                    const sourceBoardGeneration = boardGeneration;
+                    const firstDelay = Math.max(120, Math.floor(Number(BOSS_GOO_SHIELD_CONFIG.firstSpitDelayMs) || 850));
+                    setTimeout(() => {
+                        try {
+                            if (sourceBoardGeneration !== boardGeneration) return;
+                            triggerBossGooShieldSpit('first');
+                        } catch (e) { }
+                    }, firstDelay);
+                }
+                ensureBossGooShieldTimer();
                 ensureLevel5HasArmored();
                 queueLikelyAssetPrefetch(levelNum + 1, 'next-level');
                 if (preserveClicks && (Number(runPerkState.overclockedReservePending) || 0) > 0) {
@@ -3653,8 +3973,8 @@ function escapeHtmlAttr(str) {
                     const bossSpriteUrl = getMiniBossSpriteUrlForLevel(bossLevel);
                     const bossSheet = document.createElement('div');
                     bossSheet.className = 'boss-sprite-sheet';
-                    if (bossLevel === 10) {
-                        container.classList.add('special-boss-level10');
+                    if (bossLevel === 10 || bossLevel === 15) {
+                        container.classList.add('special-boss-grid9');
                         bossSheet.classList.add('boss-sprite-sheet--grid9');
                     }
                     bossSheet.style.backgroundImage = `url('${bossSpriteUrl || MINIBOSS_SPRITE_URL}')`;
@@ -3705,6 +4025,8 @@ function escapeHtmlAttr(str) {
 
             function render() {
                 specialTelegraphIndex = null;
+                const nowTs = Date.now();
+                pruneBossGooShields();
                 boardEl.innerHTML = ''; for (let i = 0; i < ROWS * COLS; i++) {
                     const val = state[i];
                     const specialType = specialState[i];
@@ -3717,6 +4039,23 @@ function escapeHtmlAttr(str) {
                         if (specialDef.className) gridCell.classList.add(specialDef.className);
                     }
                     const pet = createPetriElement(); gridCell.appendChild(pet);
+                    if (hasBossGooShield(i)) {
+                        const goo = document.createElement('div');
+                        goo.className = 'goo-shield-overlay';
+                        const st = bossGooShieldStyle[i] || {};
+                        if (st.radius) goo.style.borderRadius = st.radius;
+                        if (st.rot) goo.style.setProperty('--g-rot', st.rot);
+                        if (st.scale) goo.style.setProperty('--g-scale', String(st.scale));
+                        if (st.ox) goo.style.setProperty('--g-ox', st.ox);
+                        if (st.oy) goo.style.setProperty('--g-oy', st.oy);
+                        if (st.shineX) goo.style.setProperty('--g-shine-x', st.shineX);
+                        if (st.shineY) goo.style.setProperty('--g-shine-y', st.shineY);
+                        const freshWindow = Math.max(120, Math.floor(Number(BOSS_GOO_SHIELD_CONFIG.freshPulseMs) || 650));
+                        if ((Number(st.appliedAt) || 0) > 0 && (nowTs - Number(st.appliedAt)) <= freshWindow) {
+                            goo.classList.add('fresh');
+                        }
+                        gridCell.appendChild(goo);
+                    }
                     if (val !== null) {
                         let tweenCfg = null;
                         const pending = growthTweenByIndex.get(i);
@@ -3729,6 +4068,7 @@ function escapeHtmlAttr(str) {
                     }
                     boardEl.appendChild(gridCell);
                 }
+                ensureBossGooShieldTimer();
                 syncRotatingBlockerUI();
                 updateHUD();
                 if (!tutorialSeen.firstArmoredSeen) {
@@ -4180,6 +4520,7 @@ function escapeHtmlAttr(str) {
                     outOfClicksShown = true;
                     try { hideRunPerkPopup(true); } catch (e) { }
                     try { runPerkState.popupOpen = false; } catch (e) { }
+                    try { stopBossGooShieldTimer(); } catch (e) { }
                     try { playSfx('lose'); } catch (e) { }
 
                     // Show persistent popup � will remain until the player clicks the existing restart button
@@ -4827,6 +5168,18 @@ function escapeHtmlAttr(str) {
                     scheduleRunPerkPopupAttempt(0);
                     // If we just consumed the last click and there are no particles, check game over now
                     // Use requestAnimationFrame so DOM updates settle first
+                    requestAnimationFrame(() => {
+                        if (!particlesActive() && clicksLeft <= 0) checkOutOfClicks();
+                    });
+                    return;
+                }
+
+                if (consumeBossGooShieldHit(index)) {
+                    try { playSfx('grow'); } catch (e) { }
+                    scheduleRender();
+                    if (suppressFinalize || stormResolving) return;
+                    inputLocked = false;
+                    scheduleRunPerkPopupAttempt(0);
                     requestAnimationFrame(() => {
                         if (!particlesActive() && clicksLeft <= 0) checkOutOfClicks();
                     });
