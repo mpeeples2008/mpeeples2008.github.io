@@ -990,7 +990,7 @@ function escapeHtmlAttr(str) {
                     id: 'broker_quickfix',
                     source: 'broker',
                     title: 'Quickfix',
-                    desc: '+3 clicks now, but level-clear click bonus -1 for the rest of this run.'
+                    desc: '+4 clicks now, but level-clear bonus clicks are -1 for the rest of the run.'
                 },
                 broker_hotwire: {
                     id: 'broker_hotwire',
@@ -1029,6 +1029,12 @@ function escapeHtmlAttr(str) {
                     desc: '+2 next-level clicks, but special virus spawn chance +5% this run.'
                 }
             };
+            const BROKER_PICK_ASSISTANT_LINES = [
+                'Viral venture accepted. You should not trust that guy, he looks shady.',
+                'Deal taken. That trench-coat virus definitely has fake credentials.',
+                'Broker pick confirmed. I recommend counting your fingers after this transaction.',
+                'Viral venture selected. If he says no side effects, assume side effects.'
+            ];
             let runPerkPopupEl = null;
             function createDefaultRunPerkState() {
                 return {
@@ -1996,7 +2002,7 @@ function escapeHtmlAttr(str) {
                 } else if (id === 'storm_tuning') {
                     runPerkState.stormRechargeDelta = Math.max(-9, (Number(runPerkState.stormRechargeDelta) || 0) - 3);
                 } else if (id === 'broker_quickfix') {
-                    clicksLeft = clicksLeft + 3;
+                    clicksLeft = clicksLeft + 4;
                     runPerkState.levelClearClicksPenalty = Math.min(3, (Number(runPerkState.levelClearClicksPenalty) || 0) + 1);
                     runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
                 } else if (id === 'broker_hotwire') {
@@ -2069,9 +2075,21 @@ function escapeHtmlAttr(str) {
                     const viralCardBackUrl = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_viral_back.png';
                     const customFrontCardUrlById = {
                         armor_piercer: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_armor_piecer.png',
+                        boss_breaker: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_boss_breaker.png',
                         containment_freeze: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_containment_freeze.png',
                         emergency_cells: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_emergency_cells.png',
-                        storm_capacitor: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_capacitor.png'
+                        laser_jammer: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_laser_jammer.png',
+                        overclocked_reserve: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_overclocked_reserve.png',
+                        reserve_expansion: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_reserve_expansion.png',
+                        storm_capacitor: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_capacitor.png',
+                        storm_tuning: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_tuning.png',
+                        broker_quickfix: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_quickfix.png',
+                        broker_hotwire: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_blackmarket_hotwire.png',
+                        broker_heavy_armor: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_razor_payload.png',
+                        broker_risky_cache: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_risky_cache.png',
+                        broker_borrowed_time: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_borrowed_time.png',
+                        broker_dirty_reactor: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_dirty_reactor.png',
+                        broker_hazard_infusion: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_hazard_infusion.png'
                     };
                     const renderDealCard = (offer) => {
                         const source = escapeHtmlAttr(offer && offer.source ? offer.source : 'pixel');
@@ -2130,8 +2148,13 @@ function escapeHtmlAttr(str) {
                         try {
                             const def = RUN_PERK_DEFS[chosenId];
                             if (window.Assistant && Assistant.show && def) {
-                                const prefix = def.source === 'broker' ? 'Viral venture accepted' : 'Perk acquired';
-                                Assistant.show(`${prefix}: ${def.title}.`, { priority: 1 });
+                                if (def.source === 'broker') {
+                                    const idx = Math.floor(Math.random() * BROKER_PICK_ASSISTANT_LINES.length);
+                                    const line = BROKER_PICK_ASSISTANT_LINES[idx] || 'Viral venture accepted. I distrust this arrangement.';
+                                    Assistant.show(`${line} (${def.title})`, { priority: 1 });
+                                } else {
+                                    Assistant.show(`Perk acquired: ${def.title}.`, { priority: 1 });
+                                }
                             }
                         } catch (e) { }
                         setTimeout(() => { try { maybeShowPendingRunPerkPopup(); } catch (e) { } }, 80);
@@ -2205,6 +2228,9 @@ function escapeHtmlAttr(str) {
 
                 // Always update meter visuals and notify assistant when clicks are low
                 try {
+                    if (boardEl && boardEl.classList) {
+                        boardEl.classList.toggle('low-click-board-warning', clicksLeft <= 3);
+                    }
                     const meter = document.getElementById('clicksMeter');
                     if (meter) {
 
@@ -2623,6 +2649,67 @@ function escapeHtmlAttr(str) {
                 return Math.max(0, base - penalty);
             }
 
+            let labBgFrontEl = null;
+            let labBgBackEl = null;
+            let labBgActivePhase = null;
+            let labBgUseFront = true;
+
+            function getPhaseBackgroundStyle(phaseNum) {
+                const phase = Math.max(1, Math.min(3, Math.floor(Number(phaseNum) || 1)));
+                if (phase === 2) {
+                    return "linear-gradient(rgba(20, 8, 20, 0.56), rgba(20, 8, 20, 0.56)), var(--lab-bg-stage2)";
+                }
+                if (phase === 3) {
+                    return "linear-gradient(rgba(26, 8, 8, 0.64), rgba(26, 8, 8, 0.64)), var(--lab-bg-stage3)";
+                }
+                return "linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)), var(--lab-bg-stage1)";
+            }
+
+            function ensurePhaseBackgroundLayers() {
+                if (labBgFrontEl && labBgBackEl) return;
+                const body = document.body;
+                if (!body) return;
+                let front = document.getElementById('labBgLayerA');
+                let back = document.getElementById('labBgLayerB');
+                if (!front) {
+                    front = document.createElement('div');
+                    front.id = 'labBgLayerA';
+                    front.className = 'lab-bg-layer show';
+                }
+                if (!back) {
+                    back = document.createElement('div');
+                    back.id = 'labBgLayerB';
+                    back.className = 'lab-bg-layer';
+                }
+                if (!front.parentNode) body.prepend(front);
+                if (!back.parentNode) body.prepend(back);
+                labBgFrontEl = front;
+                labBgBackEl = back;
+            }
+
+            function setPhaseBackground(phaseNum, immediate = false) {
+                ensurePhaseBackgroundLayers();
+                if (!labBgFrontEl || !labBgBackEl) return;
+                const phase = Math.max(1, Math.min(3, Math.floor(Number(phaseNum) || 1)));
+                const nextBg = getPhaseBackgroundStyle(phase);
+                if (labBgActivePhase === null || immediate) {
+                    labBgFrontEl.style.background = nextBg;
+                    labBgFrontEl.classList.add('show');
+                    labBgBackEl.classList.remove('show');
+                    labBgUseFront = true;
+                    labBgActivePhase = phase;
+                    return;
+                }
+                if (labBgActivePhase === phase) return;
+                const incoming = labBgUseFront ? labBgBackEl : labBgFrontEl;
+                const outgoing = labBgUseFront ? labBgFrontEl : labBgBackEl;
+                incoming.style.background = nextBg;
+                incoming.classList.add('show');
+                outgoing.classList.remove('show');
+                labBgUseFront = !labBgUseFront;
+                labBgActivePhase = phase;
+            }
+
             function applyVisualPhase(levelNum = getCurrentLevelNumber()) {
                 try {
                     const body = document.body;
@@ -2631,6 +2718,7 @@ function escapeHtmlAttr(str) {
                     body.classList.remove('phase-1', 'phase-2', 'phase-3');
                     body.classList.add('phase-' + phase);
                     body.dataset.visualPhase = String(phase);
+                    setPhaseBackground(phase);
                     return phase;
                 } catch (e) {
                     return 1;
@@ -3040,8 +3128,27 @@ function escapeHtmlAttr(str) {
                         setTimeout(() => { try { cell.classList.remove('shield-block'); } catch (e) { } }, 240);
                     } catch (e) { }
                 };
+                const spawnCrackStage = (delayMs, cls, ttlMs) => {
+                    setTimeout(() => {
+                        try {
+                            const cell = boardEl.querySelector(`[data-index='${index}']`);
+                            if (!cell) return;
+                            const r = cell.getBoundingClientRect();
+                            const crack = document.createElement('div');
+                            crack.className = `shield-crack-fx ${cls}`;
+                            crack.style.left = Math.round(r.left + (r.width / 2)) + 'px';
+                            crack.style.top = Math.round(r.top + (r.height / 2)) + 'px';
+                            crack.style.width = Math.round(r.width * 0.92) + 'px';
+                            crack.style.height = Math.round(r.height * 0.92) + 'px';
+                            document.body.appendChild(crack);
+                            setTimeout(() => { try { crack.remove(); } catch (e) { } }, ttlMs);
+                        } catch (e) { }
+                    }, delayMs);
+                };
                 applyFlash();
                 try { requestAnimationFrame(applyFlash); } catch (e) { }
+                spawnCrackStage(0, 'stage-1', 190);
+                spawnCrackStage(58, 'stage-2', 280);
             }
 
             function playShieldBreakEffect(index) {
@@ -3050,11 +3157,33 @@ function escapeHtmlAttr(str) {
                     const cell = boardEl.querySelector(`[data-index='${index}']`);
                     if (!cell) return;
                     const r = cell.getBoundingClientRect();
+                    cell.classList.remove('shield-residue');
+                    void cell.offsetWidth;
+                    cell.classList.add('shield-residue');
+                    setTimeout(() => { try { cell.classList.remove('shield-residue'); } catch (e) { } }, 320);
                     const burst = document.createElement('div');
                     burst.className = 'shield-break-burst';
                     burst.style.left = Math.round(r.left + (r.width / 2)) + 'px';
                     burst.style.top = Math.round(r.top + (r.height / 2)) + 'px';
                     document.body.appendChild(burst);
+                    const shardCount = 8;
+                    for (let i = 0; i < shardCount; i++) {
+                        const shard = document.createElement('div');
+                        shard.className = 'shield-shard';
+                        const angle = ((Math.PI * 2) * i / shardCount) + ((Math.random() - 0.5) * 0.34);
+                        const travel = (14 + (Math.random() * 18));
+                        const tx = Math.cos(angle) * travel;
+                        const ty = Math.sin(angle) * travel;
+                        const rot = Math.round((Math.random() - 0.5) * 220);
+                        shard.style.left = Math.round(r.left + (r.width / 2)) + 'px';
+                        shard.style.top = Math.round(r.top + (r.height / 2)) + 'px';
+                        shard.style.setProperty('--tx', `${tx}px`);
+                        shard.style.setProperty('--ty', `${ty}px`);
+                        shard.style.setProperty('--rot', `${rot}deg`);
+                        shard.style.animationDelay = `${Math.round(Math.random() * 32)}ms`;
+                        document.body.appendChild(shard);
+                        setTimeout(() => { try { shard.remove(); } catch (e) { } }, 360);
+                    }
                     setTimeout(() => { try { burst.remove(); } catch (e) { } }, 430);
                 } catch (e) { }
             }
@@ -3082,6 +3211,7 @@ function escapeHtmlAttr(str) {
                 if ((Number(runPerkState.armorPiercerHits) || 0) > 0) {
                     runPerkState.armorPiercerHits = Math.max(0, Number(runPerkState.armorPiercerHits) - 1);
                     playShieldBreakEffect(ctx.index);
+                    try { playSfx('zap'); } catch (e) { }
                     clearSpecialForCell(ctx.index);
                     incrementAchievementStat('runArmoredShellsBroken', 1, 'run');
                     incrementAchievementStat('armoredShellsLifetime', 1, 'lifetime');
@@ -3089,13 +3219,14 @@ function escapeHtmlAttr(str) {
                 }
                 meta.shieldHitsRemaining = remaining - 1;
                 playShieldBlockFlash(ctx.index);
+                try { playSfx('grow'); } catch (e) { }
                 if (meta.shieldHitsRemaining <= 0) {
                     playShieldBreakEffect(ctx.index);
+                    try { playSfx('zap'); } catch (e) { }
                     clearSpecialForCell(ctx.index);
                     incrementAchievementStat('runArmoredShellsBroken', 1, 'run');
                     incrementAchievementStat('armoredShellsLifetime', 1, 'lifetime');
                 }
-                try { playSfx('fill'); } catch (e) { }
                 return { cancelGrowth: true };
             }
 

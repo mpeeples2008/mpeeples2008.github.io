@@ -13,6 +13,10 @@
 
         :root {
             --board-size: 720px;
+            --lab-bg-stage1: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab_stage1.png');
+            --lab-bg-stage2: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab_stage2.png');
+            --lab-bg-stage3: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lab_stage3.png');
+            --lab-bg-fade-ms: 780ms;
         }
 
         html,
@@ -25,6 +29,23 @@
             color: #0b3d91;
             box-sizing: border-box;
             padding-top: max(8px, env(safe-area-inset-top));
+        }
+
+        .lab-bg-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+            background-position: center center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            transition: opacity var(--lab-bg-fade-ms) ease-in-out;
+            will-change: opacity;
+        }
+
+        .lab-bg-layer.show {
+            opacity: 1;
         }
 
         body::before {
@@ -140,6 +161,19 @@
         body.phase-3 .board {
             background: rgba(255, 255, 255, 0.15);
             box-shadow: inset 0 0 0 1px rgba(255, 126, 126, 0.24), 0 0 28px rgba(255, 90, 90, 0.24);
+        }
+
+        .board.low-click-board-warning {
+            animation: lowBoardGlowPulse 920ms ease-in-out infinite;
+        }
+
+        @keyframes lowBoardGlowPulse {
+            0%, 100% {
+                box-shadow: inset 0 0 0 1px rgba(255, 122, 122, 0.34), 0 0 14px rgba(255, 98, 98, 0.22);
+            }
+            50% {
+                box-shadow: inset 0 0 0 2px rgba(255, 150, 150, 0.74), 0 0 26px rgba(255, 108, 108, 0.38);
+            }
         }
 
         .boss-mini-hp {
@@ -649,12 +683,20 @@
                 transform: translate(calc(-50% - 1px), calc(-50% - 1px)) scale(1.02);
                 opacity: 0.34;
             }
-            78% {
-                transform: translate(calc(-50% + 1px), calc(-50% + 1px)) scale(0.98);
-                opacity: 0.22;
+            72% {
+                transform: translate(calc(-50% + 2px), calc(-50% + 1px)) scale(0.99);
+                opacity: 0.24;
+            }
+            84% {
+                transform: translate(calc(-50% - 3px), calc(-50% + 2px)) scale(0.97);
+                opacity: 0.16;
+            }
+            92% {
+                transform: translate(calc(-50% + 3px), calc(-50% - 3px)) scale(0.95);
+                opacity: 0.09;
             }
             100% {
-                transform: translate(-50%, -50%) scale(0.95);
+                transform: translate(calc(-50% - 4px), calc(-50% + 3px)) scale(0.92);
                 opacity: 0;
             }
         }
@@ -882,6 +924,10 @@
             animation: shieldBlockRingFlash 220ms ease-out;
         }
 
+        .virus.special-armored.shield-hit::before {
+            animation: shieldGlassFlash 220ms ease-out;
+        }
+
         .virus.special-splitter {
             --special-color: #c7a7ff;
             --special-outline: rgba(199, 167, 255, 0.84);
@@ -1011,6 +1057,82 @@
             }
         }
 
+        @keyframes shieldGlassFlash {
+            0% {
+                opacity: 0.78;
+                filter: brightness(1);
+            }
+            45% {
+                opacity: 0.98;
+                filter: brightness(1.32);
+            }
+            100% {
+                opacity: 0.78;
+                filter: brightness(1);
+            }
+        }
+
+        .shield-crack-fx {
+            position: fixed;
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: 26012;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .shield-crack-fx::before {
+            content: '';
+            position: absolute;
+            inset: 8%;
+            border-radius: 999px;
+            background:
+                linear-gradient(62deg, transparent 0 44%, rgba(255, 245, 210, 0.96) 44% 46%, transparent 46% 100%),
+                linear-gradient(-18deg, transparent 0 52%, rgba(255, 235, 182, 0.94) 52% 54%, transparent 54% 100%),
+                linear-gradient(10deg, transparent 0 62%, rgba(255, 223, 154, 0.9) 62% 63.5%, transparent 63.5% 100%),
+                linear-gradient(-68deg, transparent 0 58%, rgba(255, 241, 206, 0.9) 58% 60%, transparent 60% 100%);
+            filter: drop-shadow(0 0 2px rgba(255, 235, 185, 0.72));
+        }
+
+        .shield-crack-fx.stage-1 {
+            animation: shieldCrackStage1 190ms ease-out forwards;
+        }
+
+        .shield-crack-fx.stage-2 {
+            animation: shieldCrackStage2 260ms ease-out forwards;
+        }
+
+        @keyframes shieldCrackStage1 {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.6);
+            }
+            35% {
+                opacity: 0.96;
+                transform: translate(-50%, -50%) scale(0.94);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.04);
+            }
+        }
+
+        @keyframes shieldCrackStage2 {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.75) rotate(0deg);
+            }
+            30% {
+                opacity: 0.92;
+                transform: translate(-50%, -50%) scale(1.02) rotate(-2deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.14) rotate(3deg);
+            }
+        }
+
         @keyframes specialTelegraphPulse {
             0% {
                 outline: 1px solid rgba(255, 223, 132, 0.32);
@@ -1057,6 +1179,37 @@
             pointer-events: none;
             z-index: 26010;
             animation: shieldBreakBurst 360ms ease-out forwards;
+        }
+
+        .shield-shard {
+            position: fixed;
+            width: 7px;
+            height: 3px;
+            border-radius: 2px;
+            border: 1px solid rgba(255, 248, 219, 0.72);
+            background: linear-gradient(180deg, rgba(255, 247, 219, 0.94), rgba(255, 228, 162, 0.72));
+            box-shadow: 0 0 7px rgba(255, 223, 142, 0.56);
+            pointer-events: none;
+            z-index: 26011;
+            opacity: 0;
+            transform: translate(-50%, -50%) rotate(0deg) scale(0.85);
+            animation: shieldShardFly 320ms ease-out forwards;
+        }
+
+        .cell.shell-residue::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 54%;
+            height: 54%;
+            transform: translate(-50%, -50%);
+            border-radius: 999px;
+            border: 1px solid rgba(255, 237, 176, 0.44);
+            box-shadow: inset 0 0 7px rgba(255, 237, 176, 0.18);
+            pointer-events: none;
+            z-index: 2;
+            animation: shieldResidueFade 320ms ease-out forwards;
         }
 
         .miniboss-burst {
@@ -1113,6 +1266,28 @@
             100% {
                 transform: scale(1.35) rotate(16deg);
                 opacity: 0;
+            }
+        }
+
+        @keyframes shieldShardFly {
+            0% {
+                opacity: 0.96;
+                transform: translate(-50%, -50%) rotate(0deg) scale(0.9);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) rotate(var(--rot, 0deg)) scale(0.55);
+            }
+        }
+
+        @keyframes shieldResidueFade {
+            0% {
+                opacity: 0.85;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.06);
             }
         }
 
