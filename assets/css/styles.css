@@ -311,6 +311,29 @@
             box-shadow: 0 0 10px rgba(190, 238, 255, 0.76);
         }
 
+        .rotating-blocker.overclocked {
+            background: linear-gradient(90deg, rgba(24, 146, 68, 0.98), rgba(170, 255, 208, 0.98), rgba(24, 146, 68, 0.98));
+            box-shadow: 0 0 0 2px rgba(160, 255, 204, 0.88), 0 0 24px rgba(84, 242, 156, 0.68), inset 0 0 12px rgba(214, 255, 232, 0.6);
+            animation-duration: 620ms, 460ms;
+        }
+
+        .rotating-blocker.overclocked::before {
+            background: repeating-linear-gradient(90deg, rgba(234, 255, 246, 0.1) 0 8px, rgba(176, 255, 220, 0.56) 8px 16px, rgba(234, 255, 246, 0.1) 16px 24px);
+            opacity: 0.92;
+            animation-duration: 360ms;
+        }
+
+        .rotating-blocker.overclocked::after {
+            background: linear-gradient(90deg, rgba(220, 255, 238, 0.24), rgba(194, 255, 222, 0.98), rgba(220, 255, 238, 0.24));
+            box-shadow: 0 0 12px rgba(132, 238, 176, 0.82);
+            animation-duration: 240ms;
+        }
+
+        .rotating-blocker.overclocked .blocker-emitter {
+            filter: drop-shadow(0 0 5px rgba(166, 255, 207, 0.7)) saturate(1.16) brightness(1.06);
+            animation-duration: 520ms, 960ms;
+        }
+
         @keyframes blockerBeamBodyBob {
             0%, 100% {
                 translate: 0 -2px;
@@ -901,6 +924,55 @@
             display: none;
         }
 
+        .virus.special-boss.special-boss-level15:not(.special-boss-projection) {
+            box-shadow: 0 0 0 1px rgba(134, 214, 255, 0.64), 0 0 18px rgba(92, 184, 255, 0.56), inset 0 0 11px rgba(134, 214, 255, 0.2);
+        }
+
+            .virus.special-boss.special-boss-level15:not(.special-boss-projection)::before {
+                background: radial-gradient(circle at 35% 30%, rgba(196, 236, 255, 0.54), rgba(98, 176, 255, 0.18) 48%, rgba(16, 40, 68, 0.18) 100%);
+            }
+
+        .virus.special-boss.special-boss-projection {
+            --special-color: #7ecbff;
+            --special-outline: rgba(132, 211, 255, 0.86);
+            opacity: 0.74;
+            filter: saturate(0.6) brightness(0.95) contrast(0.9);
+            box-shadow: 0 0 0 1px rgba(134, 214, 255, 0.58), 0 0 16px rgba(84, 172, 255, 0.46), inset 0 0 12px rgba(128, 220, 255, 0.2);
+            animation: bossProjectionPulse 640ms ease-in-out infinite;
+        }
+
+            .virus.special-boss.special-boss-projection::before {
+                content: '';
+                position: absolute;
+                inset: 2px;
+                border-radius: 50%;
+                background: radial-gradient(circle at 36% 28%, rgba(200, 239, 255, 0.54), rgba(115, 185, 255, 0.2) 48%, rgba(8, 24, 46, 0.24) 100%);
+                pointer-events: none;
+                z-index: 4;
+            }
+
+            .virus.special-boss.special-boss-projection::after {
+                content: '';
+                position: absolute;
+                inset: 2px;
+                border-radius: 50%;
+                background: repeating-linear-gradient(0deg, rgba(172, 228, 255, 0.22) 0 2px, rgba(70, 130, 188, 0.06) 2px 5px);
+                opacity: 0.42;
+                pointer-events: none;
+                z-index: 5;
+                mix-blend-mode: screen;
+                animation: bossProjectionScan 760ms linear infinite;
+            }
+
+            .virus.special-boss.special-boss-projection .boss-sprite-sheet {
+                opacity: 0.9;
+                filter: saturate(0.66) brightness(1.03);
+            }
+
+            .virus.special-boss.special-boss-projection .face-sprite {
+                animation-duration: 720ms;
+            }
+
             .virus.special-armored::before {
                 content: '';
                 position: absolute;
@@ -1013,6 +1085,36 @@
             100% {
                 transform: scale(1);
                 filter: brightness(1);
+            }
+        }
+
+        @keyframes bossProjectionPulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.68;
+            }
+            50% {
+                transform: scale(1.02);
+                opacity: 0.82;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.68;
+            }
+        }
+
+        @keyframes bossProjectionScan {
+            0% {
+                background-position: 0 0;
+                opacity: 0.36;
+            }
+            50% {
+                background-position: 0 7px;
+                opacity: 0.48;
+            }
+            100% {
+                background-position: 0 14px;
+                opacity: 0.36;
             }
         }
 
@@ -1425,6 +1527,121 @@
             animation: minibossBurstFaint 360ms ease-out forwards;
         }
 
+        .boss-summon-pulse {
+            position: fixed;
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            transform: translate(-50%, -50%) scale(0.42);
+            border: 2px solid rgba(255, 126, 126, 0.94);
+            box-shadow: 0 0 16px rgba(255, 86, 86, 0.7);
+            background: radial-gradient(circle, rgba(255, 186, 186, 0.58) 0%, rgba(255, 116, 116, 0.2) 46%, rgba(205, 38, 38, 0) 76%);
+            pointer-events: none;
+            z-index: 26016;
+            opacity: 0;
+            animation: bossSummonPulse 280ms ease-out forwards;
+        }
+
+        .boss-summon-pulse.is-blue {
+            border-color: rgba(130, 208, 255, 0.96);
+            box-shadow: 0 0 16px rgba(94, 182, 255, 0.72);
+            background: radial-gradient(circle, rgba(194, 236, 255, 0.62) 0%, rgba(124, 194, 255, 0.24) 46%, rgba(38, 120, 208, 0) 76%);
+        }
+
+        .boss-summon-thread {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 5px;
+            border-radius: 999px;
+            transform-origin: left center;
+            pointer-events: none;
+            z-index: 26015;
+            opacity: 0;
+            background:
+                linear-gradient(90deg, rgba(255, 112, 112, 0.78), rgba(255, 172, 172, 0.92) 38%, rgba(246, 92, 92, 0.72) 72%, rgba(246, 92, 92, 0.08) 100%);
+            box-shadow: 0 0 8px rgba(255, 106, 106, 0.56);
+            animation: bossSummonThread 250ms ease-out forwards;
+        }
+
+        .boss-summon-thread.is-blue {
+            background:
+                linear-gradient(90deg, rgba(126, 194, 255, 0.8), rgba(188, 228, 255, 0.94) 38%, rgba(82, 164, 255, 0.74) 72%, rgba(82, 164, 255, 0.08) 100%);
+            box-shadow: 0 0 8px rgba(96, 174, 255, 0.58);
+        }
+
+        .boss-summon-orb {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 11px;
+            height: 11px;
+            border-radius: 999px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 26017;
+            opacity: 0;
+            background: radial-gradient(circle, rgba(255, 232, 232, 0.98) 0%, rgba(255, 144, 144, 0.96) 42%, rgba(236, 72, 72, 0.1) 92%);
+            box-shadow: 0 0 11px rgba(255, 118, 118, 0.78);
+        }
+
+        .boss-summon-orb.is-blue {
+            background: radial-gradient(circle, rgba(230, 247, 255, 0.98) 0%, rgba(144, 212, 255, 0.96) 42%, rgba(72, 150, 232, 0.12) 92%);
+            box-shadow: 0 0 11px rgba(116, 192, 255, 0.78);
+        }
+
+        .boss-spawn-stamp {
+            position: fixed;
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            transform: translate(-50%, -50%) scale(0.45);
+            pointer-events: none;
+            z-index: 26016;
+            opacity: 0;
+            background:
+                radial-gradient(circle, rgba(255, 220, 220, 0.88) 0%, rgba(255, 136, 136, 0.54) 34%, rgba(232, 62, 62, 0.2) 56%, rgba(232, 62, 62, 0) 82%);
+            border: 1px solid rgba(255, 122, 122, 0.82);
+            box-shadow: 0 0 12px rgba(255, 102, 102, 0.66);
+            animation: bossSpawnStamp 270ms ease-out forwards;
+        }
+
+        .boss-spawn-stamp.is-blue {
+            background:
+                radial-gradient(circle, rgba(226, 246, 255, 0.9) 0%, rgba(144, 210, 255, 0.56) 34%, rgba(62, 146, 230, 0.22) 56%, rgba(62, 146, 230, 0) 82%);
+            border: 1px solid rgba(138, 208, 255, 0.84);
+            box-shadow: 0 0 12px rgba(98, 178, 255, 0.68);
+        }
+
+        .projection-pop-burst {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            transform: translate(-50%, -50%) scale(0.4);
+            pointer-events: none;
+            z-index: 26018;
+            opacity: 0;
+            border: 1px solid rgba(154, 220, 255, 0.92);
+            box-shadow: 0 0 14px rgba(104, 186, 255, 0.72);
+            background: radial-gradient(circle, rgba(208, 242, 255, 0.74) 0%, rgba(122, 196, 255, 0.26) 40%, rgba(70, 154, 236, 0) 74%);
+            animation: projectionPopBurst 300ms ease-out forwards;
+        }
+
+        .projection-pop-orb {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            transform: translate(-50%, -50%) scale(0.7);
+            pointer-events: none;
+            z-index: 26019;
+            opacity: 0;
+            background: radial-gradient(circle, rgba(236, 250, 255, 0.98) 0%, rgba(146, 214, 255, 0.9) 46%, rgba(84, 166, 244, 0.08) 92%);
+            box-shadow: 0 0 9px rgba(112, 194, 255, 0.78);
+            animation: projectionPopOrb 360ms ease-out forwards;
+        }
+
             .shield-break-burst::after {
                 content: '';
                 position: absolute;
@@ -1498,6 +1715,73 @@
             100% {
                 transform: translate(-50%, -50%) scale(2.05);
                 opacity: 0;
+            }
+        }
+
+        @keyframes bossSummonPulse {
+            0% {
+                opacity: 0.12;
+                transform: translate(-50%, -50%) scale(0.42);
+            }
+            46% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.9);
+            }
+        }
+
+        @keyframes bossSummonThread {
+            0% {
+                opacity: 0;
+                transform: translateY(-50%) scaleX(0.16);
+            }
+            28% {
+                opacity: 0.9;
+                transform: translateY(-50%) scaleX(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50%) scaleX(1);
+            }
+        }
+
+        @keyframes bossSpawnStamp {
+            0% {
+                opacity: 0.1;
+                transform: translate(-50%, -50%) scale(0.45);
+            }
+            44% {
+                opacity: 0.95;
+                transform: translate(-50%, -50%) scale(1.16);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.78);
+            }
+        }
+
+        @keyframes projectionPopBurst {
+            0% {
+                opacity: 0.9;
+                transform: translate(-50%, -50%) scale(0.42);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(2.2);
+            }
+        }
+
+        @keyframes projectionPopOrb {
+            0% {
+                opacity: 0.94;
+                transform: translate(-50%, -50%) scale(0.75);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) scale(0.42);
             }
         }
 
@@ -2444,11 +2728,205 @@
         }
 
         .run-perk-popup .rp-source.rp-source-pixel {
-            color: #20508a;
+            color: #8dd9ff;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.68), 0 0 6px rgba(128, 216, 255, 0.5);
         }
 
         .run-perk-popup .rp-source.rp-source-broker {
-            color: #7a1a0f;
+            color: #ffd0c1;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.68), 0 0 6px rgba(255, 186, 162, 0.46);
+        }
+
+        .run-perk-popup.final-offer-popup {
+            border-color: rgba(40, 16, 8, 0.68);
+            background: linear-gradient(180deg, #1d2448, #0d1530);
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.34), 0 0 26px rgba(96, 148, 255, 0.18);
+        }
+
+        .run-perk-popup.final-offer-popup .rp-title {
+            color: #ffe58e;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.52), 0 0 8px rgba(255, 209, 110, 0.28);
+        }
+
+        .run-perk-popup.final-offer-popup .rp-sub {
+            color: #d9ecff;
+        }
+
+        .final-offer-modal {
+            position: fixed;
+            z-index: 95280;
+            background: #000;
+            border: 3px solid rgba(0, 0, 0, 0.9);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+            opacity: 0;
+            pointer-events: auto;
+        }
+
+        .final-offer-modal.show {
+            animation: finalOfferIn 180ms ease-out forwards;
+        }
+
+        .final-offer-modal.hide {
+            animation: finalOfferOut 140ms ease-in forwards;
+        }
+
+        .final-offer-modal .fo-art {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+            opacity: 0.96;
+        }
+
+        .final-offer-modal .fo-shade {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.52) 0%, rgba(0, 0, 0, 0.3) 44%, rgba(0, 0, 0, 0.9) 100%);
+            pointer-events: none;
+        }
+
+        .final-offer-modal .fo-actions {
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            z-index: 2;
+        }
+
+        .final-offer-modal .fo-legend {
+            position: absolute;
+            left: 10px;
+            right: 10px;
+            bottom: 58px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            z-index: 2;
+        }
+
+        .final-offer-modal .fo-choice {
+            background: rgba(8, 10, 16, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 7px;
+            padding: 5px 6px;
+            min-height: 60px;
+        }
+
+        .final-offer-modal .fo-choice-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            line-height: 1.25;
+            margin-bottom: 4px;
+            letter-spacing: 0.03em;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        .final-offer-modal .fo-choice-desc {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            line-height: 1.45;
+            color: #dbe8ff;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.56);
+        }
+
+        .final-offer-modal .fo-choice.fo-choice-pixel .fo-choice-title {
+            color: #97d8ff;
+        }
+
+        .final-offer-modal .fo-choice.fo-choice-solo .fo-choice-title {
+            color: #e5e5e5;
+        }
+
+        .final-offer-modal .fo-choice.fo-choice-broker .fo-choice-title {
+            color: #ffc8ba;
+        }
+
+        .final-offer-modal.pick-locked .fo-btn {
+            pointer-events: none;
+            opacity: 0.72;
+        }
+
+        .final-offer-modal .fo-btn {
+            appearance: none;
+            border: 2px solid rgba(0, 0, 0, 0.72);
+            border-radius: 8px;
+            min-height: 38px;
+            padding: 7px 6px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            color: #eaf4ff;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+            transition: transform 100ms ease, filter 100ms ease;
+        }
+
+        .final-offer-modal .fo-btn:hover {
+            filter: brightness(1.06);
+            transform: translateY(-1px);
+        }
+
+        .final-offer-modal .fo-btn:active {
+            transform: translateY(0);
+        }
+
+        .final-offer-modal .fo-btn.fo-btn-pixel {
+            background: linear-gradient(180deg, #2260a8, #113a73);
+            border-color: #8cd8ff;
+        }
+
+        .final-offer-modal .fo-btn.fo-btn-solo {
+            background: linear-gradient(180deg, #4a4a4a, #232323);
+            border-color: #c6c6c6;
+            color: #f0f0f0;
+        }
+
+        .final-offer-modal .fo-btn.fo-btn-broker {
+            background: linear-gradient(180deg, #a6462f, #5a1e14);
+            border-color: #ffc0a8;
+            color: #ffe5dc;
+        }
+
+        @media (max-width: 560px) {
+            .final-offer-modal .fo-legend {
+                left: 8px;
+                right: 8px;
+                bottom: 54px;
+                gap: 5px;
+            }
+
+            .final-offer-modal .fo-choice {
+                min-height: 54px;
+                padding: 4px 5px;
+            }
+
+            .final-offer-modal .fo-choice-title {
+                font-size: 7px;
+            }
+
+            .final-offer-modal .fo-choice-desc {
+                font-size: 6px;
+                line-height: 1.35;
+            }
+
+            .final-offer-modal .fo-actions {
+                left: 8px;
+                right: 8px;
+                bottom: 8px;
+                gap: 6px;
+            }
+
+            .final-offer-modal .fo-btn {
+                min-height: 34px;
+                font-size: 7px;
+                padding: 6px 4px;
+            }
         }
 
         .run-perk-popup .rp-card-wrap {
@@ -2878,6 +3356,28 @@
             100% {
                 opacity: 0;
                 transform: translate(-50%, -50%) scale(0.92);
+            }
+        }
+
+        @keyframes finalOfferIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.985);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes finalOfferOut {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.99);
             }
         }
 
@@ -4992,6 +5492,30 @@ html.assistant-disabled .assistant-fallback-bubble {
                 opacity: 1;
              }
 
+             .control-trio .storm-btn.jammed {
+                filter: saturate(0.82) brightness(0.88);
+             }
+
+             .control-trio .storm-btn.jammed::before {
+                background:
+                    repeating-linear-gradient(135deg, rgba(255, 208, 94, 0.34) 0 4px, rgba(50, 32, 5, 0.76) 4px 8px),
+                    rgba(14, 12, 10, 0.84);
+                border-color: rgba(255, 214, 126, 0.5);
+                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.34), 0 0 8px rgba(255, 190, 68, 0.26);
+             }
+
+             .control-trio .storm-btn.jammed::after {
+                background: linear-gradient(90deg, rgba(250, 170, 84, 0.96), rgba(255, 229, 126, 0.98));
+                box-shadow: 0 0 10px rgba(255, 180, 74, 0.45);
+                animation: stormJamSweep 260ms linear infinite;
+             }
+
+             .control-trio .storm-btn.jammed .storm-armed-label {
+                opacity: 1;
+                color: #ffd27a;
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.72), 0 0 7px rgba(255, 180, 86, 0.45);
+             }
+
              .control-trio .storm-btn.combo-tracking::after {
                 opacity: 0.96;
                 animation: stormFillSweep 700ms linear infinite;
@@ -5108,6 +5632,18 @@ html.assistant-disabled .assistant-fallback-bubble {
             }
             100% {
                 filter: brightness(1.08);
+            }
+        }
+
+        @keyframes stormJamSweep {
+            0% {
+                filter: brightness(0.9);
+            }
+            50% {
+                filter: brightness(1.08);
+            }
+            100% {
+                filter: brightness(0.9);
             }
         }
 
