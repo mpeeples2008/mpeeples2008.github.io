@@ -1853,6 +1853,10 @@ function escapeHtmlAttr(str) {
                         return;
                     }
                     const cleanup = () => {
+                        try {
+                            if (el._rpRevealStartTimer) clearTimeout(el._rpRevealStartTimer);
+                            if (el._rpRevealUnlockTimer) clearTimeout(el._rpRevealUnlockTimer);
+                        } catch (e) { }
                         try { el.remove(); } catch (e) { }
                         runPerkPopupEl = null;
                         if (runPerkState) runPerkState.popupOpen = false;
@@ -2097,7 +2101,7 @@ function escapeHtmlAttr(str) {
                         const laneClass = source === 'broker' ? 'rp-broker' : 'rp-pixel';
                         const cardBackUrl = source === 'broker' ? viralCardBackUrl : pixelCardBackUrl;
                         const safeCardUrl = escapeHtmlAttr(cardBackUrl || defaultCardBackUrl);
-                        const cardInlineStyle = `border:3px solid #ffd94a;border-radius:12px;box-shadow:0 0 0 2px #07163a, 0 6px 10px rgba(0,0,0,.42);display:block;position:relative;overflow:hidden;width:190px;max-width:100%;height:285px;background:#113370;`;
+                        const cardInlineStyle = `border:3px solid #ffd94a;border-radius:12px;box-shadow:0 0 0 2px #07163a, 0 6px 10px rgba(0,0,0,.42);display:block;position:relative;overflow:hidden;background:#113370;`;
                         const backInlineStyle = `background-image:url('${safeCardUrl}');background-size:cover;background-position:center center;background-repeat:no-repeat;`;
                         const offerId = String((offer && offer.id) || '');
                         const frontCardUrl = customFrontCardUrlById[offerId] || defaultCardBackUrl;
@@ -2127,6 +2131,8 @@ function escapeHtmlAttr(str) {
                     el.className = 'run-perk-popup';
                     el.setAttribute('role', 'dialog');
                     el.setAttribute('aria-modal', 'true');
+                    el.dataset.pickReady = '0';
+                    el.classList.add('pick-locked');
                     el.innerHTML = `
                         <div class="rp-title">DOUBLE DEAL</div>
                         <div class="rp-sub">${escapeHtml(subTitleText)}</div>
@@ -2136,6 +2142,7 @@ function escapeHtmlAttr(str) {
                         </div>
                     `;
                     const onPick = (ev) => {
+                        if (!el || el.dataset.pickReady !== '1') return;
                         const btn = ev.target && ev.target.closest ? ev.target.closest('.rp-item[data-perk]') : null;
                         if (!btn) return;
                         const chosenId = applyRunPerkChoice(btn.getAttribute('data-perk'));
@@ -2167,9 +2174,18 @@ function escapeHtmlAttr(str) {
                     try { document.body.classList.add('run-perk-open'); } catch (e) { }
                     void el.offsetWidth;
                     el.classList.add('show');
-                    setTimeout(() => {
+                    const revealStartDelayMs = 700;
+                    const revealUnlockDelayMs = 1700;
+                    el._rpRevealStartTimer = setTimeout(() => {
                         try { el.classList.add('cards-reveal'); } catch (e) { }
-                    }, 700);
+                    }, revealStartDelayMs);
+                    el._rpRevealUnlockTimer = setTimeout(() => {
+                        try {
+                            if (!document.body.contains(el)) return;
+                            el.dataset.pickReady = '1';
+                            el.classList.remove('pick-locked');
+                        } catch (e) { }
+                    }, revealUnlockDelayMs);
                     return true;
                 } catch (e) {
                     return false;
