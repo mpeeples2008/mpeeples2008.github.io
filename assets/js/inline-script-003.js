@@ -200,7 +200,13 @@ function escapeHtmlAttr(str) {
             const VIRUS4_SPRITE_ROWS = 2;
             const VIRUS4_SPRITE_FPS = 6;
             const VIRUS4_SPRITE_FRAME_COUNT = 4;
-            const VIRUS_SIZE_SCALES = [0.56, 0.6, 0.85, 1.05];
+            const VIRUS_SIZE_SCALES_ANIMATED = [0.56, 0.6, 0.85, 1.05];
+            const VIRUS_SIZE_SCALES_SIMPLE = [0.34, 0.6, 0.8, 1.04];
+            function getVirusSizeScale(size) {
+                const i = Math.max(0, Math.min(3, Number(size) || 0));
+                const profile = simpleVirusArtEnabled ? VIRUS_SIZE_SCALES_SIMPLE : VIRUS_SIZE_SCALES_ANIMATED;
+                return Number(profile[i]) || 1;
+            }
             let virus2SpriteLayout = {
                 cols: 1,
                 rows: 1,
@@ -257,6 +263,7 @@ function escapeHtmlAttr(str) {
             let musicSilenceMs = 2000; // 2 seconds silence between tracks
             const AUDIO_PREF_MUSIC_ENABLED_KEY = 'goneViral_musicEnabled_v1';
             const AUDIO_PREF_SFX_ENABLED_KEY = 'goneViral_sfxEnabled_v1';
+            const VISUAL_PREF_SIMPLE_VIRUS_ART_KEY = 'goneViral_simpleVirusArt_v1';
             const SFX_MIN_GAP_MS = {
                 pop: 30,
                 grow: 70,
@@ -309,8 +316,10 @@ function escapeHtmlAttr(str) {
             }
             let musicEnabled = loadAudioEnabledPref(AUDIO_PREF_MUSIC_ENABLED_KEY, true);
             let sfxEnabled = loadAudioEnabledPref(AUDIO_PREF_SFX_ENABLED_KEY, true);
+            let simpleVirusArtEnabled = loadAudioEnabledPref(VISUAL_PREF_SIMPLE_VIRUS_ART_KEY, false);
             window.musicEnabled = musicEnabled;
             window.sfxEnabled = sfxEnabled;
+            window.simpleVirusArtEnabled = simpleVirusArtEnabled;
 
             let sfxCache = {};
             window.sfxCache = sfxCache;
@@ -1729,10 +1738,12 @@ function escapeHtmlAttr(str) {
             function syncAudioSettingsUI() {
                 const musicToggle = document.getElementById('musicEnabledToggle');
                 const sfxToggle = document.getElementById('sfxEnabledToggle');
+                const simpleVirusArtToggle = document.getElementById('simpleVirusArtToggle');
                 const musicSlider = document.getElementById('musicVol');
                 const sfxSlider = document.getElementById('sfxVol');
                 if (musicToggle) musicToggle.checked = !!musicEnabled;
                 if (sfxToggle) sfxToggle.checked = !!sfxEnabled;
+                if (simpleVirusArtToggle) simpleVirusArtToggle.checked = !!simpleVirusArtEnabled;
                 if (musicSlider) musicSlider.disabled = !musicEnabled;
                 if (sfxSlider) sfxSlider.disabled = !sfxEnabled;
             }
@@ -1766,6 +1777,16 @@ function escapeHtmlAttr(str) {
                     }
                 } catch (e) { }
                 syncAudioSettingsUI();
+            }
+
+            function applySimpleVirusArtState(fromUserAction = false) {
+                window.simpleVirusArtEnabled = !!simpleVirusArtEnabled;
+                saveAudioEnabledPref(VISUAL_PREF_SIMPLE_VIRUS_ART_KEY, !!simpleVirusArtEnabled);
+                if (fromUserAction) {
+                    try { playSfx('click'); } catch (e) { }
+                }
+                syncAudioSettingsUI();
+                scheduleRender();
             }
 
             function syncTutorialControls() {
@@ -3511,8 +3532,8 @@ function escapeHtmlAttr(str) {
                 const from = Math.max(0, Math.min(3, Number(fromSize) || 0));
                 const to = Math.max(0, Math.min(3, Number(toSize) || 0));
                 if (to <= from) return;
-                const fromScale = Number(VIRUS_SIZE_SCALES[from]) || 1;
-                const toScale = Number(VIRUS_SIZE_SCALES[to]) || 1;
+                const fromScale = getVirusSizeScale(from);
+                const toScale = getVirusSizeScale(to);
                 if (toScale <= 0) return;
                 growthTweenByIndex.set(i, {
                     ratio: Math.max(0.7, Math.min(0.98, fromScale / toScale)),
@@ -3540,50 +3561,61 @@ function escapeHtmlAttr(str) {
                 const sprite = document.createElement('div');
                 sprite.className = 'face-sprite';
                 const appendSpriteVisual = (target, spriteSize) => {
-                    if (spriteSize === 0) {
+                    const clampedSize = Math.max(0, Math.min(3, Number(spriteSize) || 0));
+                    if (simpleVirusArtEnabled) {
+                        const img = document.createElement('img');
+                        img.className = 'face-img';
+                        img.src = SPRITE_URLS[clampedSize];
+                        img.alt = 'virus';
+                        img.style.transform = 'scale(' + getVirusSizeScale(clampedSize) + ')';
+                        img.style.transformOrigin = 'center center';
+                        target.appendChild(img);
+                        return;
+                    }
+                    if (clampedSize === 0) {
                         const sheet = document.createElement('div');
                         sheet.className = 'virus1-sprite-sheet';
                         sheet.style.backgroundImage = `url('${VIRUS1_SPRITE_SHEET_URL}')`;
-                        sheet.style.transform = 'scale(' + VIRUS_SIZE_SCALES[0] + ')';
+                        sheet.style.transform = 'scale(' + getVirusSizeScale(0) + ')';
                         sheet.style.transformOrigin = 'center center';
                         sheet.setAttribute('aria-hidden', 'true');
                         target.appendChild(sheet);
-                    } else if (spriteSize === 1 && VIRUS2_SPRITE_SHEET_URL) {
+                    } else if (clampedSize === 1 && VIRUS2_SPRITE_SHEET_URL) {
                         const sheet = document.createElement('div');
                         sheet.className = 'virus2-sprite-sheet';
                         sheet.style.backgroundImage = `url('${VIRUS2_SPRITE_SHEET_URL}')`;
                         sheet.style.setProperty('--virus2-cols', String(virus2SpriteLayout.cols || 1));
                         sheet.style.setProperty('--virus2-rows', String(virus2SpriteLayout.rows || 1));
                         sheet.style.setProperty('--virus2-duration-ms', String(virus2SpriteLayout.durationMs || 200));
-                        sheet.style.setProperty('--virus2-scale', String(VIRUS_SIZE_SCALES[1]));
+                        sheet.style.setProperty('--virus2-scale', String(getVirusSizeScale(1)));
                         sheet.setAttribute('aria-hidden', 'true');
                         target.appendChild(sheet);
-                    } else if (spriteSize === 2 && VIRUS3_SPRITE_SHEET_URL) {
+                    } else if (clampedSize === 2 && VIRUS3_SPRITE_SHEET_URL) {
                         const sheet = document.createElement('div');
                         sheet.className = 'virus3-sprite-sheet';
                         sheet.style.backgroundImage = `url('${VIRUS3_SPRITE_SHEET_URL}')`;
                         sheet.style.setProperty('--virus3-cols', String(virus3SpriteLayout.cols || 1));
                         sheet.style.setProperty('--virus3-rows', String(virus3SpriteLayout.rows || 2));
                         sheet.style.setProperty('--virus3-duration-ms', String(virus3SpriteLayout.durationMs || 333));
-                        sheet.style.setProperty('--virus3-scale', String(VIRUS_SIZE_SCALES[2]));
+                        sheet.style.setProperty('--virus3-scale', String(getVirusSizeScale(2)));
                         sheet.setAttribute('aria-hidden', 'true');
                         target.appendChild(sheet);
-                    } else if (spriteSize === 3 && VIRUS4_SPRITE_SHEET_URL) {
+                    } else if (clampedSize === 3 && VIRUS4_SPRITE_SHEET_URL) {
                         const sheet = document.createElement('div');
                         sheet.className = 'virus4-sprite-sheet';
                         sheet.style.backgroundImage = `url('${VIRUS4_SPRITE_SHEET_URL}')`;
                         sheet.style.setProperty('--virus4-cols', String(virus4SpriteLayout.cols || 2));
                         sheet.style.setProperty('--virus4-rows', String(virus4SpriteLayout.rows || 2));
                         sheet.style.setProperty('--virus4-duration-ms', String(virus4SpriteLayout.durationMs || 667));
-                        sheet.style.setProperty('--virus4-scale', String(VIRUS_SIZE_SCALES[3]));
+                        sheet.style.setProperty('--virus4-scale', String(getVirusSizeScale(3)));
                         sheet.setAttribute('aria-hidden', 'true');
                         target.appendChild(sheet);
                     } else {
                         const img = document.createElement('img');
                         img.className = 'face-img';
-                        img.src = SPRITE_URLS[Math.max(0, Math.min(3, spriteSize))];
+                        img.src = SPRITE_URLS[clampedSize];
                         img.alt = 'virus';
-                        img.style.transform = 'scale(' + VIRUS_SIZE_SCALES[Math.max(0, Math.min(3, spriteSize))] + ')';
+                        img.style.transform = 'scale(' + getVirusSizeScale(clampedSize) + ')';
                         img.style.transformOrigin = 'center center';
                         target.appendChild(img);
                     }
@@ -5013,26 +5045,39 @@ function escapeHtmlAttr(str) {
             const helpBtn = document.getElementById('helpBtn');
             const settingsTabBtn = document.getElementById('settingsTabBtn');
             const achievementsTabBtn = document.getElementById('achievementsTabBtn');
+            const aboutTabBtn = document.getElementById('aboutTabBtn');
             const settingsTabPane = document.getElementById('settingsTabPane');
             const achievementsTabPane = document.getElementById('achievementsTabPane');
+            const aboutTabPane = document.getElementById('aboutTabPane');
             function setSettingsPopupTab(tabName) {
-                const showAchievements = String(tabName || '') === 'achievements';
-                if (settingsTabPane) settingsTabPane.classList.toggle('active', !showAchievements);
+                const normalized = String(tabName || '').toLowerCase();
+                const tab = normalized === 'achievements' || normalized === 'about' ? normalized : 'settings';
+                const showSettings = tab === 'settings';
+                const showAchievements = tab === 'achievements';
+                const showAbout = tab === 'about';
+                if (settingsTabPane) settingsTabPane.classList.toggle('active', showSettings);
                 if (achievementsTabPane) achievementsTabPane.classList.toggle('active', showAchievements);
+                if (aboutTabPane) aboutTabPane.classList.toggle('active', showAbout);
                 if (settingsTabBtn) {
-                    settingsTabBtn.classList.toggle('active', !showAchievements);
-                    settingsTabBtn.setAttribute('aria-selected', String(!showAchievements));
+                    settingsTabBtn.classList.toggle('active', showSettings);
+                    settingsTabBtn.setAttribute('aria-selected', String(showSettings));
                 }
                 if (achievementsTabBtn) {
                     achievementsTabBtn.classList.toggle('active', showAchievements);
                     achievementsTabBtn.setAttribute('aria-selected', String(showAchievements));
                 }
+                if (aboutTabBtn) {
+                    aboutTabBtn.classList.toggle('active', showAbout);
+                    aboutTabBtn.setAttribute('aria-selected', String(showAbout));
+                }
+                if (settingsTabPane) settingsTabPane.setAttribute('aria-hidden', String(!showSettings));
                 if (achievementsTabPane) achievementsTabPane.setAttribute('aria-hidden', String(!showAchievements));
-                if (settingsTabPane) settingsTabPane.setAttribute('aria-hidden', String(showAchievements));
+                if (aboutTabPane) aboutTabPane.setAttribute('aria-hidden', String(!showAbout));
                 if (showAchievements) scheduleAchievementsUIRender();
             }
             if (settingsTabBtn) settingsTabBtn.addEventListener('click', () => setSettingsPopupTab('settings'));
             if (achievementsTabBtn) achievementsTabBtn.addEventListener('click', () => setSettingsPopupTab('achievements'));
+            if (aboutTabBtn) aboutTabBtn.addEventListener('click', () => setSettingsPopupTab('about'));
             setSettingsPopupTab('settings');
             if (audioBtn) {
                 audioBtn.addEventListener('click', () => {
@@ -5049,8 +5094,10 @@ function escapeHtmlAttr(str) {
             }
             const musicEnabledToggle = document.getElementById('musicEnabledToggle');
             const sfxEnabledToggle = document.getElementById('sfxEnabledToggle');
+            const simpleVirusArtToggle = document.getElementById('simpleVirusArtToggle');
             const musicToggleSwitch = document.querySelector('#musicEnabledToggle + .audio-toggle-switch');
             const sfxToggleSwitch = document.querySelector('#sfxEnabledToggle + .audio-toggle-switch');
+            const simpleVirusArtToggleSwitch = document.querySelector('#simpleVirusArtToggle + .audio-toggle-switch');
             if (musicEnabledToggle) {
                 musicEnabledToggle.addEventListener('change', () => {
                     markAudioUserInteracted();
@@ -5062,6 +5109,12 @@ function escapeHtmlAttr(str) {
                 sfxEnabledToggle.addEventListener('change', () => {
                     sfxEnabled = !!sfxEnabledToggle.checked;
                     applySfxEnabledState();
+                });
+            }
+            if (simpleVirusArtToggle) {
+                simpleVirusArtToggle.addEventListener('change', () => {
+                    simpleVirusArtEnabled = !!simpleVirusArtToggle.checked;
+                    applySimpleVirusArtState(true);
                 });
             }
             if (musicToggleSwitch && musicEnabledToggle) {
@@ -5078,8 +5131,16 @@ function escapeHtmlAttr(str) {
                     sfxEnabledToggle.dispatchEvent(new Event('change'));
                 });
             }
+            if (simpleVirusArtToggleSwitch && simpleVirusArtToggle) {
+                simpleVirusArtToggleSwitch.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    simpleVirusArtToggle.checked = !simpleVirusArtToggle.checked;
+                    simpleVirusArtToggle.dispatchEvent(new Event('change'));
+                });
+            }
             applyMusicEnabledState(false);
             applySfxEnabledState();
+            applySimpleVirusArtState(false);
             const resetProgressBtn = document.getElementById('resetProgressBtn');
             if (resetProgressBtn) {
                 resetProgressBtn.addEventListener('click', (ev) => {

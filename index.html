@@ -290,6 +290,7 @@
         <div class="settings-tabs" role="tablist" aria-label="Settings sections">
             <button id="settingsTabBtn" class="btn settings-tab active" type="button" role="tab" aria-controls="settingsTabPane" aria-selected="true">Settings</button>
             <button id="achievementsTabBtn" class="btn settings-tab" type="button" role="tab" aria-controls="achievementsTabPane" aria-selected="false">Achievements</button>
+            <button id="aboutTabBtn" class="btn settings-tab" type="button" role="tab" aria-controls="aboutTabPane" aria-selected="false">About</button>
         </div>
 
         <div id="settingsTabPane" class="settings-tab-pane active" role="tabpanel" aria-labelledby="settingsTabBtn">
@@ -321,6 +322,14 @@
             </div>
         </div>
 
+        <div class="settings-audio-toggle-row">
+            <label for="simpleVirusArtToggle">Simple Virus Art</label>
+            <div style="position:relative;">
+                <input type="checkbox" id="simpleVirusArtToggle" class="audio-toggle-input" aria-label="Use simple virus sprites" />
+                <span class="audio-toggle-switch" aria-hidden="true"></span>
+            </div>
+        </div>
+
         <div class="row">
             <div class="assistant-control"
                 style="margin-top:12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
@@ -342,19 +351,23 @@
             <button id="resetProgressBtn" class="btn" type="button">Reset Progress</button>
             <div class="settings-reset-note">Clears High Score and Achievements</div>
         </div>
-
-        <div class="settings-credits">
-            <div class="settings-credits-title">Music Credits</div>
-            <div class="settings-credits-body">
-                "Ouroboros", "Robo-Western", "Robobozo", "Voltaic"<br>
-                Kevin MacLeod (incompetech.com)<br>
-                Licensed under Creative Commons: By Attribution 4.0<br>
-                <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">http://creativecommons.org/licenses/by/4.0/</a>
-            </div>
-        </div>
         </div>
 
         <div id="achievementsTabPane" class="settings-tab-pane" role="tabpanel" aria-labelledby="achievementsTabBtn" aria-hidden="true">
+        </div>
+        <div id="aboutTabPane" class="settings-tab-pane" role="tabpanel" aria-labelledby="aboutTabBtn" aria-hidden="true">
+            <div class="about-body">
+                <div class="about-line">Gone Viral! was created by me, Matt Peeples. This game is essentially 90% AI generated using Codex and ChatGPT. I initially started making this to learn the capabilities of AI for making browser based teaching activities. I needed a project and took inspiration from an old Flash game called Spash Back that I rememberd playing in the early 2000s. Almost everything you see here is initially created in AI and then modified by me from the art and sprites to the code and game logic. I had fun making this and I hope you enjoy!</div>
+            </div>
+            <div class="settings-credits">
+                <div class="settings-credits-title">Music Credits</div>
+                <div class="settings-credits-body">
+                    "Ouroboros", "Robo-Western", "Robobozo", "Voltaic"<br>
+                    Kevin MacLeod (incompetech.com)<br>
+                    Licensed under Creative Commons: By Attribution 4.0<br>
+                    <a href="http://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">http://creativecommons.org/licenses/by/4.0/</a>
+                </div>
+            </div>
         </div>
     </div>
     <!-- END AUDIO SETTINGS POPUP -->

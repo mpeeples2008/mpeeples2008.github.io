@@ -3260,6 +3260,22 @@
                 text-decoration: underline;
             }
 
+            .audio-popup .about-body {
+                margin-top: 6px;
+                border: 3px solid rgba(255, 255, 255, 0.16);
+                border-radius: 8px;
+                background: rgba(0, 0, 0, 0.18);
+                padding: 10px;
+                color: #d8ebff;
+                font-size: 10px;
+                line-height: 1.5;
+            }
+
+            .audio-popup .about-line {
+                color: #ffe9b0;
+                font-size: 10px;
+            }
+
             .audio-popup .settings-audio-toggle-row {
                 display: flex;
                 align-items: center;
