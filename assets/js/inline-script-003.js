@@ -6,6 +6,13 @@ const levelCompleteImages = Array.from({ length: 36 }, (_, i) => {
   return `https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/levelcomplete_${n}.png`;
 });
 const BOSS_LEVEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.png';
+const BOSS_LEVEL10_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level2.png';
+
+function getBossLevelIntroImageUrl(levelNum) {
+  const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+  if (lvl === 10) return BOSS_LEVEL10_IMAGE_URL || BOSS_LEVEL_IMAGE_URL;
+  return BOSS_LEVEL_IMAGE_URL;
+}
 
 
 function showLevelComplete(opts = {}) {
@@ -226,6 +233,7 @@ function escapeHtmlAttr(str) {
                 durationMs: Math.round((VIRUS4_SPRITE_FRAME_COUNT / Math.max(1, VIRUS4_SPRITE_FPS)) * 1000)
             };
             const MINIBOSS_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss.png';
+            const MINIBOSS_LEVEL10_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss2_new.png';
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
             const SFX_URLS = {
                 pop: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/pop2.mp3',
@@ -476,6 +484,7 @@ function escapeHtmlAttr(str) {
                 if (PETRI_URL) images.push(PETRI_URL);
                 if (typeof PARTICLE_SPRITE !== 'undefined' && PARTICLE_SPRITE) images.push(PARTICLE_SPRITE);
                 if (MINIBOSS_SPRITE_URL && level >= 5) images.push(MINIBOSS_SPRITE_URL);
+                if (MINIBOSS_LEVEL10_SPRITE_URL && level >= 10) images.push(MINIBOSS_LEVEL10_SPRITE_URL);
                 if (VIRUS1_SPRITE_SHEET_URL) images.push(VIRUS1_SPRITE_SHEET_URL);
                 if (VIRUS2_SPRITE_SHEET_URL) images.push(VIRUS2_SPRITE_SHEET_URL);
                 if (VIRUS3_SPRITE_SHEET_URL) images.push(VIRUS3_SPRITE_SHEET_URL);
@@ -2670,6 +2679,12 @@ function escapeHtmlAttr(str) {
                 return Math.max(1, (Number(screensPassed) || 0) + 1);
             }
 
+            function getMiniBossSpriteUrlForLevel(levelNum) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                if (lvl === 10) return MINIBOSS_LEVEL10_SPRITE_URL || MINIBOSS_SPRITE_URL;
+                return MINIBOSS_SPRITE_URL;
+            }
+
             function getVisualPhaseForLevel(levelNum = getCurrentLevelNumber()) {
                 const lvl = Math.max(1, Number(levelNum) || 1);
                 if (lvl >= 11) return 3;
@@ -2730,7 +2745,10 @@ function escapeHtmlAttr(str) {
                 const phase = Math.max(1, Math.min(3, Math.floor(Number(phaseNum) || 1)));
                 const nextBg = getPhaseBackgroundStyle(phase);
                 if (labBgActivePhase === null || immediate) {
-                    labBgFrontEl.style.background = nextBg;
+                    labBgFrontEl.style.backgroundImage = nextBg;
+                    labBgFrontEl.style.backgroundPosition = 'center center';
+                    labBgFrontEl.style.backgroundSize = 'cover';
+                    labBgFrontEl.style.backgroundRepeat = 'no-repeat';
                     labBgFrontEl.classList.add('show');
                     labBgBackEl.classList.remove('show');
                     labBgUseFront = true;
@@ -2740,7 +2758,10 @@ function escapeHtmlAttr(str) {
                 if (labBgActivePhase === phase) return;
                 const incoming = labBgUseFront ? labBgBackEl : labBgFrontEl;
                 const outgoing = labBgUseFront ? labBgFrontEl : labBgBackEl;
-                incoming.style.background = nextBg;
+                incoming.style.backgroundImage = nextBg;
+                incoming.style.backgroundPosition = 'center center';
+                incoming.style.backgroundSize = 'cover';
+                incoming.style.backgroundRepeat = 'no-repeat';
                 incoming.classList.add('show');
                 outgoing.classList.remove('show');
                 labBgUseFront = !labBgUseFront;
@@ -3440,7 +3461,13 @@ function escapeHtmlAttr(str) {
                     const bossIndex = candidate[i];
                     state[bossIndex] = 3;
                     specialState[bossIndex] = 'boss';
-                    specialMetaState[bossIndex] = { isBoss: true, hp, maxHp: hp, breaks: { b75: false, b50: false, b25: false } };
+                    specialMetaState[bossIndex] = {
+                        isBoss: true,
+                        hp,
+                        maxHp: hp,
+                        bossLevel: Math.max(1, Math.floor(Number(levelNum) || 1)),
+                        breaks: { b75: false, b50: false, b25: false }
+                    };
                 }
                 syncMiniBossStateFromBoard();
                 return spawnCount > 0;
@@ -3621,9 +3648,16 @@ function escapeHtmlAttr(str) {
                     }
                 };
                 if (specialType === 'boss') {
+                    const meta = (Number.isFinite(cellIndex) && cellIndex >= 0) ? (specialMetaState[cellIndex] || {}) : {};
+                    const bossLevel = Math.floor(Number(meta.bossLevel) || 0);
+                    const bossSpriteUrl = getMiniBossSpriteUrlForLevel(bossLevel);
                     const bossSheet = document.createElement('div');
                     bossSheet.className = 'boss-sprite-sheet';
-                    bossSheet.style.backgroundImage = `url('${MINIBOSS_SPRITE_URL}')`;
+                    if (bossLevel === 10) {
+                        container.classList.add('special-boss-level10');
+                        bossSheet.classList.add('boss-sprite-sheet--grid9');
+                    }
+                    bossSheet.style.backgroundImage = `url('${bossSpriteUrl || MINIBOSS_SPRITE_URL}')`;
                     bossSheet.setAttribute('aria-hidden', 'true');
                     sprite.appendChild(bossSheet);
                 } else {
@@ -3729,7 +3763,7 @@ function escapeHtmlAttr(str) {
                         try {
                             showLevelComplete({
                                 title: `BOSS LEVEL ${nextLevelNum}`,
-                                imageUrl: BOSS_LEVEL_IMAGE_URL,
+                                imageUrl: getBossLevelIntroImageUrl(nextLevelNum),
                                 emitAssistant: false,
                                 onDismiss: () => {
                                     randomizeBoard(true);

@@ -863,6 +863,23 @@
                 transform-origin: center center;
             }
 
+            .virus.special-boss .boss-sprite-sheet.boss-sprite-sheet--grid9 {
+                background-position: 0% 0%;
+                background-size: 300% 300%;
+                animation: minibossSpriteFrames9 1080ms step-end infinite;
+                transform: translateX(5px) scale(0.95);
+                transform-origin: center center;
+            }
+
+            .virus.special-boss.special-boss-level10 {
+                animation: none;
+            }
+
+            .virus.special-boss.special-boss-level10::before {
+                content: none;
+                display: none;
+            }
+
             .virus.special-boss::before {
                 content: '';
                 position: absolute;
@@ -1004,6 +1021,18 @@
             50%, 100% {
                 background-position: 50% 100%;
             }
+        }
+
+        @keyframes minibossSpriteFrames9 {
+            0%, 11.111% { background-position: 0% 0%; }
+            11.112%, 22.222% { background-position: 50% 0%; }
+            22.223%, 33.333% { background-position: 100% 0%; }
+            33.334%, 44.444% { background-position: 0% 50%; }
+            44.445%, 55.555% { background-position: 50% 50%; }
+            55.556%, 66.666% { background-position: 100% 50%; }
+            66.667%, 77.777% { background-position: 0% 100%; }
+            77.778%, 88.888% { background-position: 50% 100%; }
+            88.889%, 100% { background-position: 100% 100%; }
         }
 
         @keyframes minibossWobble {
