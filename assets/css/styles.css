@@ -932,6 +932,198 @@
                 background: radial-gradient(circle at 35% 30%, rgba(196, 236, 255, 0.54), rgba(98, 176, 255, 0.18) 48%, rgba(16, 40, 68, 0.18) 100%);
             }
 
+        .virus.special-boss.special-boss-level20-phase2 {
+            box-shadow: 0 0 0 1px rgba(255, 132, 132, 0.72), 0 0 20px rgba(255, 74, 74, 0.62), inset 0 0 14px rgba(255, 120, 120, 0.24);
+        }
+
+            .virus.special-boss.special-boss-level20-phase2 .face-sprite {
+                transform: scale(1.12);
+                transform-origin: center center;
+            }
+
+            .virus.special-boss.special-boss-level20-phase2::before {
+                background: radial-gradient(circle at 35% 30%, rgba(255, 214, 214, 0.62), rgba(255, 104, 104, 0.26) 48%, rgba(72, 10, 10, 0.18) 100%);
+            }
+
+        .virus.special-boss.special-boss-level20-phase3 {
+            box-shadow: 0 0 0 1px rgba(255, 184, 132, 0.78), 0 0 22px rgba(255, 116, 72, 0.66), inset 0 0 16px rgba(255, 142, 108, 0.28);
+            animation-duration: 520ms;
+        }
+
+            .virus.special-boss.special-boss-level20-phase3 .face-sprite {
+                transform: scale(1.15);
+                transform-origin: center center;
+                animation-duration: 440ms;
+            }
+
+            .virus.special-boss.special-boss-level20-phase3::before {
+                background: radial-gradient(circle at 35% 30%, rgba(255, 230, 205, 0.72), rgba(255, 154, 102, 0.36) 46%, rgba(82, 26, 10, 0.22) 100%);
+            }
+
+        .virus.special-boss.special-boss-level20-weak {
+            box-shadow: 0 0 0 1px rgba(148, 224, 255, 0.85), 0 0 24px rgba(112, 202, 255, 0.7), inset 0 0 18px rgba(146, 230, 255, 0.28);
+            animation: boss20WeakPointPulse 360ms ease-in-out infinite;
+        }
+
+            .virus.special-boss.special-boss-level20-weak::after {
+                content: '';
+                position: absolute;
+                inset: -2px;
+                border-radius: 50%;
+                border: 2px dashed rgba(172, 236, 255, 0.86);
+                box-shadow: 0 0 10px rgba(132, 222, 255, 0.66);
+                pointer-events: none;
+                z-index: 6;
+            }
+
+        .virus.special-boss.special-boss-level20-final-window {
+            animation: boss20FinalWindowPulse 230ms ease-in-out infinite;
+        }
+
+        .boss20-phase-shift {
+            position: fixed;
+            z-index: 95240;
+            pointer-events: auto;
+            border-radius: 10px;
+            overflow: hidden;
+            background: radial-gradient(circle at center, rgba(255, 78, 78, 0.20), rgba(0, 0, 0, 0.62) 62%);
+            border: 2px solid rgba(255, 132, 132, 0.7);
+            box-shadow: inset 0 0 18px rgba(255, 112, 112, 0.32), 0 0 26px rgba(255, 66, 66, 0.34);
+            animation: boss20PhaseShiftPulse 1800ms ease-in-out infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-align: center;
+            padding: 16px;
+        }
+
+        .boss20-phase-shift__title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(13px, 2.2vw, 18px);
+            color: #ffd7d7;
+            letter-spacing: 0.08em;
+            text-shadow: 0 0 8px rgba(255, 168, 168, 0.62), 1px 1px 0 rgba(0, 0, 0, 0.7);
+        }
+
+        .boss20-phase-shift__sub {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(8px, 1.2vw, 11px);
+            color: #ffb6b6;
+            letter-spacing: 0.06em;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.62);
+        }
+
+        .boss20-rescue {
+            position: fixed;
+            z-index: 95245;
+            pointer-events: auto;
+            border-radius: 10px;
+            overflow: hidden;
+            background: radial-gradient(circle at center, rgba(120, 208, 255, 0.24), rgba(0, 0, 0, 0.86) 62%);
+            border: 2px solid rgba(142, 220, 255, 0.72);
+            box-shadow: inset 0 0 20px rgba(118, 222, 255, 0.36), 0 0 28px rgba(92, 196, 255, 0.34);
+            animation: boss20RescuePulse 1600ms ease-in-out infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-align: center;
+            padding: 16px;
+        }
+
+        .boss20-rescue__title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(11px, 1.9vw, 16px);
+            color: #d8f6ff;
+            letter-spacing: 0.06em;
+            text-shadow: 0 0 8px rgba(190, 238, 255, 0.68), 1px 1px 0 rgba(0, 0, 0, 0.72);
+        }
+
+        .boss20-rescue__sub {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(7px, 1.1vw, 10px);
+            color: #b9ecff;
+            letter-spacing: 0.04em;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.64);
+        }
+
+        .boss20-phase-shift__hint,
+        .boss20-rescue__hint,
+        .boss20-final-charge__hint {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(7px, 1vw, 9px);
+            color: #ffe4c1;
+            letter-spacing: 0.05em;
+            opacity: 0.82;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.66);
+            animation: boss20ClickHintPulse 900ms ease-in-out infinite;
+        }
+
+        .boss20-final-charge {
+            position: fixed;
+            z-index: 95248;
+            pointer-events: none;
+            border-radius: 10px;
+            overflow: hidden;
+            background: radial-gradient(circle at center, rgba(255, 182, 120, 0.26), rgba(0, 0, 0, 0.88) 64%);
+            border: 2px solid rgba(255, 196, 138, 0.78);
+            box-shadow: inset 0 0 22px rgba(255, 198, 146, 0.34), 0 0 30px rgba(255, 136, 86, 0.36);
+            animation: boss20FinalChargePulse 1200ms ease-in-out both;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            text-align: center;
+            padding: 16px;
+        }
+
+        .boss20-final-charge__title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(12px, 2vw, 17px);
+            color: #ffe4c4;
+            letter-spacing: 0.08em;
+            text-shadow: 0 0 8px rgba(255, 214, 170, 0.66), 1px 1px 0 rgba(0, 0, 0, 0.72);
+        }
+
+        .boss20-final-charge__sub {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(7px, 1.1vw, 10px);
+            color: #ffd8b0;
+            letter-spacing: 0.04em;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.64);
+        }
+
+        .boss20-hero-mark {
+            position: fixed;
+            width: 58px;
+            height: 58px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 95247;
+            border: 2px solid rgba(170, 234, 255, 0.9);
+            box-shadow: 0 0 14px rgba(132, 222, 255, 0.66), inset 0 0 12px rgba(132, 222, 255, 0.26);
+            animation: boss20HeroMarkPulse 780ms ease-out both;
+        }
+
+        .boss20-final-burst {
+            position: fixed;
+            pointer-events: none;
+            z-index: 95246;
+            border-radius: 10px;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at center, rgba(255, 238, 210, 0.34), rgba(255, 140, 84, 0.2) 30%, rgba(0, 0, 0, 0.8) 70%),
+                repeating-linear-gradient(0deg, rgba(255, 194, 148, 0.08) 0 3px, rgba(255, 116, 72, 0.06) 3px 7px);
+            border: 2px solid rgba(255, 186, 132, 0.76);
+            box-shadow: inset 0 0 24px rgba(255, 196, 146, 0.34), 0 0 34px rgba(255, 128, 86, 0.38);
+            animation: boss20FinalBurstPulse 940ms ease-out both;
+        }
+
         .virus.special-boss.special-boss-projection {
             --special-color: #7ecbff;
             --special-outline: rgba(132, 211, 255, 0.86);
@@ -1115,6 +1307,125 @@
             100% {
                 background-position: 0 14px;
                 opacity: 0.36;
+            }
+        }
+
+        @keyframes boss20PhaseShiftPulse {
+            0% {
+                opacity: 0.9;
+                transform: scale(0.96);
+                filter: saturate(0.9) brightness(0.9);
+            }
+            16% {
+                opacity: 1;
+                transform: scale(1);
+                filter: saturate(1.08) brightness(1.04);
+            }
+            74% {
+                opacity: 1;
+                transform: scale(1);
+                filter: saturate(1.04) brightness(1.02);
+            }
+            100% {
+                opacity: 0.98;
+                transform: scale(1.01);
+                filter: saturate(1.02) brightness(1.01);
+            }
+        }
+
+        @keyframes boss20RescuePulse {
+            0% {
+                opacity: 0.9;
+                transform: scale(0.97);
+                filter: saturate(0.92) brightness(0.92);
+            }
+            18% {
+                opacity: 1;
+                transform: scale(1);
+                filter: saturate(1.08) brightness(1.05);
+            }
+            78% {
+                opacity: 1;
+                transform: scale(1);
+                filter: saturate(1.04) brightness(1.02);
+            }
+            100% {
+                opacity: 0.98;
+                transform: scale(1.005);
+                filter: saturate(1.03) brightness(1.01);
+            }
+        }
+
+        @keyframes boss20WeakPointPulse {
+            0%, 100% {
+                filter: saturate(1.02) brightness(1.02);
+                transform: translateZ(0);
+            }
+            50% {
+                filter: saturate(1.14) brightness(1.12);
+                transform: translateY(-1px);
+            }
+        }
+
+        @keyframes boss20FinalWindowPulse {
+            0%, 100% {
+                filter: saturate(1.08) brightness(1.06);
+            }
+            50% {
+                filter: saturate(1.22) brightness(1.24);
+            }
+        }
+
+        @keyframes boss20FinalChargePulse {
+            0% {
+                opacity: 0;
+                transform: scale(0.97);
+                filter: saturate(0.9) brightness(0.9);
+            }
+            15% {
+                opacity: 1;
+                transform: scale(1);
+                filter: saturate(1.08) brightness(1.05);
+            }
+            85% {
+                opacity: 1;
+                transform: scale(1);
+                filter: saturate(1.06) brightness(1.03);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.02);
+                filter: saturate(0.96) brightness(0.94);
+            }
+        }
+
+        @keyframes boss20HeroMarkPulse {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.56);
+            }
+            40% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.32);
+            }
+        }
+
+        @keyframes boss20FinalBurstPulse {
+            0% {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+            18% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.02);
             }
         }
 
@@ -5995,6 +6306,321 @@ html.assistant-disabled .assistant-fallback-bubble {
 .level-complete.level-complete--board.hide {
             animation: levelOutBoard 220ms ease both !important;
             pointer-events: none !important;
+        }
+
+/* -------- Level 20 Victory Sequence -------- */
+.final-victory-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 96500;
+            pointer-events: auto;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0);
+            transition: background 4.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+.final-victory-overlay.fading {
+            background: rgba(0, 0, 0, 0.94);
+        }
+
+.final-victory-explosion {
+            position: fixed;
+            width: var(--fv-size, 96px);
+            height: var(--fv-size, 96px);
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.35);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 96510;
+            background:
+                radial-gradient(circle at 30% 28%, rgba(255, 245, 210, 0.92), rgba(255, 189, 112, 0.88) 30%, rgba(255, 96, 60, 0.7) 56%, rgba(0, 0, 0, 0) 74%),
+                repeating-radial-gradient(circle at 52% 52%, rgba(255, 218, 130, 0.14) 0 4px, rgba(255, 112, 72, 0.08) 4px 9px);
+            box-shadow: 0 0 28px rgba(255, 132, 88, 0.55), 0 0 40px rgba(255, 92, 66, 0.38);
+            animation: finalVictoryExplosion 760ms ease-out forwards;
+            mix-blend-mode: screen;
+        }
+
+.final-victory-explosion.strong {
+            animation-duration: 980ms;
+            box-shadow: 0 0 34px rgba(255, 170, 112, 0.72), 0 0 54px rgba(255, 116, 86, 0.58);
+        }
+
+.final-victory-modal {
+            width: min(92vw, 760px);
+            max-height: min(88vh, 860px);
+            border-radius: 14px;
+            border: 2px solid rgba(255, 215, 170, 0.8);
+            background:
+                linear-gradient(180deg, rgba(14, 20, 34, 0.96), rgba(8, 10, 16, 0.95)),
+                radial-gradient(circle at 20% 0%, rgba(255, 178, 118, 0.2), transparent 54%);
+            box-shadow: 0 0 34px rgba(255, 164, 114, 0.34), inset 0 0 0 1px rgba(255, 238, 210, 0.08);
+            padding: 16px 16px 14px;
+            display: grid;
+            grid-template-rows: auto auto auto auto auto auto auto;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(22px) scale(0.975);
+            transition: opacity 380ms ease, transform 380ms ease;
+        }
+
+.final-victory-overlay.show-win .final-victory-modal {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+.final-victory-modal .fv-title {
+            font-family: 'Press Start 2P', monospace;
+            color: #ffd9b0;
+            font-size: clamp(13px, 2.05vw, 20px);
+            letter-spacing: 0.06em;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255, 198, 132, 0.46), 1px 1px 0 rgba(0, 0, 0, 0.7);
+            margin-top: 2px;
+        }
+
+.final-victory-modal .fv-image-wrap {
+            width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 214, 176, 0.28);
+            min-height: clamp(160px, 32vh, 320px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+.final-victory-modal .fv-image-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+.final-victory-modal .fv-credits-wrap {
+            border-radius: 9px;
+            border: 1px solid rgba(173, 205, 255, 0.26);
+            background: rgba(8, 14, 28, 0.7);
+            overflow: hidden;
+            height: clamp(80px, 14vh, 128px);
+            position: relative;
+            padding: 0;
+        }
+
+.final-victory-modal .fv-info-panel {
+            height: 100%;
+            overflow: auto;
+            text-align: center;
+            font-family: 'Press Start 2P', monospace;
+            color: #cbe2ff;
+            font-size: clamp(8px, 1.2vw, 12px);
+            line-height: 1.65;
+            letter-spacing: 0.04em;
+            padding: 8px 8px 6px;
+            scrollbar-width: thin;
+        }
+
+.final-victory-modal .fv-info-panel[hidden] {
+            display: none !important;
+        }
+
+.final-victory-modal .fv-info-panel .fv-roll-section {
+            margin-bottom: 0;
+            padding: 0 6px;
+        }
+
+.final-victory-modal .fv-roll-section {
+            margin-bottom: 16px;
+            padding: 0 8px;
+        }
+
+.final-victory-modal .fv-roll-title {
+            color: #ffe4bf;
+            font-size: clamp(8px, 1.1vw, 10px);
+            margin-bottom: 4px;
+        }
+
+.final-victory-modal .fv-roll-line {
+            color: #d4e8ff;
+            font-size: clamp(8px, 1.1vw, 10px);
+            line-height: 1.65;
+        }
+
+.final-victory-modal .fv-roll-story-line {
+            color: #ffd8b2;
+            line-height: 1.8;
+        }
+
+.final-victory-modal .fv-roll-summary .fv-summary {
+            opacity: 1;
+            max-height: none;
+            transform: none;
+            overflow: visible;
+        }
+
+.final-victory-modal .fv-summary {
+            border-radius: 10px;
+            border: 1px solid rgba(255, 214, 172, 0.24);
+            background: rgba(6, 10, 18, 0.78);
+            padding: 10px;
+            opacity: 1;
+            max-height: none;
+            overflow: visible;
+            transform: none;
+            transition: none;
+        }
+
+.final-victory-modal .fv-summary-title {
+            font-family: 'Press Start 2P', monospace;
+            color: #ffdcb5;
+            font-size: clamp(9px, 1.2vw, 12px);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+.final-victory-modal .fv-summary-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 6px 10px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(8px, 1.05vw, 10px);
+            color: #d7e8ff;
+        }
+
+.final-victory-modal .fv-summary-grid span {
+            opacity: 0.88;
+        }
+
+.final-victory-modal .fv-summary-grid b {
+            color: #ffe6c0;
+            font-weight: 700;
+            text-align: right;
+        }
+
+.final-victory-modal .fv-final-card {
+            text-align: center;
+            font-family: 'Press Start 2P', monospace;
+            color: #ffe6bf;
+            font-size: clamp(11px, 1.75vw, 16px);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 360ms ease, transform 360ms ease;
+        }
+
+.final-victory-overlay.show-final-card .fv-final-card {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+.final-victory-modal .fv-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding-top: 2px;
+        }
+
+.final-victory-modal .fv-restart-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            padding: 11px 14px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 216, 172, 0.78);
+            background: linear-gradient(180deg, #ffe7c8, #ffd49e);
+            color: #3e2208;
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.24), inset 0 0 0 1px rgba(255, 246, 232, 0.44);
+            cursor: pointer;
+        }
+
+.final-victory-modal .fv-tab-btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 2px solid rgba(162, 200, 255, 0.58);
+            background: linear-gradient(180deg, #1f2f4e, #13213c);
+            color: #d8e9ff;
+            box-shadow: 0 2px 0 rgba(0, 0, 0, 0.24), inset 0 0 0 1px rgba(215, 234, 255, 0.18);
+            cursor: pointer;
+        }
+
+.final-victory-modal .fv-tab-btn:hover {
+            filter: brightness(1.06);
+        }
+
+.final-victory-modal .fv-tab-btn.active {
+            border-color: rgba(255, 216, 172, 0.72);
+            background: linear-gradient(180deg, #3a5276, #243d5f);
+            color: #ffe8c8;
+        }
+
+.final-victory-modal .fv-restart-btn:hover {
+            filter: brightness(1.04);
+        }
+
+.final-victory-modal .fv-restart-btn:active {
+            transform: translateY(1px);
+        }
+
+@keyframes finalVictoryExplosion {
+            0% {
+                opacity: 0.95;
+                transform: translate(-50%, -50%) scale(0.24);
+            }
+            60% {
+                opacity: 0.78;
+                transform: translate(-50%, -50%) scale(1.08);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(1.42);
+            }
+        }
+
+@keyframes finalVictoryCreditsRoll {
+            0% {
+                transform: translateY(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-312%);
+                opacity: 0.2;
+            }
+        }
+
+@keyframes boss20ClickHintPulse {
+            0%, 100% { opacity: 0.58; }
+            50% { opacity: 0.96; }
+        }
+
+@media (max-width: 700px) {
+            .final-victory-modal {
+                width: min(94vw, 620px);
+                padding: 12px 12px 10px;
+                gap: 8px;
+            }
+            .final-victory-modal .fv-restart-btn {
+                font-size: 10px;
+                padding: 10px 12px;
+            }
+            .final-victory-modal .fv-tab-btn {
+                font-size: 9px;
+                padding: 9px 10px;
+            }
+            .final-victory-modal .fv-summary {
+                padding: 8px;
+            }
         }
 
 

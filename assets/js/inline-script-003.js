@@ -10,6 +10,18 @@ const BOSS_LEVEL10_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/s
 const BOSS_LEVEL15_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level_3.png';
 const FINAL_OFFER_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/final_offer.png';
 const FINAL_BOSS_THEME_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Unholy%20Knight.mp3';
+const FINAL_VICTORY_DEFAULT_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/independent_variable.png';
+const FINAL_VICTORY_PIXEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/system_restored.png';
+const FINAL_VICTORY_BROKER_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/hostile_takeover.png';
+const FINAL_VICTORY_SOLO_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/independent_variable.png';
+const FINAL_CREDITS_THEME_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Super%20Power%20Cool%20Dude.mp3';
+const FINAL_VICTORY_CREDITS = [
+  'Containment Restored',
+  'Gone Viral!',
+  'Created by Matt Peeples',
+  'Built with Codex + ChatGPT',
+  'Thank you for playing'
+];
 
 function getBossLevelIntroImageUrl(levelNum) {
   const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
@@ -168,10 +180,11 @@ function escapeHtmlAttr(str) {
             try { highScoreEl = document.getElementById('highScoreValue'); if (highScoreEl) highScoreEl.textContent = String(highScore); } catch (e) { }
             // Full game script preserved from original with badge/confetti and 8-bit icons added
             const ROWS = 6, COLS = 6, MAX_SIZE = 3, MAX_CLICKS = 20;
-            const FEATURE_FLAGS = window.GameFeatureFlags || { rotatingBlocker: true, miniBoss: true, bossGooShields: true };
+            const FEATURE_FLAGS = window.GameFeatureFlags || { rotatingBlocker: true, miniBoss: true, bossGooShields: true, epicBoss20: true };
             window.GameFeatureFlags = FEATURE_FLAGS;
             if (typeof FEATURE_FLAGS.miniBoss === 'undefined') FEATURE_FLAGS.miniBoss = true;
             if (typeof FEATURE_FLAGS.bossGooShields === 'undefined') FEATURE_FLAGS.bossGooShields = true;
+            if (typeof FEATURE_FLAGS.epicBoss20 === 'undefined') FEATURE_FLAGS.epicBoss20 = true;
 
             // ---------- Render scheduling (prevents redundant reflows) ----------
             const IS_MOBILE_COARSE = !!((window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
@@ -919,6 +932,9 @@ function escapeHtmlAttr(str) {
             let bossGooShieldHits = new Array(ROWS * COLS).fill(0);
             let bossGooShieldStyle = new Array(ROWS * COLS).fill(null);
             let bossGooShieldTimer = null;
+            let boss20PhaseTimer = null;
+            let boss20FinalWindowTimer = null;
+            let boss20Phase3TransitionTimer = null;
             let technoGremlinPowerTimer = null;
             let technoGremlinJamUntil = 0;
             let technoGremlinOverclockUntil = 0;
@@ -1047,6 +1063,19 @@ function escapeHtmlAttr(str) {
                     } catch (e) { }
                     try { inputLocked = false; } catch (e) { }
                     try { randomizeBoard(false); } catch (e) { }
+                    try {
+                        const finalOfferLevel = Math.max(1, Math.floor(Number(FINAL_OFFER_CONFIG && FINAL_OFFER_CONFIG.level) || 20));
+                        if (targetLevel === finalOfferLevel && FINAL_OFFER_CONFIG && FINAL_OFFER_CONFIG.enabled !== false) {
+                            runPerkState.finalOfferPending = true;
+                            runPerkState.finalOfferSeen = false;
+                            runPerkState.finalOfferChoice = '';
+                            runPerkState.popupOpen = false;
+                            try { hideFinalOfferPopup(true); } catch (e) { }
+                            setTimeout(() => {
+                                try { maybeShowPendingFinalOfferPopup(20); } catch (e) { }
+                            }, 0);
+                        }
+                    } catch (e) { }
                     try { syncRotatingBlockerUI(); } catch (e) { }
                     return { level: targetLevel, blockerActive: isRotatingBlockerActive(targetLevel), miniBossLevel: isMiniBossLevel(targetLevel) };
                 };
@@ -1126,6 +1155,140 @@ function escapeHtmlAttr(str) {
                         return true;
                     }
                 };
+                window.Boss20 = {
+                    state: function () {
+                        return JSON.parse(JSON.stringify(boss20State));
+                    },
+                    triggerPhase1Action: function () {
+                        return triggerBoss20Phase1Action('debug');
+                    },
+                    triggerAction: function () {
+                        return triggerBoss20Phase1Action('debug');
+                    },
+                    triggerRescue: function () {
+                        const bosses = getBossIndicesForLevel(20);
+                        if (!bosses.length) return false;
+                        const idx = bosses[0];
+                        const meta = ensureSpecialMeta(idx) || {};
+                        meta.phase = Math.max(2, Math.floor(Number(meta.phase) || 2));
+                        specialMetaState[idx] = meta;
+                        boss20State.phase = meta.phase;
+                        return triggerBoss20RescueSequence(idx, meta);
+                    },
+                    rescue: function () {
+                        return this.triggerRescue();
+                    },
+                    setHP: function (hpValue) {
+                        const bosses = getBossIndicesForLevel(20);
+                        if (!bosses.length) return null;
+                        const idx = bosses[0];
+                        const meta = ensureSpecialMeta(idx) || {};
+                        const hp = Math.max(0, Number(hpValue) || 0);
+                        const maxHp = Math.max(1, Number(meta.maxHp) || hp || 1);
+                        meta.hp = Math.min(maxHp, hp);
+                        specialMetaState[idx] = meta;
+                        boss20State.active = true;
+                        boss20State.hp = meta.hp;
+                        boss20State.maxHp = maxHp;
+                        setMiniBossStateFromMeta(idx, meta);
+                        scheduleRender();
+                        updateHUD();
+                        return { index: idx, hp: meta.hp, maxHp: maxHp, phase: Number(meta.phase) || 1 };
+                    },
+                    setPhase: function (phaseValue) {
+                        const bosses = getBossIndicesForLevel(20);
+                        if (!bosses.length) return null;
+                        const idx = bosses[0];
+                        const meta = ensureSpecialMeta(idx) || {};
+                        const ph = Math.max(1, Math.min(3, Math.floor(Number(phaseValue) || 1)));
+                        meta.phase = ph;
+                        if (ph <= 1) {
+                            const hp = getBoss20ScaledHp(EPIC_BOSS20_PHASE1_HP);
+                            meta.maxHp = hp;
+                            meta.hp = Math.min(hp, Math.max(1, Number(meta.hp) || hp));
+                            boss20State.actionCadenceMs = EPIC_BOSS20_PHASE1_ACTION_MS;
+                        } else if (ph === 2) {
+                            const hp = getBoss20ScaledHp(EPIC_BOSS20_PHASE2_HP);
+                            meta.maxHp = hp;
+                            meta.hp = Math.min(hp, Math.max(1, Number(meta.hp) || hp));
+                            boss20State.actionCadenceMs = EPIC_BOSS20_PHASE2_ACTION_MS;
+                        } else {
+                            const hp = getBoss20ScaledHp(EPIC_BOSS20_PHASE3_HP);
+                            meta.maxHp = hp;
+                            meta.hp = Math.min(hp, Math.max(1, Number(meta.hp) || hp));
+                            boss20State.actionCadenceMs = EPIC_BOSS20_PHASE3_ACTION_MS;
+                        }
+                        specialMetaState[idx] = meta;
+                        boss20State.active = true;
+                        boss20State.phase = ph;
+                        boss20State.hp = Math.max(0, Number(meta.hp) || 0);
+                        boss20State.maxHp = Math.max(1, Number(meta.maxHp) || 1);
+                        boss20State.inCinematic = false;
+                        boss20State.inFinalWindow = false;
+                        boss20State.finalChargeUntil = 0;
+                        boss20State.finalWindowUntil = 0;
+                        boss20State.weakPointUntil = 0;
+                        boss20State.heroMarkUntil = 0;
+                        boss20State.heroMarkCell = idx;
+                        boss20State.nextHeroMarkAt = (ph >= 3) ? (Date.now() + 2200) : 0;
+                        boss20State.phase3Started = ph >= 3;
+                        setMiniBossStateFromMeta(idx, meta);
+                        scheduleRender();
+                        ensureBoss20PhaseTimer();
+                        return JSON.parse(JSON.stringify(boss20State));
+                    },
+                    triggerPhase3: function () {
+                        const bosses = getBossIndicesForLevel(20);
+                        if (!bosses.length) return false;
+                        const idx = bosses[0];
+                        const meta = ensureSpecialMeta(idx) || {};
+                        return triggerBoss20PhaseThreeTransition(idx, meta);
+                    },
+                    triggerFinalWindow: function () {
+                        const bosses = getBossIndicesForLevel(20);
+                        if (!bosses.length) return false;
+                        const idx = bosses[0];
+                        const meta = ensureSpecialMeta(idx) || {};
+                        meta.phase = Math.max(3, Math.floor(Number(meta.phase) || 3));
+                        specialMetaState[idx] = meta;
+                        boss20State.phase = meta.phase;
+                        return triggerBoss20FinalWindow(idx, meta);
+                    },
+                    setEnabled: function (enabled) {
+                        FEATURE_FLAGS.epicBoss20 = !!enabled;
+                        if (!FEATURE_FLAGS.epicBoss20) resetBoss20State();
+                        try { syncRotatingBlockerUI(); } catch (e) { }
+                        return FEATURE_FLAGS.epicBoss20;
+                    }
+                };
+                // Backward-compatible debug aliases for console testing across older builds.
+                try {
+                    const b20 = window.Boss20 || {};
+                    if (typeof b20.triggerPhase3 !== 'function' && typeof b20.setPhase === 'function') {
+                        b20.triggerPhase3 = function () { return b20.setPhase(3); };
+                    }
+                    if (typeof b20.triggerFinalWindow !== 'function') {
+                        b20.triggerFinalWindow = function () {
+                            if (typeof b20.setPhase === 'function') b20.setPhase(3);
+                            if (typeof b20.setHP === 'function') return b20.setHP(2);
+                            return false;
+                        };
+                    }
+                    if (typeof b20.trigerFinalWindow !== 'function') {
+                        b20.trigerFinalWindow = function () { return b20.triggerFinalWindow(); };
+                    }
+                    if (typeof b20.triggerFinalWIndow !== 'function') {
+                        b20.triggerFinalWIndow = function () { return b20.triggerFinalWindow(); };
+                    }
+                    window.Boss20 = b20;
+                } catch (e) { }
+                try {
+                    window.Boss20Finale = {
+                        trigger: function () { return triggerLevel20FinalVictorySequence(); },
+                        clear: function () { clearFinalVictorySequence(true); return true; },
+                        state: function () { return JSON.parse(JSON.stringify(finalVictoryState)); }
+                    };
+                } catch (e) { }
             } catch (e) { }
             let blockerOrientationDeg = 0; // only 0 or 90
             let blockerLaneIndex = 2; // boundary between rows/cols (0-based lane index)
@@ -1144,7 +1307,51 @@ function escapeHtmlAttr(str) {
             const COMBO_INSURANCE_CAP = 1;
             const COMBO_INSURANCE_CHAIN_START = 15;
             const MINI_BOSS_CLICK_BONUS = 6;
+            const EPIC_BOSS20_PHASE1_HP = 16;
+            const EPIC_BOSS20_PHASE1_ACTION_MS = 3400;
+            const EPIC_BOSS20_PHASE2_HP = 30;
+            const EPIC_BOSS20_PHASE2_ACTION_MS = 2000;
+            const EPIC_BOSS20_PHASE_SHIFT_MS = 2200;
+            const EPIC_BOSS20_PHASE_SHIFT_CLICK_REWARD = 8;
+            const EPIC_BOSS20_RESCUE_TRIGGER_RATIO = 0.40;
+            const EPIC_BOSS20_RESCUE_CINEMATIC_MS = 1800;
+            const EPIC_BOSS20_RESCUE_STALL_MS = 4000;
+            const EPIC_BOSS20_PHASE3_HP = 24;
+            const EPIC_BOSS20_PHASE3_ACTION_MS = 1800;
+            const EPIC_BOSS20_PHASE3_ENTRY_BURSTS = 4;
+            const EPIC_BOSS20_PHASE3_ENTRY_BURST_INTERVAL_MS = 260;
+            const EPIC_BOSS20_HERO_MARK_EVERY_MS = 7000;
+            const EPIC_BOSS20_HERO_MARK_DURATION_MS = 3000;
+            const EPIC_BOSS20_HERO_MARK_DAMAGE_MULT = 1.6;
+            const EPIC_BOSS20_FINAL_WINDOW_HP = 2;
+            const EPIC_BOSS20_FINAL_CHARGE_MS = 1200;
+            const EPIC_BOSS20_FINAL_WINDOW_MS = 2500;
+            const EPIC_BOSS20_FINAL_DAMAGE_MULT = 2;
+            const EPIC_BOSS20_PHASE3_SHIFT_MS = 1700;
             let miniBossState = { active: false, index: -1, hp: 0, maxHp: 0 };
+            function createDefaultBoss20State() {
+                return {
+                    active: false,
+                    phase: 0,
+                    hp: 0,
+                    maxHp: 0,
+                    actionCadenceMs: 0,
+                    actionCounter: 0,
+                    rescueUsed: false,
+                    inCinematic: false,
+                    inFinalWindow: false,
+                    weakPointUntil: 0,
+                    finalWindowUntil: 0,
+                    finalChargeUntil: 0,
+                    heroMarkUntil: 0,
+                    heroMarkCell: -1,
+                    nextHeroMarkAt: 0,
+                    heroStallUntil: 0,
+                    rescueShieldUntil: 0,
+                    phase3Started: false
+                };
+            }
+            let boss20State = createDefaultBoss20State();
             let mobileStormPressTimer = null;
             let mobileStormHoldActive = false;
             let mobileStormPointerId = null;
@@ -1168,14 +1375,14 @@ function escapeHtmlAttr(str) {
                     id: 'final_pixel_safe_protocol',
                     source: 'pixel',
                     title: 'Safe Protocol',
-                    desc: '+4 clicks now, +1 Nano Storm now, and boss systems run slower at fight start.',
+                    desc: '+6 clicks now, +1 Nano Storm now, and boss systems run slower at fight start.',
                     cardFrontUrl: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_emergency_cells.png'
                 },
                 broker: {
                     id: 'final_viral_hostile_buyout',
                     source: 'broker',
                     title: 'Hostile Buyout',
-                    desc: '+10 clicks now, Nano Storm armed now, boss HP -20%. Cost: keep 49% score and no future Double Deals from score.',
+                    desc: '+15 clicks now, Nano Storm armed now, boss HP -20%. Cost: keep 49% score and no future Double Deals from score.',
                     cardFrontUrl: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_quickfix.png'
                 },
                 bossSlowMs: 20000,
@@ -1289,6 +1496,13 @@ function escapeHtmlAttr(str) {
             let runPerkPopupEl = null;
             let finalOfferPopupEl = null;
             let finalOfferModalOpen = false;
+            let finalVictoryOverlayEl = null;
+            let finalVictoryExplosionTimer = null;
+            let finalVictoryRevealTimer = null;
+            let finalVictoryFinalCardTimer = null;
+            let finalVictorySummaryTimer = null;
+            let finalCreditsMusicAudio = null;
+            let finalVictoryState = { inProgress: false, shown: false };
             function createDefaultRunPerkState() {
                 return {
                     nextThresholdIndex: 0,
@@ -1311,6 +1525,7 @@ function escapeHtmlAttr(str) {
                     miniBossBonusPenalty: 0,
                     stormNoDiagonals: false,
                     specialVirusChanceDelta: 0,
+                    armorPiercerPermanent: false,
                     acceptedDeals: 0,
                     popupOpen: false,
                     disableScoreDeals: false,
@@ -2401,7 +2616,7 @@ function escapeHtmlAttr(str) {
                 runPerkState.finalOfferChoice = id;
 
                 if (id === pixelId) {
-                    clicksLeft = (Number(clicksLeft) || 0) + 4;
+                    clicksLeft = Math.max(0, (Number(clicksLeft) || 0) + 6);
                     const beforeStorm = Math.max(0, Number(stormCharges) || 0);
                     stormCharges = Math.min(MAX_STORM_CHARGES, beforeStorm + 1);
                     if (stormCharges > beforeStorm) {
@@ -2411,9 +2626,8 @@ function escapeHtmlAttr(str) {
                         Number(runPerkState.finalBossSlowUntil) || 0,
                         Date.now() + Math.max(1000, Math.floor(Number(FINAL_OFFER_CONFIG.bossSlowMs) || 20000))
                     );
-                    clampClicksToCap();
                 } else if (id === brokerId) {
-                    clicksLeft = Math.max(0, (Number(clicksLeft) || 0) + 10);
+                    clicksLeft = Math.max(0, (Number(clicksLeft) || 0) + 15);
                     stormCharges = Math.min(MAX_STORM_CHARGES, Math.max(1, Number(stormCharges) || 0));
                     try { setStormArmed(true); } catch (e) { }
                     const keep = Math.max(0, Math.min(1, Number(FINAL_OFFER_CONFIG.scoreKeepRatio) || 0.49));
@@ -2437,6 +2651,7 @@ function escapeHtmlAttr(str) {
 
             function canShowFinalOfferPopup() {
                 if (!runPerkState || !runPerkState.finalOfferPending || runPerkState.finalOfferSeen) return false;
+                if (isFinalVictoryActive()) return false;
                 if (inputLocked || stormResolving || outOfClicksShown) return false;
                 if (typeof particlesActive === 'function' && particlesActive()) return false;
                 try {
@@ -2465,9 +2680,9 @@ function escapeHtmlAttr(str) {
                     try { hideActiveChainBadge(false); } catch (e) { }
                     finalOfferModalOpen = true;
                     try { stopRotatingBlockerTicker(); } catch (e) { }
-                    const pixelDesc = '+4 clicks, +1 Nano Storm, and boss systems run slower for a short time.';
+                    const pixelDesc = '+6 clicks, +1 Nano Storm, and boss systems run slower for a short time.';
                     const soloDesc = 'No bonus and no penalty. Enter level 20 with your current resources.';
-                    const brokerDesc = '+10 clicks, Nano Storm armed, and boss HP -20%; score drops to 49% and future score Double Deals are disabled.';
+                    const brokerDesc = '+15 clicks, Nano Storm armed, and boss HP -20%; score drops to 49% and future score Double Deals are disabled.';
                     const el = document.createElement('div');
                     el.className = 'final-offer-modal';
                     el.setAttribute('role', 'dialog');
@@ -2576,6 +2791,7 @@ function escapeHtmlAttr(str) {
             function canShowRunPerkPopup() {
                 if (!runPerkState || runPerkState.pendingOffers <= 0 || runPerkState.popupOpen) return false;
                 if (runPerkState.finalOfferPending) return false;
+                if (isFinalVictoryActive()) return false;
                 if (inputLocked || stormResolving || outOfClicksShown) return false;
                 if (typeof particlesActive === 'function' && particlesActive()) return false;
                 try {
@@ -2886,19 +3102,470 @@ function escapeHtmlAttr(str) {
                 restoreMusicFromGameOverDuck(true);
             }
 
+            function isFinalVictoryActive() {
+                return !!(finalVictoryState && (finalVictoryState.inProgress || finalVictoryState.shown));
+            }
+
+            function clearFinalVictoryTimers() {
+                try { if (finalVictoryExplosionTimer) clearInterval(finalVictoryExplosionTimer); } catch (e) { }
+                try { if (finalVictoryRevealTimer) clearTimeout(finalVictoryRevealTimer); } catch (e) { }
+                try { if (finalVictoryFinalCardTimer) clearTimeout(finalVictoryFinalCardTimer); } catch (e) { }
+                try { if (finalVictorySummaryTimer) clearTimeout(finalVictorySummaryTimer); } catch (e) { }
+                finalVictoryExplosionTimer = null;
+                finalVictoryRevealTimer = null;
+                finalVictoryFinalCardTimer = null;
+                finalVictorySummaryTimer = null;
+            }
+
+            function stopFinalCreditsMusic(fadeOutMs = 500) {
+                const a = finalCreditsMusicAudio;
+                finalCreditsMusicAudio = null;
+                if (!a) return;
+                const ms = Math.max(0, Math.floor(Number(fadeOutMs) || 0));
+                if (ms <= 0) {
+                    try { a.pause(); } catch (e) { }
+                    try { a.src = ''; } catch (e) { }
+                    return;
+                }
+                const startVol = Math.max(0, Number(a.volume) || 0);
+                const startTs = Date.now();
+                const timer = setInterval(() => {
+                    try {
+                        const t = Math.max(0, Math.min(1, (Date.now() - startTs) / ms));
+                        a.volume = Math.max(0, startVol * (1 - t));
+                        if (t >= 1) {
+                            clearInterval(timer);
+                            try { a.pause(); } catch (e) { }
+                            try { a.src = ''; } catch (e) { }
+                        }
+                    } catch (e) {
+                        clearInterval(timer);
+                        try { a.pause(); } catch (e2) { }
+                    }
+                }, 40);
+            }
+
+            function startFinalCreditsMusic() {
+                try {
+                    if (!musicEnabled || !audioUserInteracted || !!window.allMuted) return false;
+                    stopFinalCreditsMusic(0);
+                    const a = new Audio(FINAL_CREDITS_THEME_URL);
+                    a.loop = true;
+                    a.preload = 'auto';
+                    a.crossOrigin = 'anonymous';
+                    a.muted = !!window.allMuted;
+                    const targetVol = Math.max(0.02, Math.min(1, Number(window.musicVolume) || 0.20));
+                    a.volume = 0.001;
+                    finalCreditsMusicAudio = a;
+                    const p = a.play();
+                    if (p && typeof p.catch === 'function') p.catch(() => { });
+                    const startedAt = Date.now();
+                    const ms = 1800;
+                    const timer = setInterval(() => {
+                        if (finalCreditsMusicAudio !== a) {
+                            clearInterval(timer);
+                            return;
+                        }
+                        const t = Math.max(0, Math.min(1, (Date.now() - startedAt) / ms));
+                        try { a.volume = Math.max(0.001, targetVol * t); } catch (e) { }
+                        if (t >= 1) clearInterval(timer);
+                    }, 50);
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function getFinalOfferChoiceId() {
+                return String(runPerkState && runPerkState.finalOfferChoice || '');
+            }
+
+            function getFinalEndingProfile() {
+                const choiceId = getFinalOfferChoiceId();
+                if (choiceId === 'final_pixel_safe_protocol') {
+                    return {
+                        key: 'pixel',
+                        label: 'PIXEL PERK',
+                        imageUrl: FINAL_VICTORY_PIXEL_IMAGE_URL,
+                        storyText: 'SYSTEM RESTORED: PIXEL stabilized core systems and restored lab autonomy. Survivors begin rebuilding under guarded optimism.'
+                    };
+                }
+                if (choiceId === 'final_viral_hostile_buyout') {
+                    return {
+                        key: 'broker',
+                        label: 'VIRAL VENTURE',
+                        imageUrl: FINAL_VICTORY_BROKER_IMAGE_URL,
+                        storyText: 'HOSTILE TAKEOVER: containment succeeded, but at a cost. The trench-coat broker now owns the cleanup rights and the future feels compromised.'
+                    };
+                }
+                return {
+                    key: 'solo',
+                    label: 'ON MY OWN',
+                    imageUrl: FINAL_VICTORY_SOLO_IMAGE_URL || FINAL_VICTORY_DEFAULT_IMAGE_URL,
+                    storyText: 'INDEPENDENT VARIABLE: no deals, no shortcuts. You held the line alone and wrote your own ending.'
+                };
+            }
+
+            function buildFinalVictoryRunSummaryHtml() {
+                const levelReached = Math.max(1, Number(runAchievementStats.runLevelReached) || getCurrentLevelNumber());
+                const pops = Math.max(0, Number(runAchievementStats.runPops) || 0);
+                const bestChain = Math.max(0, Number(runAchievementStats.runBestChain) || 0);
+                const storms = Math.max(0, Number(runAchievementStats.runNanoStormUses) || 0);
+                const unlockedCount = Array.from(runUnlockedAchievementIds || []).length;
+                const ending = getFinalEndingProfile();
+                return `
+                    <div class="fv-summary">
+                        <div class="fv-summary-title">RUN RECAP</div>
+                        <div class="fv-summary-grid">
+                            <span>Outcome</span><b>${escapeHtml(ending.label)}</b>
+                            <span>Level</span><b>${levelReached}</b>
+                            <span>Score</span><b>${Math.max(0, Number(totalScore) || 0)}</b>
+                            <span>Viruses Destroyed</span><b>${pops}</b>
+                            <span>Best Chain</span><b>${bestChain}</b>
+                            <span>Nano Storm Uses</span><b>${storms}</b>
+                            <span>Achievements</span><b>${unlockedCount}</b>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function buildFinalVictoryCreditsHtml() {
+                const creditsLines = Array.isArray(FINAL_VICTORY_CREDITS) ? FINAL_VICTORY_CREDITS : [];
+                return creditsLines.map((line) => `<div class="fv-roll-line">${escapeHtml(String(line || ''))}</div>`).join('');
+            }
+
+            function showInitialStartScreen() {
+                try {
+                    const intro = document.getElementById('aiIntro');
+                    const introText = document.getElementById('aiIntroText');
+                    if (intro) {
+                        intro.classList.remove('fade-out');
+                        intro.style.display = 'flex';
+                        intro.setAttribute('aria-hidden', 'false');
+                    }
+                    if (introText) {
+                        introText.textContent = 'Containment breach detected.';
+                    }
+                } catch (e) { }
+                try {
+                    const startModal = document.getElementById('startModal');
+                    if (startModal) {
+                        startModal.classList.remove('show', 'open');
+                        startModal.style.display = 'none';
+                        startModal.setAttribute('aria-hidden', 'true');
+                    }
+                } catch (e) { }
+                try {
+                    const levelModal = document.getElementById('level5DynamicsModal');
+                    if (levelModal) {
+                        levelModal.classList.remove('show', 'open');
+                        levelModal.style.display = 'none';
+                        levelModal.setAttribute('aria-hidden', 'true');
+                    }
+                } catch (e) { }
+                try {
+                    const helpPopup = document.getElementById('helpPopup');
+                    if (helpPopup) {
+                        helpPopup.classList.remove('show', 'open');
+                        helpPopup.style.display = 'none';
+                        helpPopup.setAttribute('aria-hidden', 'true');
+                    }
+                } catch (e) { }
+                try {
+                    const audioPopup = document.getElementById('audioPopup');
+                    if (audioPopup) {
+                        audioPopup.classList.remove('show', 'open');
+                        audioPopup.style.display = 'none';
+                        audioPopup.setAttribute('aria-hidden', 'true');
+                    }
+                } catch (e) { }
+                try {
+                    tutorialGateState.startPressed = false;
+                    tutorialGateState.briefingAcknowledged = false;
+                } catch (e) { }
+            }
+
+            function restartToIntroScreen() {
+                try { clearFinalVictorySequence(true); } catch (e) { }
+                try { clearGameOverFeedback(); } catch (e) { }
+                try {
+                    if (musicOverrideMode === 'final-boss') stopFinalBossTheme({ fadeOutMs: 250, resumeNormal: false });
+                } catch (e) { }
+                const ma = getActiveMusicAudio();
+                if (ma) {
+                    try { ma.pause(); } catch (e) { }
+                }
+                try {
+                    screensPassed = 0;
+                    totalScore = 0;
+                    outOfClicksShown = false;
+                    randomizeBoard(false);
+                    updateHUD();
+                } catch (e) { }
+                showInitialStartScreen();
+                inputLocked = false;
+            }
+
+            function clearFinalVictorySequence(unlockInput = false) {
+                clearFinalVictoryTimers();
+                stopFinalCreditsMusic(220);
+                try {
+                    const fx = document.querySelectorAll('.final-victory-explosion');
+                    if (fx && fx.length) {
+                        fx.forEach((el) => {
+                            try { el.remove(); } catch (e2) { }
+                        });
+                    }
+                } catch (e) { }
+                try {
+                    if (finalVictoryOverlayEl && finalVictoryOverlayEl.parentNode) {
+                        finalVictoryOverlayEl.parentNode.removeChild(finalVictoryOverlayEl);
+                    }
+                } catch (e) { }
+                finalVictoryOverlayEl = null;
+                finalVictoryState = { inProgress: false, shown: false };
+                if (unlockInput) inputLocked = false;
+            }
+
+            function ensureFinalVictoryOverlay() {
+                if (finalVictoryOverlayEl && finalVictoryOverlayEl.isConnected) return finalVictoryOverlayEl;
+                const el = document.createElement('div');
+                el.className = 'final-victory-overlay';
+                document.body.appendChild(el);
+                finalVictoryOverlayEl = el;
+                return el;
+            }
+
+            function spawnFinalVictoryExplosion(x, y, strong = false) {
+                try {
+                    const host = ensureFinalVictoryOverlay();
+                    if (!host) return;
+                    const fx = document.createElement('div');
+                    fx.className = strong ? 'final-victory-explosion strong' : 'final-victory-explosion';
+                    fx.style.left = Math.round(x) + 'px';
+                    fx.style.top = Math.round(y) + 'px';
+                    fx.style.setProperty('--fv-size', `${Math.round((strong ? 120 : 84) + Math.random() * (strong ? 74 : 48))}px`);
+                    host.appendChild(fx);
+                    setTimeout(() => { try { fx.remove(); } catch (e) { } }, strong ? 980 : 760);
+                } catch (e) { }
+            }
+
+            function spawnRandomFinalVictoryExplosion() {
+                try {
+                    const board = document.getElementById('board') || boardEl;
+                    let x = Math.round(window.innerWidth * (0.2 + Math.random() * 0.6));
+                    let y = Math.round(window.innerHeight * (0.16 + Math.random() * 0.68));
+                    if (board && Math.random() < 0.72) {
+                        const r = board.getBoundingClientRect();
+                        x = Math.round(r.left + (Math.random() * r.width));
+                        y = Math.round(r.top + (Math.random() * r.height));
+                    }
+                    spawnFinalVictoryExplosion(x, y, Math.random() < 0.22);
+                } catch (e) { }
+            }
+
+            function fadeOutMusicForFinalVictory() {
+                stopFinalCreditsMusic(0);
+                try {
+                    if (musicOverrideMode === 'final-boss') {
+                        stopFinalBossTheme({ fadeOutMs: 1400, resumeNormal: false });
+                        return;
+                    }
+                } catch (e) { }
+                const ma = getActiveMusicAudio();
+                if (!ma) return;
+                const startVol = Math.max(0, Number(ma.volume) || 0.2);
+                const startedAt = Date.now();
+                const ms = 1600;
+                const t = setInterval(() => {
+                    try {
+                        const k = Math.max(0, Math.min(1, (Date.now() - startedAt) / ms));
+                        ma.volume = Math.max(0, startVol * (1 - k));
+                        if (k >= 1) {
+                            clearInterval(t);
+                            try { ma.pause(); } catch (e) { }
+                        }
+                    } catch (e) {
+                        clearInterval(t);
+                    }
+                }, 50);
+            }
+
+            function showFinalVictoryModal() {
+                const host = ensureFinalVictoryOverlay();
+                if (!host) return false;
+                finalVictoryState.inProgress = false;
+                finalVictoryState.shown = true;
+                host.classList.add('show-win');
+                const ending = getFinalEndingProfile();
+                const creditsLines = buildFinalVictoryCreditsHtml();
+                const storyText = `<div class="fv-roll-line fv-roll-story-line">${escapeHtml(String(ending.storyText || ''))}</div>`;
+                const recapHtml = buildFinalVictoryRunSummaryHtml();
+                host.innerHTML = `
+                    <div class="final-victory-modal" role="dialog" aria-modal="true" aria-label="Victory">
+                        <div class="fv-title">PATHOGEN SUPPRESSED</div>
+                        <div class="fv-image-wrap">
+                            <img src="${escapeHtmlAttr(ending.imageUrl || FINAL_VICTORY_DEFAULT_IMAGE_URL || '')}" alt="Victory" onerror="this.style.display='none';" />
+                        </div>
+                        <div class="fv-credits-wrap">
+                            <div class="fv-info-panel is-active" data-fv-panel="story">
+                                <div class="fv-roll-section fv-roll-story">
+                                    <div class="fv-roll-title">EPILOGUE</div>
+                                    ${storyText}
+                                </div>
+                            </div>
+                            <div class="fv-info-panel" data-fv-panel="credits" hidden>
+                                <div class="fv-roll-section fv-roll-credits">
+                                    <div class="fv-roll-title">CREDITS</div>
+                                    ${creditsLines}
+                                </div>
+                            </div>
+                            <div class="fv-info-panel" data-fv-panel="stats" hidden>
+                                <div class="fv-roll-section fv-roll-summary">
+                                    ${recapHtml}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="fv-final-card">MISSION COMPLETE</div>
+                        <div class="fv-actions">
+                            <button type="button" class="fv-restart-btn">START NEW RUN</button>
+                            <button type="button" class="fv-tab-btn" data-fv-tab="credits">CREDITS</button>
+                            <button type="button" class="fv-tab-btn" data-fv-tab="stats">GAME STATS</button>
+                        </div>
+                    </div>
+                `;
+                const restartBtn = host.querySelector('.fv-restart-btn');
+                if (restartBtn) {
+                    restartBtn.addEventListener('click', () => {
+                        restartToIntroScreen();
+                    }, { once: true });
+                }
+                const setFinalVictoryPanel = (name) => {
+                    const target = String(name || 'story');
+                    const panels = host.querySelectorAll('.fv-info-panel[data-fv-panel]');
+                    if (!panels || !panels.length) return;
+                    let active = false;
+                    panels.forEach((panel) => {
+                        const id = String(panel.getAttribute('data-fv-panel') || '');
+                        const on = (id === target);
+                        panel.hidden = !on;
+                        panel.classList.toggle('is-active', on);
+                        if (on) active = true;
+                    });
+                    if (!active) {
+                        panels.forEach((panel) => {
+                            const on = String(panel.getAttribute('data-fv-panel') || '') === 'story';
+                            panel.hidden = !on;
+                            panel.classList.toggle('is-active', on);
+                        });
+                    }
+                    const tabButtons = host.querySelectorAll('.fv-tab-btn[data-fv-tab]');
+                    tabButtons.forEach((btn) => {
+                        const isOn = String(btn.getAttribute('data-fv-tab') || '') === target;
+                        btn.classList.toggle('active', isOn);
+                    });
+                };
+                const tabButtons = host.querySelectorAll('.fv-tab-btn[data-fv-tab]');
+                tabButtons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const tab = String(btn.getAttribute('data-fv-tab') || '');
+                        const isActive = btn.classList.contains('active');
+                        setFinalVictoryPanel(isActive ? 'story' : tab);
+                    });
+                });
+                setFinalVictoryPanel('story');
+                startFinalCreditsMusic();
+                finalVictoryFinalCardTimer = setTimeout(() => {
+                    try { host.classList.add('show-final-card'); } catch (e) { }
+                }, 35000);
+                return true;
+            }
+
+            function triggerLevel20FinalVictorySequence(defeatedBossIndex = -1, tracker = null) {
+                if (isFinalVictoryActive()) return false;
+                finalVictoryState.inProgress = true;
+                finalVictoryState.shown = false;
+                inputLocked = true;
+                stormResolving = false;
+                try { hideRunPerkPopup(true); } catch (e) { }
+                try { hideFinalOfferPopup(true); } catch (e) { }
+                try {
+                    const levelPopup = document.querySelector('.level-complete');
+                    if (levelPopup) levelPopup.remove();
+                } catch (e) { }
+                try {
+                    const gameOver = document.querySelector('.game-over-popup');
+                    if (gameOver) gameOver.remove();
+                } catch (e) { }
+                try { stopBossGooShieldTimer(); } catch (e) { }
+                try { stopBoss20PhaseTimer(); } catch (e) { }
+                try { clearTechnoGremlinPowers(true); } catch (e) { }
+                try { stopRotatingBlockerTicker(); } catch (e) { }
+                fadeOutMusicForFinalVictory();
+
+                const host = ensureFinalVictoryOverlay();
+                if (host) {
+                    host.classList.remove('show-win', 'show-final-card', 'show-summary');
+                    host.innerHTML = '';
+                    requestAnimationFrame(() => {
+                        try { host.classList.add('fading'); } catch (e) { }
+                    });
+                }
+
+                const remaining = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (state[i] !== null) remaining.push(i);
+                }
+                shuffle(remaining);
+                let elapsed = 160;
+                for (let i = 0; i < remaining.length; i++) {
+                    const idx = remaining[i];
+                    setTimeout(() => {
+                        try {
+                            if (state[idx] === null) return;
+                            playMiniBossBurstEffect(idx, Math.random() < 0.34);
+                            popAt(idx, tracker);
+                            state[idx] = null;
+                            clearSpecialForCell(idx);
+                            if (Math.random() < 0.52) spawnRandomFinalVictoryExplosion();
+                            scheduleRender();
+                        } catch (e) { }
+                    }, elapsed);
+                    elapsed += 42 + Math.floor(Math.random() * 58);
+                }
+                if (Number.isFinite(defeatedBossIndex) && defeatedBossIndex >= 0) {
+                    const c = getBoardCellCenter(defeatedBossIndex);
+                    if (c) spawnFinalVictoryExplosion(c.x, c.y, true);
+                }
+                spawnRandomFinalVictoryExplosion();
+                finalVictoryExplosionTimer = setInterval(() => {
+                    if (!isFinalVictoryActive()) return;
+                    spawnRandomFinalVictoryExplosion();
+                }, 250);
+                finalVictoryRevealTimer = setTimeout(() => {
+                    clearFinalVictoryTimers();
+                    showFinalVictoryModal();
+                }, Math.max(3200, elapsed + 1700));
+                scheduleRender();
+                updateHUD();
+                return true;
+            }
+
             // Unified reset used by the Game Over persistent popup and restart wiring
             function performGameReset() {
                 try {
                     const fromGameOver = !!outOfClicksShown || !!(document.body && document.body.classList.contains('game-over-fx')) || !!document.querySelector('.game-over-popup');
+                    const fromFinalVictory = isFinalVictoryActive() || !!document.querySelector('.final-victory-overlay');
+                    clearFinalVictorySequence(true);
                     clearGameOverFeedback();
                     screensPassed = 0;
                     totalScore = 0;
                     randomizeBoard(false);
                     updateHUD();
                     outOfClicksShown = false;
-                    if (fromGameOver) {
+                    if (fromGameOver || fromFinalVictory) {
                         try { switchMusicForNewRun(); } catch (e) { }
-                        try { if (window.Assistant && Assistant.emit) Assistant.emit('postGameWelcome'); } catch (e) { }
+                        try { if (fromGameOver && window.Assistant && Assistant.emit) Assistant.emit('postGameWelcome'); } catch (e) { }
                     }
                 } catch (e) { console.warn('performGameReset failed', e); }
             }
@@ -3371,6 +4038,7 @@ function escapeHtmlAttr(str) {
 
             function isRotatingBlockerActive(levelNum = getCurrentLevelNumber()) {
                 if (!FEATURE_FLAGS || FEATURE_FLAGS.rotatingBlocker === false) return false;
+                if (isEpicBoss20Level(levelNum)) return false;
                 const cfg = getBlockerSettings(levelNum);
                 return levelNum >= cfg.unlockLevel;
             }
@@ -3983,8 +4651,11 @@ function escapeHtmlAttr(str) {
                 const meta = ensureSpecialMeta(ctx.index);
                 const remaining = Math.max(0, Number(meta && meta.shieldHitsRemaining) || 0);
                 if (remaining <= 0) return null;
-                if ((Number(runPerkState.armorPiercerHits) || 0) > 0) {
-                    runPerkState.armorPiercerHits = Math.max(0, Number(runPerkState.armorPiercerHits) - 1);
+                const permanentPiercer = !!(runPerkState && runPerkState.armorPiercerPermanent);
+                if (permanentPiercer || (Number(runPerkState.armorPiercerHits) || 0) > 0) {
+                    if (!permanentPiercer) {
+                        runPerkState.armorPiercerHits = Math.max(0, Number(runPerkState.armorPiercerHits) - 1);
+                    }
                     playShieldBreakEffect(ctx.index);
                     try { playSfx('zap'); } catch (e) { }
                     clearSpecialForCell(ctx.index);
@@ -4030,6 +4701,91 @@ function escapeHtmlAttr(str) {
                 return Math.max(0, maxDefault - 1);
             }
 
+            function isEpicBoss20Level(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Number(levelNum) || 1);
+                return !!(FEATURE_FLAGS && FEATURE_FLAGS.epicBoss20 !== false && lvl === 20);
+            }
+
+            function resetBoss20State() {
+                if (boss20PhaseTimer) {
+                    clearTimeout(boss20PhaseTimer);
+                    boss20PhaseTimer = null;
+                }
+                if (boss20FinalWindowTimer) {
+                    clearTimeout(boss20FinalWindowTimer);
+                    boss20FinalWindowTimer = null;
+                }
+                if (boss20Phase3TransitionTimer) {
+                    clearTimeout(boss20Phase3TransitionTimer);
+                    boss20Phase3TransitionTimer = null;
+                }
+                try {
+                    const fxA = document.querySelector('.boss20-phase-shift');
+                    if (fxA) fxA.remove();
+                } catch (e) { }
+                try {
+                    const fxB = document.querySelector('.boss20-rescue');
+                    if (fxB) fxB.remove();
+                } catch (e) { }
+                try {
+                    const fxC = document.querySelector('.boss20-final-charge');
+                    if (fxC) fxC.remove();
+                } catch (e) { }
+                try {
+                    const fxD = document.querySelectorAll('.boss20-hero-mark');
+                    if (fxD && fxD.length) {
+                        fxD.forEach((el) => {
+                            try { el.remove(); } catch (e2) { }
+                        });
+                    }
+                } catch (e) { }
+                boss20State = createDefaultBoss20State();
+                return boss20State;
+            }
+
+            function getBoss20ScaledHp(baseHp) {
+                const raw = Math.max(1, Math.floor(Number(baseHp) || 1));
+                const scale = Math.max(0.4, Math.min(1, Number(runPerkState && runPerkState.finalBossHpScale) || 1));
+                return Math.max(1, Math.round(raw * scale));
+            }
+
+            function bootstrapBoss20PhaseOne() {
+                const bosses = getBossIndicesForLevel(20);
+                if (!bosses.length) {
+                    resetBoss20State();
+                    return boss20State;
+                }
+                const idx = bosses[0];
+                const meta = specialMetaState[idx] || {};
+                const hp = Math.max(1, Math.floor(Number(meta.hp) || Number(meta.maxHp) || getBoss20ScaledHp(EPIC_BOSS20_PHASE1_HP)));
+                const maxHp = Math.max(hp, Math.floor(Number(meta.maxHp) || hp));
+                meta.phase = 1;
+                meta.hp = hp;
+                meta.maxHp = maxHp;
+                specialMetaState[idx] = meta;
+                boss20State = {
+                    active: true,
+                    phase: 1,
+                    hp,
+                    maxHp,
+                    actionCadenceMs: EPIC_BOSS20_PHASE1_ACTION_MS,
+                    actionCounter: 0,
+                    rescueUsed: false,
+                    inCinematic: false,
+                    inFinalWindow: false,
+                    weakPointUntil: 0,
+                    finalWindowUntil: 0,
+                    finalChargeUntil: 0,
+                    heroMarkUntil: 0,
+                    heroMarkCell: idx,
+                    nextHeroMarkAt: 0,
+                    heroStallUntil: 0,
+                    rescueShieldUntil: 0,
+                    phase3Started: false
+                };
+                return boss20State;
+            }
+
             function isMiniBossLevel(levelNum = getCurrentLevelNumber()) {
                 const lvl = Math.max(1, Number(levelNum) || 1);
                 return !!(FEATURE_FLAGS && FEATURE_FLAGS.miniBoss !== false && lvl >= 5 && (lvl % 5) === 0);
@@ -4041,6 +4797,9 @@ function escapeHtmlAttr(str) {
 
             function getMiniBossHpForLevel(levelNum = getCurrentLevelNumber()) {
                 const lvl = Math.max(1, Number(levelNum) || 1);
+                if (isEpicBoss20Level(lvl)) {
+                    return getBoss20ScaledHp(EPIC_BOSS20_PHASE1_HP);
+                }
                 const tier = Math.max(1, Math.floor(lvl / 5));
                 let hp = 5 + tier;
                 if (lvl >= Math.max(1, Math.floor(Number(FINAL_OFFER_CONFIG && FINAL_OFFER_CONFIG.level) || 20))) {
@@ -4235,6 +4994,700 @@ function escapeHtmlAttr(str) {
                 }, delay);
             }
 
+            function stopBoss20PhaseTimer() {
+                if (!boss20PhaseTimer) return;
+                clearTimeout(boss20PhaseTimer);
+                boss20PhaseTimer = null;
+            }
+
+            function hasActiveBoss20Combat() {
+                if (!isEpicBoss20Level()) return false;
+                if (!boss20State || !boss20State.active) return false;
+                if (Number(boss20State.phase) < 1) return false;
+                if (boss20State.inCinematic) return false;
+                return hasActiveBossForLevel(20);
+            }
+
+            function isBoss20WeakPointActive() {
+                if (!isEpicBoss20Level()) return false;
+                return Date.now() < Number(boss20State && boss20State.weakPointUntil);
+            }
+
+            function isBoss20FinalWindowActive() {
+                if (!isEpicBoss20Level()) return false;
+                if (!boss20State || !boss20State.inFinalWindow) return false;
+                return Date.now() < Number(boss20State.finalWindowUntil);
+            }
+
+            function applyBoss20ArmorThreat(originIndex, maxCount = 1) {
+                const count = Math.max(1, Math.floor(Number(maxCount) || 1));
+                const pool = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (state[i] === null) continue;
+                    if (specialState[i] === 'boss') continue;
+                    if (specialState[i] === 'armored') continue;
+                    pool.push(i);
+                }
+                if (!pool.length) return 0;
+                shuffle(pool);
+                const n = Math.max(0, Math.min(count, pool.length));
+                for (let i = 0; i < n; i++) {
+                    const pick = pool[i];
+                    setSpecialForCell(pick, 'armored');
+                    playBossSummonTravelFx(originIndex, pick);
+                    playBossSpawnStamp(pick);
+                }
+                playBossSummonPulse(originIndex);
+                try { playSfx('miniboss_laugh'); } catch (e) { }
+                scheduleRender();
+                return n;
+            }
+
+            function triggerBoss20Phase1Action(reason = 'timer') {
+                if (!hasActiveBoss20Combat()) return 0;
+                if (isBlockingPopupOpen()) return 0;
+                if (Date.now() < Number(boss20State.heroStallUntil) || isBoss20RescueShieldActive()) return 0;
+                const bosses = getBossIndicesForLevel(20);
+                if (!bosses.length) return 0;
+                const origin = bosses[0];
+                const phase = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
+                let acted = 0;
+                if (phase === 1) {
+                    acted = spawnBossArmorPulse(1, origin);
+                    if (acted <= 0) acted = applyBoss20ArmorThreat(origin, 1);
+                } else if (phase === 2) {
+                    const pulseCount = (Math.random() < 0.55) ? 2 : 1;
+                    acted = spawnBossArmorPulse(pulseCount, origin, { offAxisChance: 0.30 });
+                    if (acted <= 0) acted = applyBoss20ArmorThreat(origin, 2);
+                } else {
+                    maybeActivateBoss20HeroMark(origin);
+                    const modeRoll = Math.random();
+                    if (modeRoll < 0.34) {
+                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.88, offAxisChance: 0.44 });
+                    } else if (modeRoll < 0.67) {
+                        acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 0.84, offAxisChance: 0.38 }) + applyBoss20ArmorThreat(origin, 1);
+                    } else {
+                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.94, offAxisChance: 0.55 }) + applyBoss20ArmorThreat(origin, 1);
+                    }
+                    if (acted <= 0) acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 1.0, offAxisChance: 0.6 });
+                }
+                if (acted > 0) {
+                    boss20State.actionCounter = Math.max(0, Number(boss20State.actionCounter) || 0) + 1;
+                }
+                return acted;
+            }
+
+            function ensureBoss20PhaseTimer() {
+                if (!hasActiveBoss20Combat()) {
+                    stopBoss20PhaseTimer();
+                    return;
+                }
+                if (boss20PhaseTimer) return;
+                if (isBlockingPopupOpen() || finalOfferModalOpen) {
+                    boss20PhaseTimer = setTimeout(() => {
+                        boss20PhaseTimer = null;
+                        ensureBoss20PhaseTimer();
+                    }, 260);
+                    return;
+                }
+                const stallLeft = Math.max(0, Number(boss20State.heroStallUntil) - Date.now());
+                if (stallLeft > 0) {
+                    boss20PhaseTimer = setTimeout(() => {
+                        boss20PhaseTimer = null;
+                        ensureBoss20PhaseTimer();
+                    }, Math.max(120, Math.min(900, Math.floor(stallLeft + 40))));
+                    return;
+                }
+                const sourceBoardGeneration = boardGeneration;
+                const phase = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
+                const defaultCadence = (phase <= 1)
+                    ? EPIC_BOSS20_PHASE1_ACTION_MS
+                    : ((phase === 2) ? EPIC_BOSS20_PHASE2_ACTION_MS : EPIC_BOSS20_PHASE3_ACTION_MS);
+                let cadence = Math.max(1200, Math.floor(Number(boss20State.actionCadenceMs) || defaultCadence));
+                if (Date.now() < Number(runPerkState && runPerkState.finalBossSlowUntil)) {
+                    cadence = Math.max(1200, Math.floor(cadence * 1.28));
+                }
+                boss20PhaseTimer = setTimeout(() => {
+                    boss20PhaseTimer = null;
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        ensureBoss20PhaseTimer();
+                        return;
+                    }
+                    if (hasActiveBoss20Combat()) {
+                        triggerBoss20Phase1Action('timer');
+                    }
+                    ensureBoss20PhaseTimer();
+                }, cadence);
+            }
+
+            function showBoss20PhaseShiftOverlay() {
+                try {
+                    const prior = document.querySelector('.boss20-phase-shift');
+                    if (prior) prior.remove();
+                } catch (e) { }
+                try {
+                    const board = document.getElementById('board') || document.querySelector('.board');
+                    if (!board) return null;
+                    const r = board.getBoundingClientRect();
+                    const el = document.createElement('div');
+                    el.className = 'boss20-phase-shift';
+                    el.innerHTML = '<div class="boss20-phase-shift__title">CORE REBOOT</div><div class="boss20-phase-shift__sub">THREAT ESCALATING...</div><div class="boss20-phase-shift__hint">CLICK TO CONTINUE</div>';
+                    el.style.left = Math.round(r.left) + 'px';
+                    el.style.top = Math.round(r.top) + 'px';
+                    el.style.width = Math.max(120, Math.round(r.width)) + 'px';
+                    el.style.height = Math.max(120, Math.round(r.height)) + 'px';
+                    document.body.appendChild(el);
+                    return el;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function showBoss20RescueOverlay() {
+                try {
+                    const prior = document.querySelector('.boss20-rescue');
+                    if (prior) prior.remove();
+                } catch (e) { }
+                try {
+                    const board = document.getElementById('board') || document.querySelector('.board');
+                    if (!board) return null;
+                    const r = board.getBoundingClientRect();
+                    const el = document.createElement('div');
+                    el.className = 'boss20-rescue';
+                    el.innerHTML = '<div class="boss20-rescue__title">ALLIED NANOBOT INTERVENTION</div><div class="boss20-rescue__sub">CORE STABILIZED. CHARGES RESTORED.</div><div class="boss20-rescue__hint">CLICK TO CONTINUE</div>';
+                    el.style.left = Math.round(r.left) + 'px';
+                    el.style.top = Math.round(r.top) + 'px';
+                    el.style.width = Math.max(120, Math.round(r.width)) + 'px';
+                    el.style.height = Math.max(120, Math.round(r.height)) + 'px';
+                    document.body.appendChild(el);
+                    return el;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function showBoss20PhaseThreeOverlay() {
+                try {
+                    const prior = document.querySelector('.boss20-phase-shift');
+                    if (prior) prior.remove();
+                } catch (e) { }
+                try {
+                    const board = document.getElementById('board') || document.querySelector('.board');
+                    if (!board) return null;
+                    const r = board.getBoundingClientRect();
+                    const el = document.createElement('div');
+                    el.className = 'boss20-phase-shift';
+                    el.innerHTML = '<div class="boss20-phase-shift__title">PHASE 3: OMEGA CORE</div><div class="boss20-phase-shift__sub">HERO MARKERS ONLINE. TARGET WEAK-POINTS.</div><div class="boss20-phase-shift__hint">CLICK TO CONTINUE</div>';
+                    el.style.left = Math.round(r.left) + 'px';
+                    el.style.top = Math.round(r.top) + 'px';
+                    el.style.width = Math.max(120, Math.round(r.width)) + 'px';
+                    el.style.height = Math.max(120, Math.round(r.height)) + 'px';
+                    document.body.appendChild(el);
+                    return el;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function waitForBoss20CinematicAcknowledge(overlayEl) {
+                return new Promise((resolve) => {
+                    if (!overlayEl) {
+                        resolve();
+                        return;
+                    }
+                    let done = false;
+                    const armAt = Date.now() + 420;
+                    const finish = () => {
+                        if (done) return;
+                        done = true;
+                        try { overlayEl.removeEventListener('click', onClick); } catch (e) { }
+                        try { overlayEl.removeEventListener('touchstart', onClick); } catch (e) { }
+                        try { overlayEl.removeEventListener('touchend', onClick); } catch (e) { }
+                        try { document.removeEventListener('keydown', onKeyDown, true); } catch (e) { }
+                        resolve();
+                    };
+                    const onClick = (ev) => {
+                        if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+                        if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+                        if (Date.now() < armAt) return;
+                        finish();
+                    };
+                    const onKeyDown = (ev) => {
+                        if (Date.now() < armAt) return;
+                        const key = String((ev && ev.key) || '');
+                        if (key === 'Enter' || key === ' ' || key === 'Spacebar' || key === 'Escape') finish();
+                    };
+                    try {
+                        overlayEl.style.pointerEvents = 'auto';
+                        overlayEl.style.cursor = 'pointer';
+                        overlayEl.setAttribute('tabindex', '0');
+                        overlayEl.setAttribute('role', 'button');
+                        overlayEl.setAttribute('aria-label', 'Continue');
+                        overlayEl.addEventListener('click', onClick);
+                        overlayEl.addEventListener('touchstart', onClick, { passive: false });
+                        overlayEl.addEventListener('touchend', onClick, { passive: false });
+                        document.addEventListener('keydown', onKeyDown, true);
+                        overlayEl.focus();
+                    } catch (e) {
+                        finish();
+                    }
+                });
+            }
+
+            function showBoss20FinalChargeOverlay() {
+                try {
+                    const prior = document.querySelector('.boss20-final-charge');
+                    if (prior) prior.remove();
+                } catch (e) { }
+                try {
+                    const board = document.getElementById('board') || document.querySelector('.board');
+                    if (!board) return null;
+                    const r = board.getBoundingClientRect();
+                    const el = document.createElement('div');
+                    el.className = 'boss20-final-charge';
+                    el.innerHTML = '<div class="boss20-final-charge__title">CORE OVERLOAD</div><div class="boss20-final-charge__sub">WEAK-POINT WINDOW OPENING...</div><div class="boss20-final-charge__hint">CLICK TO CONTINUE</div>';
+                    el.style.left = Math.round(r.left) + 'px';
+                    el.style.top = Math.round(r.top) + 'px';
+                    el.style.width = Math.max(120, Math.round(r.width)) + 'px';
+                    el.style.height = Math.max(120, Math.round(r.height)) + 'px';
+                    document.body.appendChild(el);
+                    return el;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function showBoss20HeroMarkFx(index) {
+                const p = getBoardCellCenter(index);
+                if (!p) return;
+                try {
+                    const fx = document.createElement('div');
+                    fx.className = 'boss20-hero-mark';
+                    fx.style.left = Math.round(p.x) + 'px';
+                    fx.style.top = Math.round(p.y) + 'px';
+                    document.body.appendChild(fx);
+                    setTimeout(() => { try { fx.remove(); } catch (e) { } }, 820);
+                } catch (e) { }
+            }
+
+            function showBoss20FinalBurstFx(index) {
+                try {
+                    const board = document.getElementById('board') || document.querySelector('.board');
+                    if (!board) return;
+                    const r = board.getBoundingClientRect();
+                    const fx = document.createElement('div');
+                    fx.className = 'boss20-final-burst';
+                    fx.style.left = Math.round(r.left) + 'px';
+                    fx.style.top = Math.round(r.top) + 'px';
+                    fx.style.width = Math.max(120, Math.round(r.width)) + 'px';
+                    fx.style.height = Math.max(120, Math.round(r.height)) + 'px';
+                    document.body.appendChild(fx);
+                    setTimeout(() => { try { fx.remove(); } catch (e) { } }, 980);
+                } catch (e) { }
+                try {
+                    playMiniBossBurstEffect(index, true);
+                    setTimeout(() => { try { playMiniBossBurstEffect(index, true); } catch (e) { } }, 160);
+                    setTimeout(() => { try { playMiniBossBurstEffect(index, true); } catch (e) { } }, 320);
+                } catch (e) { }
+            }
+
+            function maybeActivateBoss20HeroMark(originIndex = null, force = false) {
+                if (!hasActiveBoss20Combat()) return false;
+                if (Math.max(1, Math.floor(Number(boss20State.phase) || 1)) < 3) return false;
+                if (boss20State.inCinematic || isBoss20FinalWindowActive()) return false;
+                const now = Date.now();
+                if (!force && now < Number(boss20State.nextHeroMarkAt)) return false;
+                const bosses = getBossIndicesForLevel(20);
+                if (!bosses.length) return false;
+                const idx = Number.isFinite(originIndex) ? Math.floor(Number(originIndex)) : bosses[0];
+                boss20State.heroMarkCell = idx;
+                boss20State.heroMarkUntil = now + Math.max(1000, EPIC_BOSS20_HERO_MARK_DURATION_MS);
+                boss20State.weakPointUntil = Math.max(Number(boss20State.weakPointUntil) || 0, boss20State.heroMarkUntil);
+                boss20State.nextHeroMarkAt = now + Math.max(1800, EPIC_BOSS20_HERO_MARK_EVERY_MS + Math.floor(Math.random() * 1200));
+                showBoss20HeroMarkFx(idx);
+                try { playSfx('zap'); } catch (e) { }
+                scheduleRender();
+                setTimeout(() => {
+                    try {
+                        if (!isEpicBoss20Level()) return;
+                        if (Date.now() >= Number(boss20State.weakPointUntil) - 20) scheduleRender();
+                    } catch (e) { }
+                }, Math.max(180, Number(boss20State.heroMarkUntil) - now + 36));
+                return true;
+            }
+
+            function triggerBoss20FinalWindow(index, meta) {
+                if (!isEpicBoss20Level()) return false;
+                if (!meta || !meta.isBoss || meta.isProjection) return false;
+                if (Math.max(1, Math.floor(Number(meta.phase) || 1)) < 3) return false;
+                if (boss20State.inFinalWindow || boss20State.inCinematic) return false;
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return false;
+                boss20State.inFinalWindow = false;
+                boss20State.inCinematic = true;
+                boss20State.finalChargeUntil = Date.now() + Math.max(600, EPIC_BOSS20_FINAL_CHARGE_MS);
+                boss20State.finalWindowUntil = 0;
+                stopBoss20PhaseTimer();
+                inputLocked = true;
+                const sourceBoardGeneration = boardGeneration;
+                const overlay = showBoss20FinalChargeOverlay();
+                try { playSfx('boss_level'); } catch (e) { }
+                try { playBossSummonPulse(idx, 'blue'); } catch (e) { }
+                if (boss20FinalWindowTimer) {
+                    clearTimeout(boss20FinalWindowTimer);
+                    boss20FinalWindowTimer = null;
+                }
+                waitForBoss20CinematicAcknowledge(overlay).then(() => {
+                    try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    if (state[idx] === null || specialState[idx] !== 'boss') {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    const now = Date.now();
+                    const windowDuration = Math.max(1200, EPIC_BOSS20_FINAL_WINDOW_MS);
+                    boss20State.inFinalWindow = true;
+                    boss20State.finalChargeUntil = now;
+                    boss20State.finalWindowUntil = now + windowDuration;
+                    boss20State.inCinematic = false;
+                    boss20State.heroMarkCell = idx;
+                    boss20State.heroMarkUntil = Math.max(Number(boss20State.heroMarkUntil) || 0, Number(boss20State.finalWindowUntil) || 0);
+                    boss20State.weakPointUntil = Math.max(Number(boss20State.weakPointUntil) || 0, Number(boss20State.finalWindowUntil) || 0);
+                    showBoss20HeroMarkFx(idx);
+                    if (boss20FinalWindowTimer) {
+                        clearTimeout(boss20FinalWindowTimer);
+                        boss20FinalWindowTimer = null;
+                    }
+                    boss20FinalWindowTimer = setTimeout(() => {
+                        boss20FinalWindowTimer = null;
+                        if (!isEpicBoss20Level()) return;
+                        if (Date.now() < Number(boss20State.finalWindowUntil) - 20) return;
+                        boss20State.inFinalWindow = false;
+                        if (Date.now() >= Number(boss20State.heroMarkUntil) - 20) {
+                            boss20State.weakPointUntil = 0;
+                            boss20State.heroMarkUntil = 0;
+                            boss20State.heroMarkCell = -1;
+                        }
+                        scheduleRender();
+                    }, Math.max(120, windowDuration + 30));
+                    inputLocked = false;
+                    scheduleRender();
+                    ensureBoss20PhaseTimer();
+                });
+                return true;
+            }
+
+            function isBoss20RescueShieldActive() {
+                if (!isEpicBoss20Level()) return false;
+                return Date.now() < Number(boss20State && boss20State.rescueShieldUntil);
+            }
+
+            function triggerBoss20RescueSequence(index, meta) {
+                if (!isEpicBoss20Level()) return false;
+                if (!meta || !meta.isBoss) return false;
+                if ((Number(meta.phase) || 1) < 2) return false;
+                if (boss20State.rescueUsed) return false;
+                if (boss20State.inCinematic) return false;
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return false;
+                boss20State.rescueUsed = true;
+                boss20State.inCinematic = true;
+                boss20State.rescueShieldUntil = Date.now() + Math.max(1200, EPIC_BOSS20_RESCUE_CINEMATIC_MS + 500);
+                stopBoss20PhaseTimer();
+                inputLocked = true;
+                clicksLeft = 0;
+                updateHUD();
+                const sourceBoardGeneration = boardGeneration;
+                const overlay = showBoss20RescueOverlay();
+                try { playSfx('achievement'); } catch (e) { }
+                waitForBoss20CinematicAcknowledge(overlay).then(() => {
+                    try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    if (state[idx] === null || specialState[idx] !== 'boss') {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    clicksLeft = getMaxClicksCap();
+                    stormCharges = MAX_STORM_CHARGES;
+                    try { setStormArmed(false); } catch (e) { }
+                    try { flashStormChargeGain(); } catch (e) { }
+                    try { runPerkState.armorPiercerPermanent = true; } catch (e) { }
+                    boss20State.inCinematic = false;
+                    boss20State.heroStallUntil = Date.now() + Math.max(700, Math.floor(EPIC_BOSS20_RESCUE_STALL_MS * 0.35));
+                    boss20State.rescueShieldUntil = Math.max(Number(boss20State.rescueShieldUntil) || 0, Date.now() + 220);
+                    inputLocked = false;
+                    try {
+                        if (window.Assistant && Assistant.show) {
+                            Assistant.show('Hero unit online. Containment resources restored. Armor breaker protocol now active for the rest of this run.', { priority: 2 });
+                        }
+                    } catch (e) { }
+                    scheduleRender();
+                    updateHUD();
+                    ensureBoss20PhaseTimer();
+                    if (boss20Phase3TransitionTimer) {
+                        clearTimeout(boss20Phase3TransitionTimer);
+                        boss20Phase3TransitionTimer = null;
+                    }
+                    boss20Phase3TransitionTimer = setTimeout(() => {
+                        boss20Phase3TransitionTimer = null;
+                        if (sourceBoardGeneration !== boardGeneration) return;
+                        if (state[idx] === null || specialState[idx] !== 'boss') return;
+                        const m = ensureSpecialMeta(idx) || meta || {};
+                        triggerBoss20PhaseThreeTransition(idx, m);
+                    }, Math.max(420, Math.floor(EPIC_BOSS20_RESCUE_STALL_MS * 0.38)));
+                });
+                return true;
+            }
+
+            function triggerBoss20PhaseThreeTransition(index, meta) {
+                if (!isEpicBoss20Level()) return false;
+                if (!meta || !meta.isBoss || meta.isProjection) return false;
+                if ((Number(meta.phase) || 1) >= 3) return false;
+                if (boss20State.inCinematic) return false;
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return false;
+                boss20State.inCinematic = true;
+                stopBoss20PhaseTimer();
+                inputLocked = true;
+                const sourceBoardGeneration = boardGeneration;
+                const overlay = showBoss20PhaseThreeOverlay();
+                try { playMiniBossBurstEffect(idx, true); } catch (e) { }
+                try { playSfx('boss_level'); } catch (e) { }
+                let phase3Spawned = 0;
+                if (state[idx] !== null && specialState[idx] === 'boss') {
+                    const phase3Hp = getBoss20ScaledHp(EPIC_BOSS20_PHASE3_HP);
+                    meta.phase = 3;
+                    meta.hp = phase3Hp;
+                    meta.maxHp = phase3Hp;
+                    meta.breaks = { b75: false, b50: false, b25: false };
+                    specialMetaState[idx] = meta;
+                    boss20State.active = true;
+                    boss20State.phase = 3;
+                    boss20State.hp = phase3Hp;
+                    boss20State.maxHp = phase3Hp;
+                    boss20State.actionCadenceMs = EPIC_BOSS20_PHASE3_ACTION_MS;
+                    boss20State.actionCounter = 0;
+                    boss20State.inFinalWindow = false;
+                    boss20State.finalWindowUntil = 0;
+                    boss20State.finalChargeUntil = 0;
+                    boss20State.heroMarkCell = idx;
+                    boss20State.heroMarkUntil = 0;
+                    boss20State.weakPointUntil = 0;
+                    boss20State.nextHeroMarkAt = Date.now() + Math.max(1200, Math.floor(EPIC_BOSS20_HERO_MARK_EVERY_MS * 0.5));
+                    boss20State.phase3Started = true;
+                    phase3Spawned = populateBoss20Phase3Board(idx);
+                    setMiniBossStateFromMeta(idx, meta);
+                }
+                try { render(); } catch (e) { scheduleRender(); }
+                scheduleRender();
+                waitForBoss20CinematicAcknowledge(overlay).then(() => {
+                    try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    if (state[idx] === null || specialState[idx] !== 'boss') {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    boss20State.inCinematic = false;
+                    inputLocked = false;
+                    try {
+                        if (window.Assistant && Assistant.show) {
+                            const surgeMsg = phase3Spawned > 0 ? ` Viral surge detected: ${phase3Spawned} new host cells.` : '';
+                            Assistant.show('Omega phase detected. Strike the marked weak-point windows.' + surgeMsg, { priority: 2 });
+                        }
+                    } catch (e) { }
+                    queueBoss20Phase3EntryPressure(idx);
+                    scheduleRender();
+                    ensureBoss20PhaseTimer();
+                });
+                return true;
+            }
+
+            function triggerBoss20FalseVictoryTransition(index, meta, tracker = null) {
+                if (!isEpicBoss20Level()) return false;
+                if (!meta || !meta.isBoss) return false;
+                if ((Number(boss20State.phase) || 1) !== 1) return false;
+                if (boss20State.inCinematic) return true;
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return false;
+                boss20State.inCinematic = true;
+                stopBoss20PhaseTimer();
+                inputLocked = true;
+                const sourceBoardGeneration = boardGeneration;
+                const overlay = showBoss20PhaseShiftOverlay();
+                try { playMiniBossBurstEffect(idx, true); } catch (e) { }
+                setTimeout(() => { try { playMiniBossBurstEffect(idx, true); } catch (e) { } }, 640);
+                try { playSfx('boss_level'); } catch (e) { }
+                let phase2Spawned = 0;
+                if (state[idx] !== null && specialState[idx] === 'boss') {
+                    const phase2Hp = getBoss20ScaledHp(EPIC_BOSS20_PHASE2_HP);
+                    meta.phase = 2;
+                    meta.hp = phase2Hp;
+                    meta.maxHp = phase2Hp;
+                    meta.breaks = { b75: false, b50: false, b25: false };
+                    specialMetaState[idx] = meta;
+                    boss20State.active = true;
+                    boss20State.phase = 2;
+                    boss20State.hp = phase2Hp;
+                    boss20State.maxHp = phase2Hp;
+                    boss20State.actionCadenceMs = EPIC_BOSS20_PHASE2_ACTION_MS;
+                    boss20State.actionCounter = 0;
+                    boss20State.inFinalWindow = false;
+                    boss20State.finalWindowUntil = 0;
+                    boss20State.finalChargeUntil = 0;
+                    boss20State.weakPointUntil = 0;
+                    boss20State.heroMarkUntil = 0;
+                    boss20State.heroMarkCell = idx;
+                    boss20State.nextHeroMarkAt = 0;
+                    boss20State.phase3Started = false;
+                    phase2Spawned = populateBoss20Phase2Board(idx);
+                    clicksLeft = Math.min(getMaxClicksCap(), Math.max(0, Number(clicksLeft) || 0) + Math.max(0, Number(EPIC_BOSS20_PHASE_SHIFT_CLICK_REWARD) || 0));
+                    setMiniBossStateFromMeta(idx, meta);
+                }
+                try { render(); } catch (e) { scheduleRender(); }
+                scheduleRender();
+                updateHUD();
+                waitForBoss20CinematicAcknowledge(overlay).then(() => {
+                    try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    if (state[idx] === null || specialState[idx] !== 'boss') {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    boss20State.inCinematic = false;
+                    inputLocked = false;
+                    try {
+                        if (window.Assistant && Assistant.show) {
+                            const filledMsg = phase2Spawned > 0 ? ` Swarm surge detected: ${phase2Spawned} host cells re-seeded.` : '';
+                            Assistant.show('Containment failure. Host entity has reconstituted into a stronger form. Emergency nanobot refill granted.' + filledMsg, { priority: 2 });
+                        }
+                    } catch (e) { }
+                    scheduleRender();
+                    updateHUD();
+                    ensureBoss20PhaseTimer();
+                });
+                return true;
+            }
+
+            function populateBoss20Phase2Board(bossIndex) {
+                if (!isEpicBoss20Level()) return 0;
+                const idx = Math.floor(Number(bossIndex));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
+                if (state[idx] === null || specialState[idx] !== 'boss') return 0;
+                const total = ROWS * COLS;
+                const spawnProfileLevel = Math.max(1, getSpawnProfileLevel(15));
+                const spawnProfileCompleted = Math.max(0, Math.min(9, spawnProfileLevel - 1));
+                const difficulty = getDifficultyForLevel(spawnProfileLevel);
+                const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
+                const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
+                const density = Math.min(0.96, baseDensity + (spawnProfileCompleted * densityGrowth) + 0.12);
+                const targetOccupied = Math.max(26, Math.min(total - 1, Math.round(total * density)));
+                const targetNonBoss = Math.max(24, targetOccupied - 1);
+
+                let occupiedNonBoss = 0;
+                const empties = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (i === idx) continue;
+                    if (state[i] === null) {
+                        empties.push(i);
+                        continue;
+                    }
+                    occupiedNonBoss++;
+                    if (specialState[i] && specialState[i] !== 'boss') {
+                        clearSpecialForCell(i);
+                    }
+                }
+                if (occupiedNonBoss >= targetNonBoss || !empties.length) return 0;
+                shuffle(empties);
+                const addCount = Math.max(0, Math.min(empties.length, targetNonBoss - occupiedNonBoss));
+                for (let k = 0; k < addCount; k++) {
+                    const cellIndex = empties[k];
+                    state[cellIndex] = sampleSizeRandom(spawnProfileLevel, spawnProfileCompleted);
+                    clearSpecialForCell(cellIndex);
+                }
+                return addCount;
+            }
+
+            function populateBoss20Phase3Board(bossIndex) {
+                if (!isEpicBoss20Level()) return 0;
+                const idx = Math.floor(Number(bossIndex));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
+                if (state[idx] === null || specialState[idx] !== 'boss') return 0;
+                const total = ROWS * COLS;
+                const spawnProfileLevel = Math.max(1, getSpawnProfileLevel(15));
+                const spawnProfileCompleted = Math.max(0, Math.min(9, spawnProfileLevel - 1));
+                const difficulty = getDifficultyForLevel(spawnProfileLevel);
+                const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
+                const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
+                const density = Math.min(0.98, baseDensity + (spawnProfileCompleted * densityGrowth) + 0.18);
+                const targetOccupied = Math.max(30, Math.min(total - 1, Math.round(total * density)));
+                const targetNonBoss = Math.max(28, targetOccupied - 1);
+
+                let occupiedNonBoss = 0;
+                const empties = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (i === idx) continue;
+                    if (state[i] === null) {
+                        empties.push(i);
+                        continue;
+                    }
+                    occupiedNonBoss++;
+                    if (specialState[i] && specialState[i] !== 'boss') {
+                        clearSpecialForCell(i);
+                    }
+                }
+                if (occupiedNonBoss >= targetNonBoss || !empties.length) return 0;
+                shuffle(empties);
+                const addCount = Math.max(0, Math.min(empties.length, targetNonBoss - occupiedNonBoss));
+                for (let k = 0; k < addCount; k++) {
+                    const cellIndex = empties[k];
+                    state[cellIndex] = sampleSizeRandom(spawnProfileLevel, spawnProfileCompleted);
+                    clearSpecialForCell(cellIndex);
+                }
+                return addCount;
+            }
+
+            function queueBoss20Phase3EntryPressure(originIndex) {
+                const idx = Math.floor(Number(originIndex));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return;
+                const sourceBoardGeneration = boardGeneration;
+                const pulses = Math.max(1, Math.floor(Number(EPIC_BOSS20_PHASE3_ENTRY_BURSTS) || 4));
+                const gapMs = Math.max(120, Math.floor(Number(EPIC_BOSS20_PHASE3_ENTRY_BURST_INTERVAL_MS) || 260));
+                for (let i = 0; i < pulses; i++) {
+                    setTimeout(() => {
+                        try {
+                            if (sourceBoardGeneration !== boardGeneration) return;
+                            if (!hasActiveBoss20Combat()) return;
+                            if (Math.max(1, Math.floor(Number(boss20State.phase) || 1)) < 3) return;
+                            if (boss20State.inCinematic || isBlockingPopupOpen()) return;
+                            const burstCount = 2 + (Math.random() < 0.6 ? 1 : 0);
+                            let spawned = spawnBossArmorPulse(burstCount, idx, { anyBoardChance: 0.95, offAxisChance: 0.52 });
+                            if (spawned <= 0) spawned = applyBoss20ArmorThreat(idx, 1);
+                            if (spawned > 0) scheduleRender();
+                        } catch (e) { }
+                    }, 140 + (i * gapMs));
+                }
+            }
+
             function stopBossGooShieldTimer() {
                 if (!bossGooShieldTimer) return;
                 clearTimeout(bossGooShieldTimer);
@@ -4421,15 +5874,34 @@ function escapeHtmlAttr(str) {
                 return out;
             }
 
-            function spawnBossArmorPulse(count = 2, originIndex = null) {
+            function spawnBossArmorPulse(count = 2, originIndex = null, opts = null) {
                 const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+                const offAxisChance = Math.max(0, Math.min(1, Number(opts && opts.offAxisChance) || 0));
+                const anyBoardChance = Math.max(0, Math.min(1, Number(opts && opts.anyBoardChance) || 0));
                 let candidates = [];
                 let bossLevel = getCurrentLevelNumber();
+                let originRow = -1;
+                let originCol = -1;
                 if (Number.isFinite(originIndex)) {
                     const bossMeta = specialMetaState[Math.floor(Number(originIndex))] || {};
                     bossLevel = Math.max(1, Math.floor(Number(bossMeta.bossLevel) || bossLevel));
+                    originRow = Math.floor(Number(originIndex) / COLS);
+                    originCol = Number(originIndex) % COLS;
                 }
                 const useLevel5SummonFx = (bossLevel === 5 && Number.isFinite(originIndex));
+                const anyCandidates = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (state[i] === null) anyCandidates.push(i);
+                }
+                if (!anyCandidates.length) return 0;
+                let offAxisCandidates = [];
+                if (Number.isFinite(originIndex)) {
+                    offAxisCandidates = anyCandidates.filter((i) => {
+                        const row = Math.floor(i / COLS);
+                        const col = i % COLS;
+                        return row !== originRow && col !== originCol;
+                    });
+                }
                 if (Number.isFinite(originIndex)) {
                     const order = dirs.slice();
                     shuffle(order);
@@ -4443,17 +5915,37 @@ function escapeHtmlAttr(str) {
                     }
                 }
                 if (!candidates.length) {
-                    for (let i = 0; i < state.length; i++) {
-                        if (state[i] === null) candidates.push(i);
-                    }
+                    candidates = anyCandidates.slice();
                 }
                 shuffle(candidates);
-                const n = Math.max(0, Math.min(candidates.length, Math.floor(Number(count) || 0)));
+                shuffle(anyCandidates);
+                shuffle(offAxisCandidates);
+                const used = new Set();
+                const takeFrom = (pool) => {
+                    while (pool && pool.length) {
+                        const pick = pool.pop();
+                        if (!Number.isFinite(pick)) continue;
+                        if (used.has(pick)) continue;
+                        if (state[pick] !== null) continue;
+                        used.add(pick);
+                        return pick;
+                    }
+                    return null;
+                };
+                const n = Math.max(0, Math.min(anyCandidates.length, Math.floor(Number(count) || 0)));
                 if (n > 0 && useLevel5SummonFx) {
                     playBossSummonPulse(originIndex);
                 }
+                let spawned = 0;
                 for (let k = 0; k < n; k++) {
-                    const idx = candidates[k];
+                    const useAny = anyBoardChance > 0 && anyCandidates.length > 0 && Math.random() < anyBoardChance;
+                    const useOffAxis = offAxisChance > 0 && offAxisCandidates.length > 0 && Math.random() < offAxisChance;
+                    let idx = useAny ? takeFrom(anyCandidates) : null;
+                    if (idx === null && useOffAxis) idx = takeFrom(offAxisCandidates);
+                    if (idx === null) idx = takeFrom(candidates);
+                    if (idx === null && !useOffAxis) idx = takeFrom(offAxisCandidates);
+                    if (idx === null) idx = takeFrom(anyCandidates);
+                    if (idx === null) break;
                     state[idx] = 3;
                     const shouldArmored = bossLevel === 10 ? (Math.random() < 0.5) : true;
                     if (shouldArmored) setSpecialForCell(idx, 'armored');
@@ -4464,12 +5956,13 @@ function escapeHtmlAttr(str) {
                     } else {
                         playMiniBossBurstEffect(idx, false);
                     }
+                    spawned++;
                 }
-                if (n > 0) {
+                if (spawned > 0) {
                     try { playSfx(bossLevel === 10 ? 'goop' : 'miniboss_laugh'); } catch (e) { }
                     scheduleRender();
                 }
-                return n;
+                return spawned;
             }
 
             function spawnBossProjectionPulse(count = 2, originIndex = null) {
@@ -4563,14 +6056,29 @@ function escapeHtmlAttr(str) {
                 if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return false;
                 const m = meta || specialMetaState[idx] || {};
                 const bossLevel = Math.max(1, Math.floor(Number(m.bossLevel) || getCurrentLevelNumber()));
+                const isEpic20 = (bossLevel === 20 && isEpicBoss20Level());
+                const bossPhase = Math.max(1, Math.floor(Number(m.phase) || Number(boss20State && boss20State.phase) || 1));
+                const shouldTriggerFinale = isEpic20 && bossPhase >= 3;
                 playMiniBossBurstEffect(idx, true);
+                if (isEpic20) {
+                    try { showBoss20FinalBurstFx(idx); } catch (e) { }
+                }
                 try { popAt(idx, tracker); } catch (e) { }
                 state[idx] = null;
                 clearSpecialForCell(idx);
                 if (bossLevel === 15) {
                     popBossProjectionsForLevel(15, tracker, idx);
                 }
+                if (bossLevel === 20) {
+                    stopBoss20PhaseTimer();
+                    resetBoss20State();
+                }
                 syncMiniBossStateFromBoard();
+                if (shouldTriggerFinale) {
+                    try { playSfx('boss_level'); } catch (e) { }
+                    triggerLevel20FinalVictorySequence(idx, tracker);
+                    return true;
+                }
                 const bossBonusPenalty = Math.max(0, Number(runPerkState && runPerkState.miniBossBonusPenalty) || 0);
                 const bossBonus = Math.max(0, MINI_BOSS_CLICK_BONUS - bossBonusPenalty);
                 clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + bossBonus);
@@ -4578,6 +6086,7 @@ function escapeHtmlAttr(str) {
                 try {
                     if (bossLevel === 15) playSfx('techno_dead');
                     else if (bossLevel === 10) playSfx('goop_be_dead');
+                    else if (isEpic20) playSfx('boss_level');
                     else playSfx('miniboss_dies');
                 } catch (e) { }
                 return true;
@@ -4612,6 +6121,9 @@ function escapeHtmlAttr(str) {
                 if (!meta.isBoss) return null;
                 const isProjection = !!meta.isProjection;
                 const bossLevel = Math.max(1, Math.floor(Number(meta.bossLevel) || getCurrentLevelNumber()));
+                if (!isProjection && bossLevel === 20 && isEpicBoss20Level() && !Number.isFinite(Number(meta.phase))) {
+                    meta.phase = Math.max(1, Math.floor(Number(boss20State && boss20State.phase) || 1));
+                }
                 const hpNow = Math.max(0, Number(meta.hp) || Number(meta.maxHp) || 1);
                 let extraDamage = 0;
                 if ((Number(runPerkState.bossBreakerHits) || 0) > 0) {
@@ -4620,11 +6132,46 @@ function escapeHtmlAttr(str) {
                 }
                 const totalBaseDamage = 1 + extraDamage;
                 const directClickPenalty = (bossLevel === 10 && !!ctx.isUser) ? 0.5 : 1;
-                const appliedDamage = totalBaseDamage * directClickPenalty;
+                let boss20DamageMult = 1;
+                if (!isProjection && bossLevel === 20 && isEpicBoss20Level()) {
+                    if (isBoss20WeakPointActive()) boss20DamageMult *= Math.max(1, Number(EPIC_BOSS20_HERO_MARK_DAMAGE_MULT) || 1.6);
+                    if (isBoss20FinalWindowActive()) boss20DamageMult *= Math.max(1, Number(EPIC_BOSS20_FINAL_DAMAGE_MULT) || 2);
+                }
+                const appliedDamage = totalBaseDamage * directClickPenalty * boss20DamageMult;
                 meta.hp = Math.max(0, hpNow - appliedDamage);
+                if (!isProjection && bossLevel === 20 && isEpicBoss20Level()) {
+                    if (!Number.isFinite(Number(meta.phase))) meta.phase = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
+                    boss20State.active = true;
+                    boss20State.hp = Math.max(0, Number(meta.hp) || 0);
+                    boss20State.maxHp = Math.max(1, Number(meta.maxHp) || Number(meta.hp) || 1);
+                    if ((Number(meta.phase) || 0) >= 1) {
+                        boss20State.phase = Math.max(1, Math.floor(Number(meta.phase) || 1));
+                    }
+                    const ratio = Math.max(0, Math.min(1, (Number(meta.hp) || 0) / Math.max(1, Number(meta.maxHp) || 1)));
+                    if (boss20State.phase >= 2 && !boss20State.rescueUsed && ratio <= EPIC_BOSS20_RESCUE_TRIGGER_RATIO) {
+                        if (Number(meta.hp) <= 0) meta.hp = 1;
+                        boss20State.hp = Math.max(1, Number(meta.hp) || 1);
+                        setMiniBossStateFromMeta(idx, meta);
+                        scheduleRender();
+                        triggerBoss20RescueSequence(idx, meta);
+                        return { cancelGrowth: true };
+                    }
+                    if (boss20State.phase >= 3 && !boss20State.inFinalWindow && Number(meta.hp) > 0 && Number(meta.hp) <= Math.max(1, Number(EPIC_BOSS20_FINAL_WINDOW_HP) || 2)) {
+                        meta.hp = Math.max(1, Number(meta.hp) || 1);
+                        boss20State.hp = Math.max(1, Number(meta.hp) || 1);
+                        setMiniBossStateFromMeta(idx, meta);
+                        scheduleRender();
+                        triggerBoss20FinalWindow(idx, meta);
+                        return { cancelGrowth: true };
+                    }
+                }
                 if (meta.hp <= 0) {
                     if (!isProjection) {
-                        resolveBossDefeat(idx, meta, ctx.tracker);
+                        if (bossLevel === 20 && isEpicBoss20Level() && (Number(meta.phase) || 1) === 1) {
+                            triggerBoss20FalseVictoryTransition(idx, meta, ctx.tracker);
+                        } else {
+                            resolveBossDefeat(idx, meta, ctx.tracker);
+                        }
                     } else {
                         try { popAt(idx, ctx.tracker, { projectionFx: true }); } catch (e) { }
                         if (Array.isArray(ctx.state)) ctx.state[idx] = null;
@@ -4648,6 +6195,7 @@ function escapeHtmlAttr(str) {
             function placeMiniBossForLevel(levelNum, preferredEmptyList = null) {
                 if (!isMiniBossLevel(levelNum)) {
                     clearMiniBossState();
+                    resetBoss20State();
                     return false;
                 }
                 const empties = Array.isArray(preferredEmptyList) ? preferredEmptyList.filter((i) => state[i] === null) : [];
@@ -4665,10 +6213,17 @@ function escapeHtmlAttr(str) {
                         hp,
                         maxHp: hp,
                         bossLevel: Math.max(1, Math.floor(Number(levelNum) || 1)),
+                        phase: isEpicBoss20Level(levelNum) ? 1 : 0,
                         breaks: { b75: false, b50: false, b25: false }
                     };
                 }
                 syncMiniBossStateFromBoard();
+                if (isEpicBoss20Level(levelNum)) {
+                    bootstrapBoss20PhaseOne();
+                    ensureBoss20PhaseTimer();
+                } else {
+                    resetBoss20State();
+                }
                 return spawnCount > 0;
             }
 
@@ -4697,9 +6252,11 @@ function escapeHtmlAttr(str) {
 
             function randomizeBoard(preserveClicks = false) {
                 boardGeneration += 1;
+                clearFinalVictorySequence(false);
                 state.fill(null);
                 specialState.fill(null);
                 specialMetaState.fill(null);
+                resetBoss20State();
                 resetBossGooShieldState(true);
                 clearTechnoGremlinPowers(true);
                 if (!preserveClicks) {
@@ -4715,6 +6272,9 @@ function escapeHtmlAttr(str) {
                 }
                 const total = ROWS * COLS;
                 const levelNum = getCurrentLevelNumber();
+                if (isEpicBoss20Level(levelNum)) {
+                    try { stopRotatingBlockerTicker(); } catch (e) { }
+                }
                 applyVisualPhase(levelNum);
                 const spawnProfileLevel = getSpawnProfileLevel(levelNum);
                 const spawnProfileCompleted = Math.max(0, Math.min(9, spawnProfileLevel - 1));
@@ -4759,6 +6319,7 @@ function escapeHtmlAttr(str) {
                     }, firstDelay);
                 }
                 ensureTechnoGremlinPowerTimer();
+                ensureBoss20PhaseTimer();
                 ensureLevel5HasArmored();
                 queueLikelyAssetPrefetch(levelNum + 1, 'next-level');
                 if (preserveClicks && (Number(runPerkState.overclockedReservePending) || 0) > 0) {
@@ -4877,10 +6438,22 @@ function escapeHtmlAttr(str) {
                     const meta = (Number.isFinite(cellIndex) && cellIndex >= 0) ? (specialMetaState[cellIndex] || {}) : {};
                     const isProjection = !!meta.isProjection;
                     const bossLevel = Math.floor(Number(meta.bossLevel) || 0);
+                    const bossPhase = (bossLevel === 20) ? Math.floor(Number(meta.phase) || 0) : 0;
                     const bossSpriteUrl = getMiniBossSpriteUrlForLevel(bossLevel);
                     if (isProjection) container.classList.add('special-boss-projection');
                     if (bossLevel === 10) container.classList.add('special-boss-level10');
                     if (bossLevel === 15) container.classList.add('special-boss-level15');
+                    if (bossLevel === 20 && bossPhase >= 2) container.classList.add('special-boss-level20-phase2');
+                    if (bossLevel === 20 && bossPhase >= 3) container.classList.add('special-boss-level20-phase3');
+                    if (!isProjection && bossLevel === 20) {
+                        const now = Date.now();
+                        if (Number(cellIndex) === Number(boss20State.heroMarkCell) && now < Number(boss20State.weakPointUntil)) {
+                            container.classList.add('special-boss-level20-weak');
+                        }
+                        if (boss20State.inFinalWindow && now < Number(boss20State.finalWindowUntil)) {
+                            container.classList.add('special-boss-level20-final-window');
+                        }
+                    }
                     const bossSheet = document.createElement('div');
                     bossSheet.className = 'boss-sprite-sheet';
                     if (bossLevel === 10 || bossLevel === 15) {
@@ -4981,6 +6554,7 @@ function escapeHtmlAttr(str) {
                 }
                 ensureBossGooShieldTimer();
                 ensureTechnoGremlinPowerTimer();
+                ensureBoss20PhaseTimer();
                 syncRotatingBlockerUI();
                 updateHUD();
                 if (!tutorialSeen.firstArmoredSeen) {
@@ -4996,6 +6570,9 @@ function escapeHtmlAttr(str) {
                 const remaining = state.filter(x => x !== null).length;
 
                 if (remaining === 0) {
+                    if (isFinalVictoryActive()) {
+                        return;
+                    }
                     // single, unified "level complete" path
                     if (clicksLeft === 1) incrementAchievementStat('runClutchClears', 1, 'run');
                     const clearedLevelNum = getCurrentLevelNumber();
@@ -5455,6 +7032,10 @@ function escapeHtmlAttr(str) {
 
             // ----- Cleaned out-of-clicks handling (previously corrupted) -----
             function checkOutOfClicks() {
+                if (isFinalVictoryActive()) return;
+                if (clicksLeft <= 0 && isBoss20RescueShieldActive()) {
+                    return;
+                }
                 if (clicksLeft <= 0 && !outOfClicksShown) {
                     outOfClicksShown = true;
                     const levelNow = getCurrentLevelNumber();
@@ -5462,6 +7043,7 @@ function escapeHtmlAttr(str) {
                     try { hideFinalOfferPopup(true); } catch (e) { }
                     try { runPerkState.popupOpen = false; } catch (e) { }
                     try { stopBossGooShieldTimer(); } catch (e) { }
+                    try { resetBoss20State(); } catch (e) { }
                     try { clearTechnoGremlinPowers(true); } catch (e) { }
                     if (levelNow === Math.max(1, Math.floor(Number(FINAL_OFFER_CONFIG && FINAL_OFFER_CONFIG.level) || 20)) && musicOverrideMode === 'final-boss') {
                         try { stopFinalBossTheme({ fadeOutMs: 700, resumeNormal: true }); } catch (e) { }
@@ -5932,7 +7514,7 @@ function escapeHtmlAttr(str) {
                     for (let i = 0; i < modalIds.length; i++) {
                         if (isElementVisiblyOpen(document.getElementById(modalIds[i]))) return true;
                     }
-                    const modalSelectors = ['.level-complete', '.game-over-popup', '.run-perk-popup', '.final-offer-modal'];
+                    const modalSelectors = ['.level-complete', '.game-over-popup', '.run-perk-popup', '.final-offer-modal', '.final-victory-overlay'];
                     for (let i = 0; i < modalSelectors.length; i++) {
                         if (isElementVisiblyOpen(document.querySelector(modalSelectors[i]))) return true;
                     }
