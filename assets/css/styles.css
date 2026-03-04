@@ -3115,18 +3115,23 @@
             left: 10px;
             right: 10px;
             bottom: 58px;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            display: flex;
+            align-items: flex-end;
             gap: 6px;
             z-index: 2;
         }
 
         .final-offer-modal .fo-choice {
+            flex: 1 1 0;
+            min-width: 0;
             background: rgba(8, 10, 16, 0.72);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 7px;
             padding: 5px 6px;
-            min-height: 60px;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
 
         .final-offer-modal .fo-choice-title {
@@ -3144,6 +3149,10 @@
             line-height: 1.45;
             color: #dbe8ff;
             text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.56);
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 4;
+            overflow: hidden;
         }
 
         .final-offer-modal .fo-choice.fo-choice-pixel .fo-choice-title {
@@ -3213,7 +3222,7 @@
             }
 
             .final-offer-modal .fo-choice {
-                min-height: 54px;
+                min-height: 0;
                 padding: 4px 5px;
             }
 
@@ -6211,6 +6220,12 @@ html.assistant-disabled .assistant-fallback-bubble {
 
         /* Tablet layout: keep top stats row full-width, but place meter + controls together. */
         @media (min-width: 600px) and (max-width: 899px) {
+            body:not(.assistant-disabled) .hud,
+            html:not(.assistant-disabled) body .hud {
+                /* Reserve space for the fixed assistant badge on the right side. */
+                padding-right: clamp(60px, 11vw, 92px);
+            }
+
             .hud {
                 justify-content: flex-start;
                 gap: 10px;
@@ -6222,51 +6237,31 @@ html.assistant-disabled .assistant-fallback-bubble {
             }
 
             .hud > #clicksMeter {
-                flex: 1 1 auto;
+                flex: 0 0 auto;
                 width: auto;
-                min-width: 0;
-                margin-right: auto;
-                padding: 6px 8px;
-                gap: 5px;
-            }
-
-            .hud > #clicksMeter .meter-icon {
-                width: 24px;
-                height: 24px;
-            }
-
-            .hud > #clicksMeter .meter-segments {
-                gap: 2px;
-            }
-
-            .hud > #clicksMeter .meter-segments .seg {
-                width: 10px;
-                height: 10px;
-            }
-
-            .hud > #clicksMeter .meter-count {
-                font-size: 9px;
+                margin-right: 0;
             }
 
             .hud > .control-trio {
                 flex: 0 0 auto;
                 width: auto;
-                margin-left: auto;
-                justify-content: flex-end;
-                gap: 6px;
+                margin-left: 0;
+                margin-right: auto;
+                justify-content: flex-start;
+                gap: 8px;
             }
 
             .hud > .control-trio .ctrl {
-                width: 40px;
-                height: 36px;
-                padding: 4px;
-                font-size: 10px;
+                width: 48px;
+                height: 40px;
+                padding: 6px;
+                font-size: 12px;
             }
 
             .hud > .control-trio .storm-btn {
-                width: 40px;
-                min-width: 40px;
-                height: 40px;
+                width: 44px;
+                min-width: 44px;
+                height: 44px;
             }
         }
 
@@ -6486,7 +6481,7 @@ html.assistant-disabled .assistant-fallback-bubble {
             box-shadow: 0 0 34px rgba(255, 170, 112, 0.72), 0 0 54px rgba(255, 116, 86, 0.58);
         }
 
-.final-victory-modal {
+        .final-victory-modal {
             width: min(92vw, 760px);
             max-height: min(88vh, 860px);
             border-radius: 14px;
@@ -6502,6 +6497,8 @@ html.assistant-disabled .assistant-fallback-bubble {
             opacity: 0;
             transform: translateY(22px) scale(0.975);
             transition: opacity 380ms ease, transform 380ms ease;
+            overflow-y: auto;
+            overscroll-behavior: contain;
         }
 
 .final-victory-overlay.show-win .final-victory-modal {
@@ -6519,13 +6516,14 @@ html.assistant-disabled .assistant-fallback-bubble {
             margin-top: 2px;
         }
 
-.final-victory-modal .fv-image-wrap {
+        .final-victory-modal .fv-image-wrap {
             width: 100%;
             border-radius: 10px;
             overflow: hidden;
             background: rgba(0, 0, 0, 0.28);
             border: 1px solid rgba(255, 214, 176, 0.28);
-            min-height: clamp(160px, 32vh, 320px);
+            min-height: clamp(132px, 26vh, 260px);
+            max-height: 34vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -6746,6 +6744,14 @@ html.assistant-disabled .assistant-fallback-bubble {
                 width: min(94vw, 620px);
                 padding: 12px 12px 10px;
                 gap: 8px;
+                max-height: min(92vh, 760px);
+            }
+            .final-victory-modal .fv-image-wrap {
+                min-height: clamp(104px, 20vh, 180px);
+                max-height: 26vh;
+            }
+            .final-victory-modal .fv-credits-wrap {
+                height: clamp(64px, 11vh, 96px);
             }
             .final-victory-modal .fv-restart-btn {
                 font-size: 10px;
