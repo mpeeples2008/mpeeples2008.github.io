@@ -7990,6 +7990,29 @@ function escapeHtmlAttr(str) {
             const settingsTabPane = document.getElementById('settingsTabPane');
             const achievementsTabPane = document.getElementById('achievementsTabPane');
             const aboutTabPane = document.getElementById('aboutTabPane');
+            const testLevelInput = document.getElementById('testLevelInput');
+            const applyTestLevelBtn = document.getElementById('applyTestLevelBtn');
+            const testClicksInput = document.getElementById('testClicksInput');
+            const applyTestClicksBtn = document.getElementById('applyTestClicksBtn');
+            const testClicksOverCap = document.getElementById('testClicksOverCap');
+            const settingsTestStatus = document.getElementById('settingsTestStatus');
+            function setSettingsTestStatus(message, isError) {
+                if (!settingsTestStatus) return;
+                settingsTestStatus.textContent = String(message || '');
+                settingsTestStatus.style.color = isError ? '#ffd0d0' : '#cfe4ff';
+            }
+            function syncSettingsTestInputs() {
+                if (testLevelInput) {
+                    let currentLevel = 1;
+                    try {
+                        if (typeof window.getLevel === 'function') currentLevel = Number(window.getLevel()) || 1;
+                        else currentLevel = getCurrentLevelNumber();
+                    } catch (e) { }
+                    testLevelInput.value = String(Math.max(1, Math.floor(Number(currentLevel) || 1)));
+                }
+                if (testClicksInput) testClicksInput.value = '5';
+                setSettingsTestStatus('', false);
+            }
             function setSettingsPopupTab(tabName) {
                 const normalized = String(tabName || '').toLowerCase();
                 const tab = normalized === 'achievements' || normalized === 'about' ? normalized : 'settings';
@@ -8026,6 +8049,7 @@ function escapeHtmlAttr(str) {
                     setSettingsPopupTab('settings');
                     scheduleAchievementsUIRender();
                     syncAudioSettingsUI();
+                    syncSettingsTestInputs();
                 });
             }
             if (helpBtn) {
@@ -8087,6 +8111,61 @@ function escapeHtmlAttr(str) {
                 resetProgressBtn.addEventListener('click', (ev) => {
                     try { ev.preventDefault(); } catch (e) { }
                     resetProgressWithConfirm();
+                });
+            }
+            if (applyTestLevelBtn) {
+                applyTestLevelBtn.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    const requested = Math.max(1, Math.floor(Number(testLevelInput && testLevelInput.value) || 1));
+                    if (testLevelInput) testLevelInput.value = String(requested);
+                    try {
+                        if (typeof window.setLevel === 'function') {
+                            const result = window.setLevel(requested) || {};
+                            const actual = Math.max(1, Math.floor(Number(result.level) || requested));
+                            if (testLevelInput) testLevelInput.value = String(actual);
+                            setSettingsTestStatus(`Level set to ${actual}.`, false);
+                        } else {
+                            screensPassed = requested - 1;
+                            randomizeBoard(false);
+                            updateHUD();
+                            setSettingsTestStatus(`Level set to ${requested}.`, false);
+                        }
+                    } catch (e) {
+                        setSettingsTestStatus('Level change failed.', true);
+                    }
+                });
+            }
+            if (applyTestClicksBtn) {
+                applyTestClicksBtn.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    const amount = Math.max(1, Math.floor(Number(testClicksInput && testClicksInput.value) || 0));
+                    if (!Number.isFinite(amount) || amount <= 0) {
+                        setSettingsTestStatus('Enter a valid click amount.', true);
+                        return;
+                    }
+                    const allowOverCap = !!(testClicksOverCap && testClicksOverCap.checked);
+                    try {
+                        let result = null;
+                        if (typeof window.addClicks === 'function') {
+                            result = window.addClicks(amount, allowOverCap) || null;
+                        } else {
+                            const before = Number(clicksLeft) || 0;
+                            const next = before + amount;
+                            clicksLeft = allowOverCap
+                                ? Math.max(0, next)
+                                : Math.max(0, Math.min(getMaxClicksCap(), next));
+                            updateHUD();
+                            result = { clicks: clicksLeft, cap: getMaxClicksCap(), changed: clicksLeft - before };
+                        }
+                        if (result && Number.isFinite(Number(result.clicks))) {
+                            const cap = Number(result.cap) || getMaxClicksCap();
+                            setSettingsTestStatus(`Clicks: ${Number(result.clicks)} / ${cap}`, false);
+                        } else {
+                            setSettingsTestStatus('Clicks added.', false);
+                        }
+                    } catch (e) {
+                        setSettingsTestStatus('Click update failed.', true);
+                    }
                 });
             }
 

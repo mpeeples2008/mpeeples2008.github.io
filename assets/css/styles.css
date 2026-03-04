@@ -4233,6 +4233,82 @@
                 font-size: 10px;
             }
 
+            .audio-popup .settings-test-tools {
+                margin-top: 10px;
+                padding-top: 8px;
+                border-top: 1px solid rgba(255, 255, 255, 0.16);
+            }
+
+            .audio-popup .settings-test-title {
+                font-size: 9px;
+                color: #ffe9b0;
+                margin-bottom: 8px;
+                letter-spacing: 0.02em;
+            }
+
+            .audio-popup .settings-test-row {
+                display: grid;
+                grid-template-columns: 86px 1fr auto;
+                align-items: center;
+                gap: 8px;
+                margin-top: 6px;
+            }
+
+            .audio-popup .settings-test-row label {
+                width: auto;
+                margin: 0;
+                font-size: 10px;
+            }
+
+            .audio-popup input[type="number"]#testLevelInput,
+            .audio-popup input[type="number"]#testClicksInput {
+                width: 100%;
+                min-height: 30px;
+                border-radius: 6px;
+                border: 2px solid rgba(255, 255, 255, 0.22);
+                background: rgba(0, 0, 0, 0.22);
+                color: #ffe9b0;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 10px;
+                padding: 4px 6px;
+                box-sizing: border-box;
+            }
+
+            .audio-popup .settings-test-row .btn {
+                min-width: 58px;
+                padding: 7px 10px;
+                font-size: 10px;
+            }
+
+            .audio-popup .settings-test-row-meta {
+                grid-template-columns: 1fr;
+                gap: 6px;
+                margin-top: 8px;
+            }
+
+            .audio-popup .settings-test-checkbox-wrap {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 9px;
+                color: #d8ebff;
+            }
+
+            .audio-popup .settings-test-checkbox-wrap input[type="checkbox"] {
+                width: 14px;
+                height: 14px;
+                accent-color: #67e8f9;
+                margin: 0;
+            }
+
+            .audio-popup .settings-test-status {
+                min-height: 12px;
+                font-size: 8px;
+                color: #cfe4ff;
+                line-height: 1.35;
+                opacity: 0.96;
+            }
+
             .audio-popup .settings-credits {
                 margin-top: 10px;
                 padding-top: 8px;
@@ -6131,6 +6207,67 @@ html.assistant-disabled .assistant-fallback-bubble {
             justify-content: center;
             align-items: center;
             flex-wrap: nowrap;
+        }
+
+        /* Tablet layout: keep top stats row full-width, but place meter + controls together. */
+        @media (min-width: 600px) and (max-width: 899px) {
+            .hud {
+                justify-content: flex-start;
+                gap: 10px;
+            }
+
+            .hud > .hud-row {
+                flex: 0 0 100%;
+                width: 100%;
+            }
+
+            .hud > #clicksMeter {
+                flex: 1 1 auto;
+                width: auto;
+                min-width: 0;
+                margin-right: auto;
+                padding: 6px 8px;
+                gap: 5px;
+            }
+
+            .hud > #clicksMeter .meter-icon {
+                width: 24px;
+                height: 24px;
+            }
+
+            .hud > #clicksMeter .meter-segments {
+                gap: 2px;
+            }
+
+            .hud > #clicksMeter .meter-segments .seg {
+                width: 10px;
+                height: 10px;
+            }
+
+            .hud > #clicksMeter .meter-count {
+                font-size: 9px;
+            }
+
+            .hud > .control-trio {
+                flex: 0 0 auto;
+                width: auto;
+                margin-left: auto;
+                justify-content: flex-end;
+                gap: 6px;
+            }
+
+            .hud > .control-trio .ctrl {
+                width: 40px;
+                height: 36px;
+                padding: 4px;
+                font-size: 10px;
+            }
+
+            .hud > .control-trio .storm-btn {
+                width: 40px;
+                min-width: 40px;
+                height: 40px;
+            }
         }
 
         /* Ensure board and wrap sizing predictable and prevent overflow from transient particles */

@@ -351,6 +351,27 @@
             <button id="resetProgressBtn" class="btn" type="button">Reset Progress</button>
             <div class="settings-reset-note">Clears High Score and Achievements</div>
         </div>
+
+        <div class="settings-test-tools">
+            <div class="settings-test-title">Testing Tools</div>
+            <div class="settings-test-row">
+                <label for="testLevelInput">Set Level</label>
+                <input id="testLevelInput" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" />
+                <button id="applyTestLevelBtn" class="btn" type="button">Go</button>
+            </div>
+            <div class="settings-test-row">
+                <label for="testClicksInput">Add Clicks</label>
+                <input id="testClicksInput" type="number" min="1" max="99" step="1" value="5" inputmode="numeric" />
+                <button id="applyTestClicksBtn" class="btn" type="button">Add</button>
+            </div>
+            <div class="settings-test-row settings-test-row-meta">
+                <label class="settings-test-checkbox-wrap" for="testClicksOverCap">
+                    <input id="testClicksOverCap" type="checkbox" />
+                    <span>Allow over cap</span>
+                </label>
+                <div id="settingsTestStatus" class="settings-test-status" aria-live="polite"></div>
+            </div>
+        </div>
         </div>
 
         <div id="achievementsTabPane" class="settings-tab-pane" role="tabpanel" aria-labelledby="achievementsTabBtn" aria-hidden="true">
