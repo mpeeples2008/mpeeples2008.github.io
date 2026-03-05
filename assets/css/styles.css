@@ -3063,6 +3063,23 @@
             color: #d9ecff;
         }
 
+        .final-offer-prelude {
+            position: fixed;
+            z-index: 95270;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity var(--fo-prelude-ms, 900ms) ease;
+        }
+
+        .final-offer-prelude.show {
+            opacity: 1;
+        }
+
+        .final-offer-prelude.hide {
+            opacity: 0;
+        }
+
         .final-offer-modal {
             position: fixed;
             z-index: 95280;

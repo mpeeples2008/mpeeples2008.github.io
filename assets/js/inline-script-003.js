@@ -10,6 +10,9 @@ const BOSS_LEVEL10_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/s
 const BOSS_LEVEL15_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level_3.png';
 const FINAL_OFFER_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/final_offer.png';
 const FINAL_BOSS_THEME_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Unholy%20Knight.mp3';
+const FINAL_OFFER_PRELUDE_FADE_MS = 900;
+const FINAL_OFFER_MUSIC_DUCK_MS = 900;
+const FINAL_OFFER_MUSIC_DUCK_RATIO = 0.06;
 const FINAL_VICTORY_DEFAULT_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/independent_variable.png';
 const FINAL_VICTORY_PIXEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/system_restored.png';
 const FINAL_VICTORY_BROKER_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/hostile_takeover.png';
@@ -679,9 +682,11 @@ function escapeHtmlAttr(str) {
 
             function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
             function prepareMusicOrder() { musicOrder = MUSIC_PLAYLIST.slice(); shuffleArray(musicOrder); musicIndex = 0; }
-            function startFinalBossTheme() {
+            function startFinalBossTheme(opts = {}) {
                 try {
                     if (!musicEnabled || !audioUserInteracted) return false;
+                    const fadeInMs = Math.max(0, Math.floor(Number(opts.fadeInMs) || 0));
+                    const initialRatio = Math.max(0, Math.min(1, Number(opts.initialVolumeRatio)));
                     musicOverrideMode = 'final-boss';
                     try {
                         if (musicOverrideFadeTimer) {
@@ -698,11 +703,27 @@ function escapeHtmlAttr(str) {
                     musicAudio.loop = true;
                     musicAudio.preload = 'auto';
                     musicAudio.crossOrigin = 'anonymous';
-                    musicAudio.volume = Math.max(0, Math.min(1, Number(window.musicVolume) || 0.20));
+                    const targetVol = Math.max(0, Math.min(1, Number(window.musicVolume) || 0.20));
+                    const startVol = fadeInMs > 0 ? Math.max(0.001, targetVol * initialRatio) : targetVol;
+                    musicAudio.volume = startVol;
                     musicAudio.muted = !!window.allMuted;
                     try { window.musicAudio = musicAudio; } catch (e) { }
                     const p = musicAudio.play();
                     if (p && p.catch) p.catch(() => { });
+                    if (fadeInMs > 0 && !window.allMuted) {
+                        const stepMs = 40;
+                        const steps = Math.max(1, Math.ceil(fadeInMs / stepMs));
+                        let tick = 0;
+                        musicOverrideFadeTimer = setInterval(() => {
+                            tick += 1;
+                            const t = Math.max(0, Math.min(1, tick / steps));
+                            try { musicAudio.volume = Math.max(0.001, startVol + ((targetVol - startVol) * t)); } catch (e) { }
+                            if (t >= 1) {
+                                try { clearInterval(musicOverrideFadeTimer); } catch (e) { }
+                                musicOverrideFadeTimer = null;
+                            }
+                        }, stepMs);
+                    }
                     return true;
                 } catch (e) {
                     return false;
@@ -1550,6 +1571,10 @@ function escapeHtmlAttr(str) {
             let runPerkPopupEl = null;
             let finalOfferPopupEl = null;
             let finalOfferModalOpen = false;
+            let finalOfferPreludeEl = null;
+            let finalOfferPreludeActive = false;
+            let finalOfferPreludeTimer = null;
+            let finalOfferMusicFadeTimer = null;
             let finalVictoryOverlayEl = null;
             let finalVictoryExplosionTimer = null;
             let finalVictoryRevealTimer = null;
@@ -2428,8 +2453,105 @@ function escapeHtmlAttr(str) {
                 } catch (e) { }
             }
 
+            function stopFinalOfferMusicDuck() {
+                try {
+                    if (finalOfferMusicFadeTimer) {
+                        clearInterval(finalOfferMusicFadeTimer);
+                        finalOfferMusicFadeTimer = null;
+                    }
+                } catch (e) { }
+            }
+
+            function fadeCurrentMusicForFinalOffer(durationMs = FINAL_OFFER_MUSIC_DUCK_MS, targetRatio = FINAL_OFFER_MUSIC_DUCK_RATIO) {
+                stopFinalOfferMusicDuck();
+                const ma = getActiveMusicAudio();
+                if (!ma || musicOverrideMode === 'final-boss') return;
+                const ms = Math.max(120, Math.floor(Number(durationMs) || 0));
+                const ratio = Math.max(0, Math.min(1, Number(targetRatio) || 0));
+                const fromVol = Math.max(0.001, Number(ma.volume) || Number(window.musicVolume) || 0.2);
+                const toVol = Math.max(0.001, fromVol * ratio);
+                if (ms <= 0 || Math.abs(fromVol - toVol) < 0.001) {
+                    try { ma.volume = toVol; } catch (e) { }
+                    return;
+                }
+                const stepMs = 40;
+                const steps = Math.max(1, Math.ceil(ms / stepMs));
+                let tick = 0;
+                finalOfferMusicFadeTimer = setInterval(() => {
+                    tick += 1;
+                    const t = Math.max(0, Math.min(1, tick / steps));
+                    try { ma.volume = Math.max(0.001, fromVol + ((toVol - fromVol) * t)); } catch (e) { }
+                    if (t >= 1) stopFinalOfferMusicDuck();
+                }, stepMs);
+            }
+
+            function hideFinalOfferPrelude(immediate = false) {
+                const el = finalOfferPreludeEl || document.querySelector('.final-offer-prelude');
+                finalOfferPreludeActive = false;
+                if (!el) {
+                    finalOfferPreludeEl = null;
+                    return;
+                }
+                const cleanup = () => {
+                    try {
+                        if (typeof el._foPreludeRemoveViewportListeners === 'function') el._foPreludeRemoveViewportListeners();
+                    } catch (e) { }
+                    try { el.remove(); } catch (e) { }
+                    if (finalOfferPreludeEl === el) finalOfferPreludeEl = null;
+                };
+                if (immediate) {
+                    cleanup();
+                    return;
+                }
+                el.classList.remove('show');
+                el.classList.add('hide');
+                setTimeout(cleanup, 260);
+            }
+
+            function showFinalOfferPrelude(durationMs = FINAL_OFFER_PRELUDE_FADE_MS) {
+                hideFinalOfferPrelude(true);
+                finalOfferPreludeActive = true;
+                const el = document.createElement('div');
+                el.className = 'final-offer-prelude';
+                const positionOverBoard = () => {
+                    try {
+                        const board = document.getElementById('board') || document.querySelector('.board');
+                        if (!board) return;
+                        const r = board.getBoundingClientRect();
+                        el.style.left = Math.round(r.left) + 'px';
+                        el.style.top = Math.round(r.top) + 'px';
+                        el.style.width = Math.max(120, Math.round(r.width)) + 'px';
+                        el.style.height = Math.max(120, Math.round(r.height)) + 'px';
+                    } catch (e) { }
+                };
+                const onViewportChange = () => positionOverBoard();
+                positionOverBoard();
+                window.addEventListener('resize', onViewportChange);
+                window.addEventListener('scroll', onViewportChange, true);
+                el._foPreludeRemoveViewportListeners = () => {
+                    try { window.removeEventListener('resize', onViewportChange); } catch (e) { }
+                    try { window.removeEventListener('scroll', onViewportChange, true); } catch (e) { }
+                };
+                document.body.appendChild(el);
+                finalOfferPreludeEl = el;
+                const fadeMs = Math.max(200, Math.floor(Number(durationMs) || FINAL_OFFER_PRELUDE_FADE_MS));
+                el.style.setProperty('--fo-prelude-ms', `${fadeMs}ms`);
+                requestAnimationFrame(() => {
+                    try { el.classList.add('show'); } catch (e) { }
+                });
+                return fadeMs;
+            }
+
             function hideFinalOfferPopup(immediate = false) {
                 try {
+                    try {
+                        if (finalOfferPreludeTimer) {
+                            clearTimeout(finalOfferPreludeTimer);
+                            finalOfferPreludeTimer = null;
+                        }
+                    } catch (e) { }
+                    stopFinalOfferMusicDuck();
+                    hideFinalOfferPrelude(immediate);
                     const el = finalOfferPopupEl || document.querySelector('.final-offer-modal');
                     if (!el) {
                         finalOfferPopupEl = null;
@@ -2707,12 +2829,14 @@ function escapeHtmlAttr(str) {
                 if (!runPerkState || !runPerkState.finalOfferPending || runPerkState.finalOfferSeen) return false;
                 if (isFinalVictoryActive()) return false;
                 if (inputLocked || stormResolving || outOfClicksShown) return false;
+                if (finalOfferPreludeActive || finalOfferModalOpen) return false;
                 if (typeof particlesActive === 'function' && particlesActive()) return false;
                 try {
                     if (document.querySelector('.level-complete')) return false;
                     if (document.querySelector('.game-over-popup')) return false;
                     if (document.querySelector('.run-perk-popup')) return false;
                     if (document.querySelector('.final-offer-modal')) return false;
+                    if (document.querySelector('.final-offer-prelude')) return false;
                     const audioPopup = document.getElementById('audioPopup');
                     const helpPopup = document.getElementById('helpPopup');
                     const aboutPopup = document.getElementById('aboutPopup');
@@ -2733,95 +2857,112 @@ function escapeHtmlAttr(str) {
                     hideFinalOfferPopup(true);
                     try { hideActiveChainBadge(false); } catch (e) { }
                     finalOfferModalOpen = true;
-                    try { stopRotatingBlockerTicker(); } catch (e) { }
-                    const pixelDesc = '+6 clicks, +1 Nano Storm, and boss systems run slower for a short time.';
-                    const soloDesc = 'No bonus and no penalty. Enter level 20 with your current resources.';
-                    const brokerDesc = '+15 clicks, Nano Storm armed, and boss HP -20%; score drops to 49% and future score Double Deals are disabled.';
-                    const el = document.createElement('div');
-                    el.className = 'final-offer-modal';
-                    el.setAttribute('role', 'dialog');
-                    el.setAttribute('aria-modal', 'true');
-                    el.dataset.pickReady = '0';
-                    el.classList.add('pick-locked');
-                    el.innerHTML = `
-                        <div class="fo-art" style="background-image:url('${escapeHtmlAttr(FINAL_OFFER_IMAGE_URL)}');"></div>
-                        <div class="fo-shade"></div>
-                        <div class="fo-legend">
-                            <div class="fo-choice fo-choice-pixel">
-                                <div class="fo-choice-title">PIXEL PERK</div>
-                                <div class="fo-choice-desc">${escapeHtml(pixelDesc)}</div>
-                            </div>
-                            <div class="fo-choice fo-choice-solo">
-                                <div class="fo-choice-title">ON MY OWN</div>
-                                <div class="fo-choice-desc">${escapeHtml(soloDesc)}</div>
-                            </div>
-                            <div class="fo-choice fo-choice-broker">
-                                <div class="fo-choice-title">VIRAL VENTURE</div>
-                                <div class="fo-choice-desc">${escapeHtml(brokerDesc)}</div>
-                            </div>
-                        </div>
-                        <div class="fo-actions">
-                            <button type="button" class="fo-btn fo-btn-pixel" data-offer="${escapeHtmlAttr(pixel.id)}">PIXEL PERK</button>
-                            <button type="button" class="fo-btn fo-btn-solo" data-offer="final_on_my_own">ON MY OWN</button>
-                            <button type="button" class="fo-btn fo-btn-broker" data-offer="${escapeHtmlAttr(broker.id)}">VIRAL VENTURE</button>
-                        </div>
-                    `;
-                    const onPick = (ev) => {
-                        if (!el || el.dataset.pickReady !== '1') return;
-                        const btn = ev.target && ev.target.closest ? ev.target.closest('.fo-btn[data-offer]') : null;
-                        if (!btn) return;
-                        const chosenId = applyFinalOfferChoice(btn.getAttribute('data-offer'));
-                        hideFinalOfferPopup(false);
-                        inputLocked = false;
-                        try {
-                            if (window.Assistant && Assistant.show) {
-                                if (chosenId === broker.id) {
-                                    Assistant.show('Viral venture accepted. Big power now, expensive consequences later.', { priority: 2 });
-                                } else if (chosenId === 'final_on_my_own') {
-                                    Assistant.show('No deal selected. Respect. You are entering alone.', { priority: 2 });
-                                } else {
-                                    Assistant.show('PIXEL perk loaded. Modest boost online for the final fight.', { priority: 2 });
-                                }
-                            }
-                        } catch (e) { }
-                    };
-                    el.addEventListener('click', onPick);
-                    document.body.appendChild(el);
-                    finalOfferPopupEl = el;
-                    runPerkState.popupOpen = true;
+                    finalOfferPreludeActive = true;
+                    if (runPerkState) runPerkState.popupOpen = true;
                     inputLocked = true;
                     try { document.body.classList.add('run-perk-open'); } catch (e) { }
-                    const positionOverBoard = () => {
-                        try {
-                            const board = document.getElementById('board') || document.querySelector('.board');
-                            if (!board) return;
-                            const r = board.getBoundingClientRect();
-                            el.style.left = Math.round(r.left) + 'px';
-                            el.style.top = Math.round(r.top) + 'px';
-                            el.style.width = Math.max(120, Math.round(r.width)) + 'px';
-                            el.style.height = Math.max(120, Math.round(r.height)) + 'px';
-                        } catch (e) { }
+                    try { stopRotatingBlockerTicker(); } catch (e) { }
+                    const mountFinalOfferModal = () => {
+                        const pixelDesc = '+6 clicks, +1 Nano Storm, and boss systems run slower for a short time.';
+                        const soloDesc = 'No bonus and no penalty. Enter level 20 with your current resources.';
+                        const brokerDesc = '+15 clicks, Nano Storm armed, and boss HP -20%; score drops to 49% and future score Double Deals are disabled.';
+                        const el = document.createElement('div');
+                        el.className = 'final-offer-modal';
+                        el.setAttribute('role', 'dialog');
+                        el.setAttribute('aria-modal', 'true');
+                        el.dataset.pickReady = '0';
+                        el.classList.add('pick-locked');
+                        el.innerHTML = `
+                            <div class="fo-art" style="background-image:url('${escapeHtmlAttr(FINAL_OFFER_IMAGE_URL)}');"></div>
+                            <div class="fo-shade"></div>
+                            <div class="fo-legend">
+                                <div class="fo-choice fo-choice-pixel">
+                                    <div class="fo-choice-title">PIXEL PERK</div>
+                                    <div class="fo-choice-desc">${escapeHtml(pixelDesc)}</div>
+                                </div>
+                                <div class="fo-choice fo-choice-solo">
+                                    <div class="fo-choice-title">ON MY OWN</div>
+                                    <div class="fo-choice-desc">${escapeHtml(soloDesc)}</div>
+                                </div>
+                                <div class="fo-choice fo-choice-broker">
+                                    <div class="fo-choice-title">VIRAL VENTURE</div>
+                                    <div class="fo-choice-desc">${escapeHtml(brokerDesc)}</div>
+                                </div>
+                            </div>
+                            <div class="fo-actions">
+                                <button type="button" class="fo-btn fo-btn-pixel" data-offer="${escapeHtmlAttr(pixel.id)}">PIXEL PERK</button>
+                                <button type="button" class="fo-btn fo-btn-solo" data-offer="final_on_my_own">ON MY OWN</button>
+                                <button type="button" class="fo-btn fo-btn-broker" data-offer="${escapeHtmlAttr(broker.id)}">VIRAL VENTURE</button>
+                            </div>
+                        `;
+                        const onPick = (ev) => {
+                            if (!el || el.dataset.pickReady !== '1') return;
+                            const btn = ev.target && ev.target.closest ? ev.target.closest('.fo-btn[data-offer]') : null;
+                            if (!btn) return;
+                            const chosenId = applyFinalOfferChoice(btn.getAttribute('data-offer'));
+                            hideFinalOfferPopup(false);
+                            inputLocked = false;
+                            try {
+                                if (window.Assistant && Assistant.show) {
+                                    if (chosenId === broker.id) {
+                                        Assistant.show('Viral venture accepted. Big power now, expensive consequences later.', { priority: 2 });
+                                    } else if (chosenId === 'final_on_my_own') {
+                                        Assistant.show('No deal selected. Respect. You are entering alone.', { priority: 2 });
+                                    } else {
+                                        Assistant.show('PIXEL perk loaded. Modest boost online for the final fight.', { priority: 2 });
+                                    }
+                                }
+                            } catch (e) { }
+                        };
+                        el.addEventListener('click', onPick);
+                        document.body.appendChild(el);
+                        finalOfferPopupEl = el;
+                        if (runPerkState) runPerkState.popupOpen = true;
+                        const positionOverBoard = () => {
+                            try {
+                                const board = document.getElementById('board') || document.querySelector('.board');
+                                if (!board) return;
+                                const r = board.getBoundingClientRect();
+                                el.style.left = Math.round(r.left) + 'px';
+                                el.style.top = Math.round(r.top) + 'px';
+                                el.style.width = Math.max(120, Math.round(r.width)) + 'px';
+                                el.style.height = Math.max(120, Math.round(r.height)) + 'px';
+                            } catch (e) { }
+                        };
+                        const onViewportChange = () => positionOverBoard();
+                        positionOverBoard();
+                        window.addEventListener('resize', onViewportChange);
+                        window.addEventListener('scroll', onViewportChange, true);
+                        el._foRemoveViewportListeners = () => {
+                            try { window.removeEventListener('resize', onViewportChange); } catch (e) { }
+                            try { window.removeEventListener('scroll', onViewportChange, true); } catch (e) { }
+                        };
+                        void el.offsetWidth;
+                        el.classList.add('show');
+                        try { startFinalBossTheme({ fadeInMs: 1000, initialVolumeRatio: 0.03 }); } catch (e) { }
+                        el._foRevealUnlockTimer = setTimeout(() => {
+                            try {
+                                if (!document.body.contains(el)) return;
+                                el.dataset.pickReady = '1';
+                                el.classList.remove('pick-locked');
+                            } catch (e) { }
+                        }, 650);
+                        hideFinalOfferPrelude(false);
                     };
-                    const onViewportChange = () => positionOverBoard();
-                    positionOverBoard();
-                    window.addEventListener('resize', onViewportChange);
-                    window.addEventListener('scroll', onViewportChange, true);
-                    el._foRemoveViewportListeners = () => {
-                        try { window.removeEventListener('resize', onViewportChange); } catch (e) { }
-                        try { window.removeEventListener('scroll', onViewportChange, true); } catch (e) { }
-                    };
-                    void el.offsetWidth;
-                    el.classList.add('show');
-                    try { startFinalBossTheme(); } catch (e) { }
-                    el._foRevealUnlockTimer = setTimeout(() => {
-                        try {
-                            if (!document.body.contains(el)) return;
-                            el.dataset.pickReady = '1';
-                            el.classList.remove('pick-locked');
-                        } catch (e) { }
-                    }, 650);
+                    const preludeMs = showFinalOfferPrelude(FINAL_OFFER_PRELUDE_FADE_MS);
+                    fadeCurrentMusicForFinalOffer(FINAL_OFFER_MUSIC_DUCK_MS, FINAL_OFFER_MUSIC_DUCK_RATIO);
+                    try {
+                        if (finalOfferPreludeTimer) clearTimeout(finalOfferPreludeTimer);
+                    } catch (e) { }
+                    finalOfferPreludeTimer = setTimeout(() => {
+                        finalOfferPreludeTimer = null;
+                        if (!finalOfferModalOpen) return;
+                        if (!runPerkState || !runPerkState.finalOfferPending || runPerkState.finalOfferSeen) return;
+                        mountFinalOfferModal();
+                    }, Math.max(240, Math.floor(Number(preludeMs) || FINAL_OFFER_PRELUDE_FADE_MS)));
                     return true;
                 } catch (e) {
+                    hideFinalOfferPopup(true);
                     return false;
                 }
             }
