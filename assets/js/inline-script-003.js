@@ -3917,6 +3917,8 @@ function escapeHtmlAttr(str) {
                 if (lvl >= 16) base = 3;
                 else if (phase >= 3) base = 2;
                 else if (phase >= 2) base = 1;
+                // Mid-late bridge smoothing: extra +1 clicks only for levels 16-19.
+                if (lvl >= 16 && lvl <= 19) base += 1;
                 const penalty = Math.max(0, Math.floor(Number(runPerkState && runPerkState.levelClearClicksPenalty) || 0));
                 return Math.max(0, base - penalty);
             }
@@ -4024,6 +4026,9 @@ function escapeHtmlAttr(str) {
             // Level 10 resets to level-5 spawn profile, then advances one profile step every 2 levels.
             function getSpawnProfileLevel(levelNum = getCurrentLevelNumber()) {
                 const lvl = Math.max(1, Number(levelNum) || 1);
+                if (lvl === 16 || lvl === 17) return 6;
+                if (lvl === 18) return 7;
+                if (lvl === 19) return 8;
                 if (lvl < 10) return Math.min(10, lvl);
                 const remapped = 5 + Math.floor((lvl - 10) / 2);
                 return Math.max(1, Math.min(10, remapped));
@@ -4031,14 +4036,17 @@ function escapeHtmlAttr(str) {
 
             function getBlockerSettings(levelNum = getCurrentLevelNumber()) {
                 const d = getDifficultyForLevel(levelNum);
+                const lvl = Math.max(1, Number(levelNum) || 1);
                 const runSpeed = Math.max(1, Number(runPerkState && runPerkState.blockerSpeedFactor) || 1);
                 const gremlinSpeed = isTechnoGremlinOverclockActive(levelNum)
                     ? Math.max(1, Number(TECHNO_GREMLIN_POWER_CONFIG.overclockSpeedMult) || 1.55)
                     : 1;
                 const speedFactor = Math.max(1, runSpeed * gremlinSpeed);
+                // Ease 16-19: slightly slower blocker cycle before final level.
+                const lateBridgeTickMult = (lvl >= 16 && lvl <= 19) ? 1.18 : 1;
                 return {
                     unlockLevel: Math.max(1, Math.floor(Number(d.blockerUnlockLevel) || 1)),
-                    tickMs: Math.max(650, Math.floor((Number(d.blockerTickMs) || 1500) / speedFactor)),
+                    tickMs: Math.max(650, Math.floor(((Number(d.blockerTickMs) || 1500) * lateBridgeTickMult) / speedFactor)),
                     tickJitterMs: Math.max(0, Math.floor(Number(d.blockerTickJitterMs) || 550)),
                     postUserTickMs: Math.max(220, Math.floor((Number(d.blockerPostUserTickMs) || 520) / speedFactor)),
                     userBoostWindowMs: Math.max(250, Math.floor(Number(d.blockerUserBoostWindowMs) || 1300)),
@@ -6522,7 +6530,12 @@ function escapeHtmlAttr(str) {
                 const isBossLevelNow = isMiniBossLevel(levelNum);
                 const density = Math.min(0.95, baseDensity + Math.max(0, Number(spawnProfileCompleted) || 0) * densityGrowth);
                 let target = Math.round(total * density);
-                if (isBossLevelNow) target = Math.max(8, Math.round(target * 0.78));
+                if (isBossLevelNow) {
+                    // Fixed boss-opening occupancy for level 5/10/15/20:
+                    // 20/36 total occupied = 19 normal cells + 1 boss cell.
+                    if (levelNum === 5 || levelNum === 10 || levelNum === 15 || levelNum === 20) target = 19;
+                    else target = Math.max(8, Math.round(target * 0.78));
+                }
                 const idx = Array.from({ length: total }, (_, i) => i);
                 shuffle(idx);
                 for (let k = 0; k < target; k++) {
