@@ -8,11 +8,15 @@ const levelCompleteImages = Array.from({ length: 36 }, (_, i) => {
 const BOSS_LEVEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.png';
 const BOSS_LEVEL10_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level2.png';
 const BOSS_LEVEL15_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level_3.png';
+const BOSS_LEVEL20_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/final_boss_splash.png';
 const FINAL_OFFER_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/final_offer.png';
 const FINAL_BOSS_THEME_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Unholy%20Knight.mp3';
 const FINAL_OFFER_PRELUDE_FADE_MS = 900;
 const FINAL_OFFER_MUSIC_DUCK_MS = 900;
 const FINAL_OFFER_MUSIC_DUCK_RATIO = 0.06;
+const FINAL_OFFER_GLOBAL_PRELUDE_FADE_IN_MS = 1650;
+const FINAL_OFFER_GLOBAL_PRELUDE_FADE_OUT_MS = 950;
+const FINAL_OFFER_LEVEL20_SPLASH_Z = 2147483646;
 const FINAL_VICTORY_DEFAULT_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/independent_variable.png';
 const FINAL_VICTORY_PIXEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/system_restored.png';
 const FINAL_VICTORY_BROKER_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/hostile_takeover.png';
@@ -30,6 +34,7 @@ function getBossLevelIntroImageUrl(levelNum) {
   const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
   if (lvl === 10) return BOSS_LEVEL10_IMAGE_URL || BOSS_LEVEL_IMAGE_URL;
   if (lvl === 15) return BOSS_LEVEL15_IMAGE_URL || BOSS_LEVEL_IMAGE_URL;
+  if (lvl === 20) return BOSS_LEVEL20_IMAGE_URL || BOSS_LEVEL15_IMAGE_URL || BOSS_LEVEL10_IMAGE_URL || BOSS_LEVEL_IMAGE_URL;
   return BOSS_LEVEL_IMAGE_URL;
 }
 
@@ -39,6 +44,8 @@ function showLevelComplete(opts = {}) {
   const imgSrc = opts.imageUrl || levelCompleteImages[Math.floor(Math.random() * levelCompleteImages.length)] || '';
   const onDismiss = (typeof opts.onDismiss === 'function') ? opts.onDismiss : null;
   const emitAssistant = opts.emitAssistant !== false;
+  const extraClass = String(opts.className || '').trim();
+  const customZIndex = Number(opts.zIndex);
   try { if (window.hideChainBadge) window.hideChainBadge(false); } catch (e) {}
 
   // remove any previous popup
@@ -47,7 +54,10 @@ function showLevelComplete(opts = {}) {
 
   try {
     const el = document.createElement('div');
-    el.className = 'level-complete level-complete--board';
+    el.className = `level-complete level-complete--board${extraClass ? ` ${extraClass}` : ''}`;
+    if (Number.isFinite(customZIndex) && customZIndex > 0) {
+      el.style.zIndex = String(Math.floor(customZIndex));
+    }
     el.setAttribute('role', 'status');
     el.setAttribute('aria-live', 'polite');
     el.innerHTML = `
@@ -256,6 +266,9 @@ function escapeHtmlAttr(str) {
             const MINIBOSS_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss.png';
             const MINIBOSS_LEVEL10_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss2_new.png';
             const MINIBOSS_LEVEL15_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techy-goblin.png';
+            const MINIBOSS_LEVEL20_PHASE1_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss.png';
+            const MINIBOSS_LEVEL20_PHASE2_SPRITE_URL = MINIBOSS_LEVEL20_PHASE1_SPRITE_URL;
+            const MINIBOSS_LEVEL20_PHASE3_SPRITE_URL = MINIBOSS_LEVEL20_PHASE1_SPRITE_URL;
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
             const SFX_URLS = {
                 pop: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/pop2.mp3',
@@ -296,8 +309,12 @@ function escapeHtmlAttr(str) {
             let musicOrder = [];
             let musicIndex = 0;
             let musicAudio = null;
+            let runStartedByPlayer = false;
             let musicOverrideMode = '';
             let musicOverrideFadeTimer = null;
+            let musicWatchdogTimer = null;
+            let musicWatchdogLastTime = -1;
+            let musicWatchdogLastProgressAt = 0;
             let musicSilenceMs = 2000; // 2 seconds silence between tracks
             const AUDIO_PREF_MUSIC_ENABLED_KEY = 'goneViral_musicEnabled_v1';
             const AUDIO_PREF_SFX_ENABLED_KEY = 'goneViral_sfxEnabled_v1';
@@ -522,6 +539,11 @@ function escapeHtmlAttr(str) {
                 if (MINIBOSS_SPRITE_URL && level >= 5) images.push(MINIBOSS_SPRITE_URL);
                 if (MINIBOSS_LEVEL10_SPRITE_URL && level >= 10) images.push(MINIBOSS_LEVEL10_SPRITE_URL);
                 if (MINIBOSS_LEVEL15_SPRITE_URL && level >= 15) images.push(MINIBOSS_LEVEL15_SPRITE_URL);
+                if (level >= 20) {
+                    if (MINIBOSS_LEVEL20_PHASE1_SPRITE_URL) images.push(MINIBOSS_LEVEL20_PHASE1_SPRITE_URL);
+                    if (MINIBOSS_LEVEL20_PHASE2_SPRITE_URL) images.push(MINIBOSS_LEVEL20_PHASE2_SPRITE_URL);
+                    if (MINIBOSS_LEVEL20_PHASE3_SPRITE_URL) images.push(MINIBOSS_LEVEL20_PHASE3_SPRITE_URL);
+                }
                 if (VIRUS1_SPRITE_SHEET_URL) images.push(VIRUS1_SPRITE_SHEET_URL);
                 if (VIRUS2_SPRITE_SHEET_URL) images.push(VIRUS2_SPRITE_SHEET_URL);
                 if (VIRUS3_SPRITE_SHEET_URL) images.push(VIRUS3_SPRITE_SHEET_URL);
@@ -710,6 +732,7 @@ function escapeHtmlAttr(str) {
                     try { window.musicAudio = musicAudio; } catch (e) { }
                     const p = musicAudio.play();
                     if (p && p.catch) p.catch(() => { });
+                    ensureMusicPlaybackWatchdog();
                     if (fadeInMs > 0 && !window.allMuted) {
                         const stepMs = 40;
                         const steps = Math.max(1, Math.ceil(fadeInMs / stepMs));
@@ -781,6 +804,7 @@ function escapeHtmlAttr(str) {
             }
             function switchMusicForNewRun() {
                 try {
+                    if (!runStartedByPlayer) return;
                     if (!musicEnabled || !audioUserInteracted) return;
                     if (musicOverrideMode === 'final-boss') {
                         stopFinalBossTheme({ fadeOutMs: 0, resumeNormal: false });
@@ -797,20 +821,130 @@ function escapeHtmlAttr(str) {
                     musicOrder = [picked].concat(rest);
                     musicIndex = 0;
                     playNextMusicTrack();
+                    ensureMusicPlaybackWatchdog();
                 } catch (e) { }
+            }
+            function queueNextMusicTrackAfterDelay(delayMs = musicSilenceMs) {
+                const wait = Math.max(0, Math.floor(Number(delayMs) || 0));
+                setTimeout(() => {
+                    try {
+                        if (musicOverrideMode === 'final-boss') return;
+                        if (!runStartedByPlayer) return;
+                        if (!musicEnabled || !audioUserInteracted || !!window.allMuted) return;
+                        musicIndex += 1;
+                        playNextMusicTrack();
+                    } catch (e) { }
+                }, wait);
             }
             function playNextMusicTrack() {
                 if (musicOverrideMode === 'final-boss') return;
-                if (!musicEnabled) return; if (musicAudio) { try { musicAudio.pause(); musicAudio.src = ''; } catch (e) { } musicAudio = null; }
+                if (!runStartedByPlayer) return;
+                if (!musicEnabled || !audioUserInteracted || !!window.allMuted) return;
+                if (musicAudio) {
+                    try { musicAudio.pause(); } catch (e) { }
+                    try { musicAudio.src = ''; } catch (e) { }
+                    musicAudio = null;
+                }
                 if (musicOrder.length === 0 || musicIndex >= musicOrder.length) prepareMusicOrder();
                 const url = musicOrder[musicIndex];
-                musicAudio = new Audio(url); musicAudio.volume = 0.20; musicAudio.preload = 'auto'; musicAudio.crossOrigin = 'anonymous';
-                const onEnded = () => { // schedule next after silence
-                    musicAudio.removeEventListener('ended', onEnded);
-                    setTimeout(() => { musicIndex += 1; playNextMusicTrack(); }, musicSilenceMs);
+                const track = new Audio(url);
+                track.volume = (typeof musicVolume !== 'undefined') ? Number(musicVolume) || 0.20 : (window.musicVolume || 0.20);
+                track.preload = 'auto';
+                track.crossOrigin = 'anonymous';
+                track.muted = !!window.allMuted;
+                musicAudio = track;
+                try { window.musicAudio = track; } catch (e) { }
+                musicWatchdogLastTime = -1;
+                musicWatchdogLastProgressAt = Date.now();
+                let advanced = false;
+                const cleanup = () => {
+                    try { track.removeEventListener('ended', onEnded); } catch (e) { }
+                    try { track.removeEventListener('error', onError); } catch (e) { }
+                    try { track.removeEventListener('stalled', onError); } catch (e) { }
+                    try { track.removeEventListener('abort', onError); } catch (e) { }
                 };
-                musicAudio.addEventListener('ended', onEnded);
-                const playPromise = musicAudio.play(); if (playPromise && playPromise.catch) { playPromise.catch(() => { /* ignore */ }); }
+                const advance = () => {
+                    if (advanced) return;
+                    advanced = true;
+                    cleanup();
+                    if (musicAudio !== track) return;
+                    queueNextMusicTrackAfterDelay(musicSilenceMs);
+                };
+                const onEnded = () => advance();
+                const onError = () => {
+                    if (musicAudio !== track) return;
+                    advance();
+                };
+                track.addEventListener('ended', onEnded);
+                track.addEventListener('error', onError);
+                track.addEventListener('stalled', onError);
+                track.addEventListener('abort', onError);
+                const playPromise = track.play();
+                if (playPromise && playPromise.catch) {
+                    playPromise.catch(() => {
+                        if (musicAudio !== track) return;
+                        advance();
+                    });
+                }
+                ensureMusicPlaybackWatchdog();
+            }
+            function nudgeMusicPlaybackHealth(reason = 'watchdog') {
+                try {
+                    if (!runStartedByPlayer && musicOverrideMode !== 'final-boss') return;
+                    if (!musicEnabled || !audioUserInteracted || !!window.allMuted || document.hidden) return;
+                    if (isFinalVictoryActive()) return;
+                    if (musicOverrideMode !== 'final-boss') {
+                        if (finalCreditsMusicAudio && !finalCreditsMusicAudio.paused) return;
+                    }
+                    const active = getActiveMusicAudio();
+                    if (!active) {
+                        if (musicOverrideMode === 'final-boss') startFinalBossTheme({ fadeInMs: 320, initialVolumeRatio: 0.1 });
+                        else playNextMusicTrack();
+                        return;
+                    }
+                    if (active.ended) {
+                        if (musicOverrideMode === 'final-boss') startFinalBossTheme({ fadeInMs: 320, initialVolumeRatio: 0.1 });
+                        else queueNextMusicTrackAfterDelay(0);
+                        return;
+                    }
+                    if (active.paused) {
+                        const p = active.play();
+                        if (p && p.catch) {
+                            p.catch(() => {
+                                if (musicOverrideMode === 'final-boss') startFinalBossTheme({ fadeInMs: 320, initialVolumeRatio: 0.1 });
+                                else queueNextMusicTrackAfterDelay(0);
+                            });
+                        }
+                        return;
+                    }
+                    const now = Date.now();
+                    const ct = Math.max(0, Number(active.currentTime) || 0);
+                    const lastCt = Number(musicWatchdogLastTime);
+                    const progressedForward = ct > (Number.isFinite(lastCt) ? lastCt : 0) + 0.03;
+                    // Looping tracks reset currentTime back to ~0; treat that as healthy progress.
+                    const loopWrapped = Number.isFinite(lastCt) && lastCt >= 0.4 && ct + 0.15 < lastCt;
+                    if (progressedForward || loopWrapped) {
+                        musicWatchdogLastTime = ct;
+                        musicWatchdogLastProgressAt = now;
+                        return;
+                    }
+                    if (!musicWatchdogLastProgressAt) musicWatchdogLastProgressAt = now;
+                    const stuckMs = now - Number(musicWatchdogLastProgressAt || now);
+                    if (stuckMs < 16000) return;
+                    if (musicOverrideMode === 'final-boss') {
+                        startFinalBossTheme({ fadeInMs: 280, initialVolumeRatio: 0.08 });
+                    } else {
+                        queueNextMusicTrackAfterDelay(0);
+                    }
+                    musicWatchdogLastProgressAt = now;
+                    musicWatchdogLastTime = -1;
+                } catch (e) { }
+            }
+            function ensureMusicPlaybackWatchdog() {
+                if (musicWatchdogTimer) return;
+                musicWatchdogTimer = setInterval(() => {
+                    nudgeMusicPlaybackHealth('interval');
+                }, 3500);
             }
             // ---- audio settings hookup inserted by ChatGPT v4 ----
             try {
@@ -899,7 +1033,14 @@ function escapeHtmlAttr(str) {
             } catch (e) { }
             // ---- end inserted block ----
 
-            function startBackgroundMusic() { try { if (!musicOrder.length) prepareMusicOrder(); playNextMusicTrack(); } catch (e) { console.warn('startBackgroundMusic failed', e); } }
+            function startBackgroundMusic() {
+                try {
+                    if (!runStartedByPlayer) return;
+                    if (!musicOrder.length) prepareMusicOrder();
+                    playNextMusicTrack();
+                    ensureMusicPlaybackWatchdog();
+                } catch (e) { console.warn('startBackgroundMusic failed', e); }
+            }
             function stopBackgroundMusic() {
                 try {
                     // stop and clear any local reference
@@ -914,6 +1055,8 @@ function escapeHtmlAttr(str) {
                         try { window.musicAudio.currentTime = 0; } catch (e) { }
                         try { window.musicAudio = null; } catch (e) { /* ignore */ }
                     }
+                    musicWatchdogLastTime = -1;
+                    musicWatchdogLastProgressAt = 0;
                 } catch (e) {
                     // final safety - don't leak exceptions to UI
                     console.warn('stopBackgroundMusic error', e);
@@ -1344,8 +1487,11 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_PHASE2_ACTION_MS = 2000;
             const EPIC_BOSS20_PHASE2_DESPERATION_RATIO = 0.33;
             const EPIC_BOSS20_PHASE2_DESPERATION_ACTION_MS = 1200;
+            const EPIC_BOSS20_PHASE2_DESPERATION_MIN_CADENCE_MS = 760;
+            const EPIC_BOSS20_PHASE2_DESPERATION_RAMP_MS = 9000;
             const EPIC_BOSS20_PHASE2_RESCUE_CLICK_THRESHOLD = 2;
             const EPIC_BOSS20_PHASE2_DESPERATION_HP_FLOOR_RATIO = 0.22;
+            const EPIC_BOSS20_PHASE2_DESPERATION_HP_FLOOR_MAX_RATIO = 0.36;
             const EPIC_BOSS20_PHASE2_DESPERATION_REGEN_MIN_MS = 650;
             const EPIC_BOSS20_PHASE2_REPOP_DENSITY = 0.90;
             const EPIC_BOSS20_PHASE2_REPOP_MIN_NON_BOSS = 29;
@@ -1363,6 +1509,7 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_HERO_MARK_DURATION_MS = 3000;
             const EPIC_BOSS20_HERO_MARK_DAMAGE_MULT = 1.6;
             const EPIC_BOSS20_FINAL_WINDOW_HP = 2;
+            const EPIC_BOSS20_PHASE3_PRE_FINAL_HP_FLOOR = 1;
             const EPIC_BOSS20_FINAL_CHARGE_MS = 1200;
             const EPIC_BOSS20_FINAL_WINDOW_MS = 2500;
             const EPIC_BOSS20_FINAL_DAMAGE_MULT = 2;
@@ -1571,7 +1718,9 @@ function escapeHtmlAttr(str) {
             let runPerkPopupEl = null;
             let finalOfferPopupEl = null;
             let finalOfferModalOpen = false;
+            let finalOfferSkipPreludeOnce = false;
             let finalOfferPreludeEl = null;
+            let finalOfferGlobalPreludeEl = null;
             let finalOfferPreludeActive = false;
             let finalOfferPreludeTimer = null;
             let finalOfferMusicFadeTimer = null;
@@ -1702,6 +1851,7 @@ function escapeHtmlAttr(str) {
                     const closeBtn = document.getElementById('startModalClose');
                     if (!startBtn) tutorialGateState.startPressed = true;
                     if (!closeBtn) tutorialGateState.briefingAcknowledged = true;
+                    runStartedByPlayer = !!tutorialGateState.startPressed;
                 } catch (e) { }
             }
 
@@ -2214,8 +2364,9 @@ function escapeHtmlAttr(str) {
             syncTutorialGateFromDom();
             if (aiStartBtn) {
                 aiStartBtn.addEventListener('click', () => {
-                    markAudioUserInteracted();
+                    runStartedByPlayer = true;
                     tutorialGateState.startPressed = true;
+                    markAudioUserInteracted();
                 });
             }
             if (startModalCloseBtn) {
@@ -2258,9 +2409,11 @@ function escapeHtmlAttr(str) {
                 if (!wasInteracted && musicEnabled) {
                     try {
                         const hasMusic = !!(musicAudio || window.musicAudio);
-                        if (!hasMusic) startBackgroundMusic();
+                        if (!hasMusic && runStartedByPlayer) startBackgroundMusic();
                     } catch (e) { }
                 }
+                ensureMusicPlaybackWatchdog();
+                nudgeMusicPlaybackHealth('user-interaction');
             }
 
             function handleVisibilityAudioState() {
@@ -2290,6 +2443,7 @@ function escapeHtmlAttr(str) {
                     } else {
                         startBackgroundMusic();
                     }
+                    nudgeMusicPlaybackHealth('visibility');
                 } catch (e) { }
             }
 
@@ -2313,9 +2467,11 @@ function escapeHtmlAttr(str) {
                     musicWasPlayingBeforeHide = false;
                     try { stopFinalBossTheme({ fadeOutMs: 0, resumeNormal: false }); } catch (e) { }
                     stopBackgroundMusic();
-                } else if (fromUserAction || audioUserInteracted) {
+                } else if ((fromUserAction || audioUserInteracted) && runStartedByPlayer) {
                     if (musicOverrideMode === 'final-boss') startFinalBossTheme();
                     else startBackgroundMusic();
+                    ensureMusicPlaybackWatchdog();
+                    nudgeMusicPlaybackHealth('toggle-on');
                 }
                 syncAudioSettingsUI();
             }
@@ -2486,7 +2642,7 @@ function escapeHtmlAttr(str) {
             }
 
             function hideFinalOfferPrelude(immediate = false) {
-                const el = finalOfferPreludeEl || document.querySelector('.final-offer-prelude');
+                const el = finalOfferPreludeEl || document.querySelector('.final-offer-prelude.final-offer-prelude-board');
                 finalOfferPreludeActive = false;
                 if (!el) {
                     finalOfferPreludeEl = null;
@@ -2512,7 +2668,7 @@ function escapeHtmlAttr(str) {
                 hideFinalOfferPrelude(true);
                 finalOfferPreludeActive = true;
                 const el = document.createElement('div');
-                el.className = 'final-offer-prelude';
+                el.className = 'final-offer-prelude final-offer-prelude-board';
                 const positionOverBoard = () => {
                     try {
                         const board = document.getElementById('board') || document.querySelector('.board');
@@ -2542,7 +2698,69 @@ function escapeHtmlAttr(str) {
                 return fadeMs;
             }
 
-            function hideFinalOfferPopup(immediate = false) {
+            function hideFinalOfferGlobalPrelude(immediate = false, fadeOutMs = FINAL_OFFER_GLOBAL_PRELUDE_FADE_OUT_MS) {
+                const el = finalOfferGlobalPreludeEl || document.querySelector('.final-offer-prelude.final-offer-prelude-global');
+                if (!el) {
+                    finalOfferGlobalPreludeEl = null;
+                    return;
+                }
+                const cleanup = () => {
+                    try { el.remove(); } catch (e) { }
+                    if (finalOfferGlobalPreludeEl === el) finalOfferGlobalPreludeEl = null;
+                };
+                if (immediate) {
+                    cleanup();
+                    return;
+                }
+                const ms = Math.max(120, Math.floor(Number(fadeOutMs) || FINAL_OFFER_GLOBAL_PRELUDE_FADE_OUT_MS));
+                el.style.setProperty('--fo-prelude-ms', `${ms}ms`);
+                el.classList.remove('show');
+                el.classList.add('hide');
+                setTimeout(cleanup, ms + 40);
+            }
+
+            function showFinalOfferGlobalPrelude(durationMs = FINAL_OFFER_GLOBAL_PRELUDE_FADE_IN_MS) {
+                hideFinalOfferGlobalPrelude(true);
+                const el = document.createElement('div');
+                el.className = 'final-offer-prelude final-offer-prelude-global';
+                const fadeMs = Math.max(300, Math.floor(Number(durationMs) || FINAL_OFFER_GLOBAL_PRELUDE_FADE_IN_MS));
+                el.style.setProperty('--fo-prelude-ms', `${fadeMs}ms`);
+                document.body.appendChild(el);
+                finalOfferGlobalPreludeEl = el;
+                requestAnimationFrame(() => {
+                    try { el.classList.add('show'); } catch (e) { }
+                });
+                return fadeMs;
+            }
+
+            function runLevel20FinalApproachSequence(onDone = null) {
+                const finish = () => {
+                    try {
+                        if (typeof onDone === 'function') onDone();
+                    } catch (e) { }
+                };
+                try {
+                    const fadeMs = showFinalOfferGlobalPrelude(FINAL_OFFER_GLOBAL_PRELUDE_FADE_IN_MS);
+                    fadeCurrentMusicForFinalOffer(Math.max(700, FINAL_OFFER_MUSIC_DUCK_MS + 260), 0.03);
+                    setTimeout(() => {
+                        try {
+                            if (musicOverrideMode !== 'final-boss') {
+                                startFinalBossTheme({ fadeInMs: 1200, initialVolumeRatio: 0.01 });
+                            }
+                        } catch (e) { }
+                        finish();
+                    }, Math.max(520, fadeMs));
+                } catch (e) {
+                    try {
+                        if (musicOverrideMode !== 'final-boss') {
+                            startFinalBossTheme({ fadeInMs: 1200, initialVolumeRatio: 0.01 });
+                        }
+                    } catch (e2) { }
+                    finish();
+                }
+            }
+
+            function hideFinalOfferPopup(immediate = false, opts = {}) {
                 try {
                     try {
                         if (finalOfferPreludeTimer) {
@@ -2552,6 +2770,7 @@ function escapeHtmlAttr(str) {
                     } catch (e) { }
                     stopFinalOfferMusicDuck();
                     hideFinalOfferPrelude(immediate);
+                    if (opts.keepGlobal !== true) hideFinalOfferGlobalPrelude(immediate);
                     const el = finalOfferPopupEl || document.querySelector('.final-offer-modal');
                     if (!el) {
                         finalOfferPopupEl = null;
@@ -2587,6 +2806,7 @@ function escapeHtmlAttr(str) {
 
             function resetRunPerkState() {
                 runPerkState = createDefaultRunPerkState();
+                finalOfferSkipPreludeOnce = false;
                 hideRunPerkPopup(true);
                 hideFinalOfferPopup(true);
             }
@@ -2836,7 +3056,7 @@ function escapeHtmlAttr(str) {
                     if (document.querySelector('.game-over-popup')) return false;
                     if (document.querySelector('.run-perk-popup')) return false;
                     if (document.querySelector('.final-offer-modal')) return false;
-                    if (document.querySelector('.final-offer-prelude')) return false;
+                    if (document.querySelector('.final-offer-prelude.final-offer-prelude-board')) return false;
                     const audioPopup = document.getElementById('audioPopup');
                     const helpPopup = document.getElementById('helpPopup');
                     const aboutPopup = document.getElementById('aboutPopup');
@@ -2853,11 +3073,14 @@ function escapeHtmlAttr(str) {
                 const broker = Object.assign({}, FINAL_OFFER_CONFIG.broker || {});
                 const pair = [pixel, broker].filter((p) => p && p.id);
                 if (pair.length < 2) return false;
+                const skipPrelude = !!finalOfferSkipPreludeOnce;
+                finalOfferSkipPreludeOnce = false;
                 try {
-                    hideFinalOfferPopup(true);
+                    const keepGlobal = skipPrelude && !!(finalOfferGlobalPreludeEl || document.querySelector('.final-offer-prelude.final-offer-prelude-global'));
+                    hideFinalOfferPopup(true, { keepGlobal });
                     try { hideActiveChainBadge(false); } catch (e) { }
                     finalOfferModalOpen = true;
-                    finalOfferPreludeActive = true;
+                    finalOfferPreludeActive = !skipPrelude;
                     if (runPerkState) runPerkState.popupOpen = true;
                     inputLocked = true;
                     try { document.body.classList.add('run-perk-open'); } catch (e) { }
@@ -2939,7 +3162,9 @@ function escapeHtmlAttr(str) {
                         };
                         void el.offsetWidth;
                         el.classList.add('show');
-                        try { startFinalBossTheme({ fadeInMs: 1000, initialVolumeRatio: 0.03 }); } catch (e) { }
+                        if (musicOverrideMode !== 'final-boss') {
+                            try { startFinalBossTheme({ fadeInMs: 1000, initialVolumeRatio: 0.03 }); } catch (e) { }
+                        }
                         el._foRevealUnlockTimer = setTimeout(() => {
                             try {
                                 if (!document.body.contains(el)) return;
@@ -2948,7 +3173,12 @@ function escapeHtmlAttr(str) {
                             } catch (e) { }
                         }, 650);
                         hideFinalOfferPrelude(false);
+                        hideFinalOfferGlobalPrelude(false, FINAL_OFFER_GLOBAL_PRELUDE_FADE_OUT_MS);
                     };
+                    if (skipPrelude) {
+                        mountFinalOfferModal();
+                        return true;
+                    }
                     const preludeMs = showFinalOfferPrelude(FINAL_OFFER_PRELUDE_FADE_MS);
                     fadeCurrentMusicForFinalOffer(FINAL_OFFER_MUSIC_DUCK_MS, FINAL_OFFER_MUSIC_DUCK_RATIO);
                     try {
@@ -3221,6 +3451,37 @@ function escapeHtmlAttr(str) {
                 try { maybeShowPendingRunPerkPopup(); } catch (e) { }
             }
 
+            let levelClearClickToastTimer = null;
+            function showLevelClearClickToast(amount = 0) {
+                const gain = Math.max(0, Math.floor(Number(amount) || 0));
+                if (gain <= 0) return;
+                try {
+                    const meter = document.getElementById('clicksMeter');
+                    if (!meter) return;
+                    const existing = document.querySelector('.level-clear-click-toast');
+                    if (existing) {
+                        try { existing.remove(); } catch (e) { }
+                    }
+                    if (levelClearClickToastTimer) {
+                        clearTimeout(levelClearClickToastTimer);
+                        levelClearClickToastTimer = null;
+                    }
+                    const toast = document.createElement('div');
+                    toast.className = 'level-clear-click-toast';
+                    toast.textContent = `+${gain}`;
+                    document.body.appendChild(toast);
+                    const rect = meter.getBoundingClientRect();
+                    const left = Math.round(rect.right - 14);
+                    const top = Math.round(rect.top - 12);
+                    toast.style.left = `${left}px`;
+                    toast.style.top = `${top}px`;
+                    levelClearClickToastTimer = setTimeout(() => {
+                        try { toast.remove(); } catch (e) { }
+                        levelClearClickToastTimer = null;
+                    }, 950);
+                } catch (e) { }
+            }
+
             function getActiveMusicAudio() {
                 try {
                     if (typeof musicAudio !== 'undefined' && musicAudio) return musicAudio;
@@ -3486,10 +3747,8 @@ function escapeHtmlAttr(str) {
                 try {
                     if (musicOverrideMode === 'final-boss') stopFinalBossTheme({ fadeOutMs: 250, resumeNormal: false });
                 } catch (e) { }
-                const ma = getActiveMusicAudio();
-                if (ma) {
-                    try { ma.pause(); } catch (e) { }
-                }
+                runStartedByPlayer = false;
+                stopBackgroundMusic();
                 try {
                     screensPassed = 0;
                     totalScore = 0;
@@ -3584,6 +3843,17 @@ function escapeHtmlAttr(str) {
                         clearInterval(t);
                     }
                 }, 50);
+            }
+
+            function playLevel20BossDeathSequenceSfx() {
+                const delays = [0, 420, 840];
+                for (let i = 0; i < delays.length; i++) {
+                    const delay = delays[i];
+                    setTimeout(() => {
+                        if (!isFinalVictoryActive()) return;
+                        try { playSfx('techno_dead'); } catch (e) { }
+                    }, delay);
+                }
             }
 
             function showFinalVictoryModal() {
@@ -3696,6 +3966,7 @@ function escapeHtmlAttr(str) {
                 try { stopBoss20PhaseTimer(); } catch (e) { }
                 try { clearTechnoGremlinPowers(true); } catch (e) { }
                 try { stopRotatingBlockerTicker(); } catch (e) { }
+                playLevel20BossDeathSequenceSfx();
                 fadeOutMusicForFinalVictory();
 
                 const host = ensureFinalVictoryOverlay();
@@ -3740,7 +4011,7 @@ function escapeHtmlAttr(str) {
                 finalVictoryRevealTimer = setTimeout(() => {
                     clearFinalVictoryTimers();
                     showFinalVictoryModal();
-                }, Math.max(3200, elapsed + 1700));
+                }, Math.max(5200, elapsed + 3000));
                 scheduleRender();
                 updateHUD();
                 return true;
@@ -4037,11 +4308,45 @@ function escapeHtmlAttr(str) {
                 return Math.max(1, (Number(screensPassed) || 0) + 1);
             }
 
-            function getMiniBossSpriteUrlForLevel(levelNum) {
+            function getBossSpriteProfileForLevel(levelNum, phaseNum = 0) {
                 const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
-                if (lvl === 10) return MINIBOSS_LEVEL10_SPRITE_URL || MINIBOSS_SPRITE_URL;
-                if (lvl === 15) return MINIBOSS_LEVEL15_SPRITE_URL || MINIBOSS_SPRITE_URL;
-                return MINIBOSS_SPRITE_URL;
+                const phase = Math.max(1, Math.min(3, Math.floor(Number(phaseNum) || 1)));
+                if (lvl === 10) {
+                    return {
+                        url: MINIBOSS_LEVEL10_SPRITE_URL || MINIBOSS_SPRITE_URL,
+                        sheetClass: 'boss-sprite-sheet--grid9',
+                        containerClass: 'special-boss-grid9'
+                    };
+                }
+                if (lvl === 15) {
+                    return {
+                        url: MINIBOSS_LEVEL15_SPRITE_URL || MINIBOSS_SPRITE_URL,
+                        sheetClass: 'boss-sprite-sheet--grid9',
+                        containerClass: 'special-boss-grid9'
+                    };
+                }
+                if (lvl === 20) {
+                    const phaseSpriteMap = {
+                        1: MINIBOSS_LEVEL20_PHASE1_SPRITE_URL,
+                        2: MINIBOSS_LEVEL20_PHASE2_SPRITE_URL,
+                        3: MINIBOSS_LEVEL20_PHASE3_SPRITE_URL
+                    };
+                    return {
+                        url: phaseSpriteMap[phase] || MINIBOSS_LEVEL20_PHASE1_SPRITE_URL || MINIBOSS_SPRITE_URL,
+                        sheetClass: 'boss-sprite-sheet--grid6',
+                        containerClass: ''
+                    };
+                }
+                return {
+                    url: MINIBOSS_SPRITE_URL,
+                    sheetClass: '',
+                    containerClass: ''
+                };
+            }
+
+            function getMiniBossSpriteUrlForLevel(levelNum, phaseNum = 0) {
+                const profile = getBossSpriteProfileForLevel(levelNum, phaseNum) || {};
+                return profile.url || MINIBOSS_SPRITE_URL;
             }
 
             function getVisualPhaseForLevel(levelNum = getCurrentLevelNumber()) {
@@ -5234,6 +5539,15 @@ function escapeHtmlAttr(str) {
                 return !!boss20State.phase2DesperationActive;
             }
 
+            function getBoss20Phase2DesperationRamp() {
+                if (!isBoss20Phase2DesperationActive()) return 0;
+                const startAt = Math.max(0, Number(boss20State.phase2DesperationStartedAt) || 0);
+                if (startAt <= 0) return 0;
+                const elapsed = Math.max(0, Date.now() - startAt);
+                const rampMs = Math.max(2000, Math.floor(Number(EPIC_BOSS20_PHASE2_DESPERATION_RAMP_MS) || 9000));
+                return Math.max(0, Math.min(1, elapsed / rampMs));
+            }
+
             function sampleBoss20Phase2Size() {
                 const mix = Array.isArray(EPIC_BOSS20_PHASE2_REPOP_SIZE_MIX) ? EPIC_BOSS20_PHASE2_REPOP_SIZE_MIX : [0.14, 0.30, 0.34, 0.22];
                 const total = Math.max(0.0001, mix.reduce((acc, n) => acc + Math.max(0, Number(n) || 0), 0));
@@ -5335,16 +5649,36 @@ function escapeHtmlAttr(str) {
                     if (acted <= 0) acted = spawnBossArmorPulse(1, origin, { anyBoardChance: 1, spawnSize: phase1SpawnSize });
                 } else if (phase === 2) {
                     if (isBoss20Phase2DesperationActive()) {
+                        const ramp = getBoss20Phase2DesperationRamp();
+                        const basePulse = 3 + (Math.random() < (0.45 + (ramp * 0.35)) ? 1 : 0);
+                        const heavyPulse = 4 + (Math.random() < (0.22 + (ramp * 0.48)) ? 1 : 0);
                         const modeRoll = Math.random();
-                        if (modeRoll < 0.5) {
-                            const pulseCount = 3 + (Math.random() < 0.5 ? 1 : 0);
-                            acted = spawnBossArmorPulse(pulseCount, origin, { anyBoardChance: 0.72, offAxisChance: 0.48, spawnSize: 0 });
-                        } else if (modeRoll < 0.85) {
-                            acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.84, offAxisChance: 0.56, spawnSize: 0 }) + applyBoss20ArmorThreat(origin, 1, { minState: 0 });
+                        const heavyChance = 0.16 + (ramp * 0.42);
+                        const mixedChance = 0.38 + (ramp * 0.28);
+                        if (modeRoll < heavyChance) {
+                            acted = spawnBossArmorPulse(heavyPulse, origin, {
+                                anyBoardChance: 0.90 + (ramp * 0.10),
+                                offAxisChance: 0.58 + (ramp * 0.22),
+                                spawnSize: 0
+                            }) + applyBoss20ArmorThreat(origin, 1 + (ramp > 0.6 ? 1 : 0), { minState: 0 });
+                        } else if (modeRoll < (heavyChance + mixedChance)) {
+                            acted = spawnBossArmorPulse(basePulse, origin, {
+                                anyBoardChance: 0.80 + (ramp * 0.18),
+                                offAxisChance: 0.52 + (ramp * 0.20),
+                                spawnSize: 0
+                            }) + applyBoss20ArmorThreat(origin, 1, { minState: 0 });
                         } else {
-                            acted = spawnBossArmorPulse(4, origin, { anyBoardChance: 0.96, offAxisChance: 0.62, spawnSize: 0 }) + applyBoss20ArmorThreat(origin, 1, { minState: 0 });
+                            acted = spawnBossArmorPulse(basePulse, origin, {
+                                anyBoardChance: 0.70 + (ramp * 0.20),
+                                offAxisChance: 0.46 + (ramp * 0.20),
+                                spawnSize: 0
+                            });
                         }
-                        if (acted <= 0) acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 1.0, offAxisChance: 0.66, spawnSize: 0 });
+                        if (acted <= 0) acted = spawnBossArmorPulse(3 + (ramp > 0.5 ? 1 : 0), origin, {
+                            anyBoardChance: 1.0,
+                            offAxisChance: 0.66 + (ramp * 0.16),
+                            spawnSize: 0
+                        });
                     } else {
                         const pulseCount = (Math.random() < 0.55) ? 2 : 1;
                         acted = spawnBossArmorPulse(pulseCount, origin, { offAxisChance: 0.30 });
@@ -5399,7 +5733,10 @@ function escapeHtmlAttr(str) {
                     : ((phase === 2) ? EPIC_BOSS20_PHASE2_ACTION_MS : EPIC_BOSS20_PHASE3_ACTION_MS);
                 let cadence = Math.max(1200, Math.floor(Number(boss20State.actionCadenceMs) || defaultCadence));
                 if (phase === 2 && isBoss20Phase2DesperationActive()) {
-                    cadence = Math.max(900, Math.min(cadence, Math.floor(Number(EPIC_BOSS20_PHASE2_DESPERATION_ACTION_MS) || 1200)));
+                    const ramp = getBoss20Phase2DesperationRamp();
+                    const targetCap = Math.floor((Number(EPIC_BOSS20_PHASE2_DESPERATION_ACTION_MS) || 1200) - (280 * ramp));
+                    const minCadence = Math.max(640, Math.floor(Number(EPIC_BOSS20_PHASE2_DESPERATION_MIN_CADENCE_MS) || 760));
+                    cadence = Math.max(minCadence, Math.min(cadence, Math.max(minCadence, targetCap)));
                 }
                 if (Date.now() < Number(runPerkState && runPerkState.finalBossSlowUntil)) {
                     cadence = Math.max(1200, Math.floor(cadence * 1.28));
@@ -6418,7 +6755,6 @@ function escapeHtmlAttr(str) {
                 }
                 syncMiniBossStateFromBoard();
                 if (shouldTriggerFinale) {
-                    try { playSfx('boss_level'); } catch (e) { }
                     triggerLevel20FinalVictorySequence(idx, tracker);
                     return true;
                 }
@@ -6496,23 +6832,22 @@ function escapeHtmlAttr(str) {
                             enterBoss20Phase2Desperation(idx, meta);
                         }
                         if (isBoss20Phase2DesperationActive()) {
-                            const clickThreshold = Math.max(0, Number(EPIC_BOSS20_PHASE2_RESCUE_CLICK_THRESHOLD) || 2);
+                            const ramp = getBoss20Phase2DesperationRamp();
                             const maxHp = Math.max(1, Number(meta.maxHp) || Number(boss20State.maxHp) || 1);
-                            const floorRatio = Math.max(0.08, Math.min(0.7, Number(EPIC_BOSS20_PHASE2_DESPERATION_HP_FLOOR_RATIO) || 0.22));
+                            const baseFloorRatio = Math.max(0.08, Math.min(0.7, Number(EPIC_BOSS20_PHASE2_DESPERATION_HP_FLOOR_RATIO) || 0.22));
+                            const maxFloorRatio = Math.max(baseFloorRatio, Math.min(0.8, Number(EPIC_BOSS20_PHASE2_DESPERATION_HP_FLOOR_MAX_RATIO) || 0.36));
+                            const floorRatio = baseFloorRatio + ((maxFloorRatio - baseFloorRatio) * ramp);
                             const floorHp = Math.max(1, Math.ceil(maxHp * floorRatio));
-                            const clickCount = Number(clicksLeft) || 0;
-                            if (clickCount > clickThreshold) {
-                                const before = Math.max(0, Number(meta.hp) || 0);
-                                if (before < floorHp) {
-                                    meta.hp = floorHp;
-                                    boss20State.hp = floorHp;
-                                    const now = Date.now();
-                                    const minGap = Math.max(250, Number(EPIC_BOSS20_PHASE2_DESPERATION_REGEN_MIN_MS) || 650);
-                                    if (now - Number(boss20State.phase2LastRegenAt || 0) >= minGap) {
-                                        boss20State.phase2LastRegenAt = now;
-                                        try { playSfx('fill'); } catch (e) { }
-                                        try { playBossSummonPulse(idx); } catch (e) { }
-                                    }
+                            const before = Math.max(0, Number(meta.hp) || 0);
+                            if (before < floorHp) {
+                                meta.hp = floorHp;
+                                boss20State.hp = floorHp;
+                                const now = Date.now();
+                                const minGap = Math.max(250, Number(EPIC_BOSS20_PHASE2_DESPERATION_REGEN_MIN_MS) || 650);
+                                if (now - Number(boss20State.phase2LastRegenAt || 0) >= minGap) {
+                                    boss20State.phase2LastRegenAt = now;
+                                    try { playSfx('fill'); } catch (e) { }
+                                    try { playBossSummonPulse(idx); } catch (e) { }
                                 }
                             }
                             setMiniBossStateFromMeta(idx, meta);
@@ -6522,8 +6857,10 @@ function escapeHtmlAttr(str) {
                             }
                         }
                     }
-                    if (boss20State.phase >= 3 && !boss20State.inFinalWindow && Number(meta.hp) > 0 && Number(meta.hp) <= Math.max(1, Number(EPIC_BOSS20_FINAL_WINDOW_HP) || 2)) {
-                        meta.hp = Math.max(1, Number(meta.hp) || 1);
+                    if (boss20State.phase >= 3 && !boss20State.inFinalWindow && Number(meta.hp) <= Math.max(1, Number(EPIC_BOSS20_FINAL_WINDOW_HP) || 2)) {
+                        const triggerHp = Math.max(1, Number(EPIC_BOSS20_FINAL_WINDOW_HP) || 2);
+                        const holdHp = Math.max(1, Math.min(triggerHp, Math.floor(Number(EPIC_BOSS20_PHASE3_PRE_FINAL_HP_FLOOR) || 1)));
+                        meta.hp = holdHp;
                         boss20State.hp = Math.max(1, Number(meta.hp) || 1);
                         setMiniBossStateFromMeta(idx, meta);
                         scheduleRender();
@@ -6832,12 +7169,15 @@ function escapeHtmlAttr(str) {
                     const isProjection = !!meta.isProjection;
                     const bossLevel = Math.floor(Number(meta.bossLevel) || 0);
                     const bossPhase = (bossLevel === 20) ? Math.floor(Number(meta.phase) || 0) : 0;
-                    const bossSpriteUrl = getMiniBossSpriteUrlForLevel(bossLevel);
+                    const bossSpriteProfile = getBossSpriteProfileForLevel(bossLevel, bossPhase);
+                    const bossSpriteUrl = (bossSpriteProfile && bossSpriteProfile.url) || MINIBOSS_SPRITE_URL;
                     if (isProjection) container.classList.add('special-boss-projection');
                     if (bossLevel === 10) container.classList.add('special-boss-level10');
                     if (bossLevel === 15) container.classList.add('special-boss-level15');
+                    if (bossLevel === 20) container.classList.add('special-boss-level20');
                     if (bossLevel === 20 && bossPhase >= 2) container.classList.add('special-boss-level20-phase2');
                     if (bossLevel === 20 && bossPhase >= 3) container.classList.add('special-boss-level20-phase3');
+                    if (bossSpriteProfile && bossSpriteProfile.containerClass) container.classList.add(bossSpriteProfile.containerClass);
                     if (!isProjection && bossLevel === 20) {
                         const now = Date.now();
                         if (Number(cellIndex) === Number(boss20State.heroMarkCell) && now < Number(boss20State.weakPointUntil)) {
@@ -6849,10 +7189,7 @@ function escapeHtmlAttr(str) {
                     }
                     const bossSheet = document.createElement('div');
                     bossSheet.className = 'boss-sprite-sheet';
-                    if (bossLevel === 10 || bossLevel === 15) {
-                        container.classList.add('special-boss-grid9');
-                        bossSheet.classList.add('boss-sprite-sheet--grid9');
-                    }
+                    if (bossSpriteProfile && bossSpriteProfile.sheetClass) bossSheet.classList.add(bossSpriteProfile.sheetClass);
                     bossSheet.style.backgroundImage = `url('${bossSpriteUrl || MINIBOSS_SPRITE_URL}')`;
                     bossSheet.setAttribute('aria-hidden', 'true');
                     sprite.appendChild(bossSheet);
@@ -6970,36 +7307,74 @@ function escapeHtmlAttr(str) {
                     if (clicksLeft === 1) incrementAchievementStat('runClutchClears', 1, 'run');
                     const clearedLevelNum = getCurrentLevelNumber();
                     const clearBonusClicks = getLevelClearBonusClicks(clearedLevelNum);
-                    clicksLeft = Math.min(getMaxClicksCap(), clicksLeft + 1 + clearBonusClicks);
+                    const clicksBeforeClearReward = Math.max(0, Number(clicksLeft) || 0);
+                    const clearRewardClicks = Math.max(0, 1 + (Number(clearBonusClicks) || 0));
+                    clicksLeft = Math.min(getMaxClicksCap(), clicksBeforeClearReward + clearRewardClicks);
+                    const clearRewardApplied = Math.max(0, clicksLeft - clicksBeforeClearReward);
                     playSfx('win');
                     screensPassed += 1;
                     incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
                     const nextLevelNum = screensPassed + 1;
                     setAchievementBest('runLevelReached', nextLevelNum, 'run');
                     updateHUD();
+                    showLevelClearClickToast(clearRewardApplied);
                     tutorialEvent('firstLevelClear');
 
                     const showFinalOfferNow = shouldShowFinalOfferForLevel(nextLevelNum);
                     const isBossIntroLevel = (nextLevelNum === 5 || nextLevelNum === 10 || nextLevelNum === 15);
                     if (showFinalOfferNow) {
                         runPerkState.finalOfferPending = true;
+                        const openPendingFinalOffer = () => {
+                            inputLocked = false;
+                            maybeShowPendingFinalOfferPopup(40);
+                        };
+                        const beginLevel20BossIntro = () => {
+                            inputLocked = true;
+                            runLevel20FinalApproachSequence(() => {
+                                // Build the level 20 board only after the full-screen blackout is in place.
+                                randomizeBoard(true);
+                                applyFinalOfferClickFloor();
+                                updateHUD();
+                                try {
+                                    showLevelComplete({
+                                        title: `BOSS LEVEL ${nextLevelNum}`,
+                                        imageUrl: getBossLevelIntroImageUrl(nextLevelNum),
+                                        emitAssistant: false,
+                                        zIndex: FINAL_OFFER_LEVEL20_SPLASH_Z,
+                                        onDismiss: () => {
+                                            finalOfferSkipPreludeOnce = true;
+                                            openPendingFinalOffer();
+                                        }
+                                    });
+                                } catch (e) {
+                                    finalOfferSkipPreludeOnce = true;
+                                    openPendingFinalOffer();
+                                }
+                            });
+                        };
                         try {
                             showLevelComplete({
                                 title: `LEVEL ${clearedLevelNum} COMPLETE`,
                                 onDismiss: () => {
+                                    if (nextLevelNum === 20) {
+                                        beginLevel20BossIntro();
+                                        return;
+                                    }
                                     randomizeBoard(true);
                                     applyFinalOfferClickFloor();
-                                    inputLocked = false;
                                     updateHUD();
-                                    maybeShowPendingFinalOfferPopup(40);
+                                    openPendingFinalOffer();
                                 }
                             });
                         } catch (e) {
+                            if (nextLevelNum === 20) {
+                                beginLevel20BossIntro();
+                                return;
+                            }
                             randomizeBoard(true);
                             applyFinalOfferClickFloor();
-                            inputLocked = false;
                             updateHUD();
-                            maybeShowPendingFinalOfferPopup(40);
+                            openPendingFinalOffer();
                         }
                     } else if (isBossIntroLevel) {
                         try { playSfx('boss_level'); } catch (e) { }
@@ -8075,8 +8450,12 @@ function escapeHtmlAttr(str) {
             // ----- Core interaction -----
             function handleClick(index, isUser = false, tracker = null, suppressFinalize = false) {
                 if (isUser) {
+                    if (isBlockingPopupOpen()) return;
                     // block clicks if game is locked or already out of clicks
-                    if (inputLocked || clicksLeft <= 0) return;
+                    if (inputLocked || stormResolving || clicksLeft <= 0) return;
+                    try {
+                        if (typeof particlesActive === 'function' && particlesActive()) return;
+                    } catch (e) { }
 
                     // lock input for the duration of this chain
                     inputLocked = true;
@@ -8320,6 +8699,9 @@ function escapeHtmlAttr(str) {
                     if (!c) return;
                     const i = Number(c.dataset.index);
                     if (Number.isFinite(i)) applySpecialTelegraph(i, true);
+                    try {
+                        if (isBlockingPopupOpen() || inputLocked || stormResolving || (typeof particlesActive === 'function' && particlesActive())) return;
+                    } catch (e) { }
                     if (IS_MOBILE_COARSE && stormArmed && stormCharges > 0) {
                         beginMobileStormInteraction(i, ev.pointerId);
                         return;

@@ -894,6 +894,14 @@
                 transform-origin: center center;
             }
 
+            .virus.special-boss .boss-sprite-sheet.boss-sprite-sheet--grid6 {
+                background-position: 0% 0%;
+                background-size: 200% 300%;
+                animation: minibossSpriteFrames6 860ms step-end infinite;
+                transform: scale(1.14);
+                transform-origin: center center;
+            }
+
             .virus.special-boss.special-boss-level10,
             .virus.special-boss.special-boss-grid9 {
                 animation: none;
@@ -954,6 +962,15 @@
                 transform: scale(1.15);
                 transform-origin: center center;
                 animation-duration: 440ms;
+            }
+
+        .virus.special-boss.special-boss-level20 {
+            animation: none;
+        }
+
+            .virus.special-boss.special-boss-level20 .face-sprite {
+                animation: none;
+                transform: none !important;
             }
 
             .virus.special-boss.special-boss-level20-phase3::before {
@@ -1363,7 +1380,7 @@
             }
             50% {
                 filter: saturate(1.14) brightness(1.12);
-                transform: translateY(-1px);
+                transform: translateZ(0);
             }
         }
 
@@ -1448,6 +1465,15 @@
             66.667%, 77.777% { background-position: 0% 100%; }
             77.778%, 88.888% { background-position: 50% 100%; }
             88.889%, 100% { background-position: 100% 100%; }
+        }
+
+        @keyframes minibossSpriteFrames6 {
+            0%, 16.666% { background-position: 0% 0%; }
+            16.667%, 33.333% { background-position: 100% 0%; }
+            33.334%, 50% { background-position: 0% 50%; }
+            50.001%, 66.666% { background-position: 100% 50%; }
+            66.667%, 83.333% { background-position: 0% 100%; }
+            83.334%, 100% { background-position: 100% 100%; }
         }
 
         @keyframes minibossWobble {
@@ -3065,11 +3091,24 @@
 
         .final-offer-prelude {
             position: fixed;
-            z-index: 95270;
             background: #000;
             opacity: 0;
             pointer-events: none;
             transition: opacity var(--fo-prelude-ms, 900ms) ease;
+        }
+
+        .final-offer-prelude.final-offer-prelude-board {
+            z-index: 95270;
+        }
+
+        .final-offer-prelude.final-offer-prelude-global {
+            inset: 0 !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0 !important;
+            z-index: 2147483644;
         }
 
         .final-offer-prelude.show {
@@ -3971,6 +4010,38 @@
                 /* optional: slightly brighten segments */
                 filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
             }
+
+        .level-clear-click-toast {
+            position: fixed;
+            z-index: 92050;
+            pointer-events: none;
+            transform: translate(-100%, -50%);
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(10px, 1.4vw, 13px);
+            color: #ffe08a;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.72), 0 0 8px rgba(255, 209, 102, 0.36);
+            letter-spacing: 0.02em;
+            animation: levelClearClickToastPop 920ms ease-out forwards;
+        }
+
+        @keyframes levelClearClickToastPop {
+            0% {
+                opacity: 0;
+                transform: translate(-100%, -50%) scale(0.92);
+            }
+            16% {
+                opacity: 1;
+                transform: translate(-100%, -64%) scale(1.02);
+            }
+            72% {
+                opacity: 1;
+                transform: translate(-100%, -116%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-100%, -136%) scale(0.96);
+            }
+        }
 
 
 /* ------------ audio popup (matches badge/game-over styling but interactive) ------------- */
@@ -6465,7 +6536,7 @@ html.assistant-disabled .assistant-fallback-bubble {
             pointer-events: auto;
             overflow: hidden;
             background: rgba(0, 0, 0, 0);
-            transition: background 4.4s ease;
+            transition: background 6.6s ease;
             display: flex;
             align-items: center;
             justify-content: center;
