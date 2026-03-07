@@ -79,9 +79,6 @@
                 <button id="startBtn" class="ctrl small-ctrl" aria-label="S">
                     <span class="hud-glyph hud-glyph-start" aria-hidden="true">▶</span>
                 </button>
-                <button id="restart" class="ctrl small-ctrl" aria-label="Restart">
-                    <span class="hud-glyph hud-glyph-reset" aria-hidden="true">↻</span>
-                </button>
 
                 <button id="audioBtn" class="ctrl small-ctrl" aria-label="Audio Settings" title="Audio Settings"
                     data-modal-open="audioPopup">
@@ -91,7 +88,9 @@
                     <span class="hud-glyph hud-glyph-help" aria-hidden="true">?</span>
                 </button>
                 <button id="stormBtn" class="ctrl storm-btn" aria-label="Nano Storm" aria-pressed="false"
-                    title="Nano Storm"><span class="storm-armed-label" aria-hidden="true">ARMED</span></button>
+                    title="Nano Storm"><span class="storm-bolt" aria-hidden="true">⚡</span><span
+                        class="storm-batt-cap" aria-hidden="true"></span><span class="storm-armed-label"
+                        aria-hidden="true">ARMED</span></button>
             </div>
 
             <div id="assist-badge" class="assist-badge" aria-live="polite" aria-atomic="true" title="Lab Assistant"
@@ -345,6 +344,11 @@
                 </div>
             </div>
 
+        </div>
+
+        <div class="settings-reset-row">
+            <button id="restartRunBtn" class="btn" type="button">Restart Run</button>
+            <div class="settings-reset-note">Restarts the current run from level 1</div>
         </div>
 
         <div class="settings-reset-row">

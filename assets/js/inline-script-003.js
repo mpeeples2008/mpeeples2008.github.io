@@ -1096,6 +1096,16 @@ function escapeHtmlAttr(str) {
                 firstSpitDelayMs: 1100,
                 freshPulseMs: 650
             };
+            const BIOFILM_CONFIG = {
+                enabled: true,
+                unlockLevel: 10,
+                maxHitsPerCell: 2,
+                countsByBand: [
+                    { minLevel: 10, maxLevel: 14, count: 2 },
+                    { minLevel: 15, maxLevel: 19, count: 3 },
+                    { minLevel: 20, maxLevel: 999, count: 4 }
+                ]
+            };
             const TECHNO_GREMLIN_POWER_CONFIG = {
                 enabled: true,
                 level: 15,
@@ -1111,6 +1121,10 @@ function escapeHtmlAttr(str) {
             let bossGooShieldHits = new Array(ROWS * COLS).fill(0);
             let bossGooShieldStyle = new Array(ROWS * COLS).fill(null);
             let bossGooShieldTimer = null;
+            let biofilmHits = new Array(ROWS * COLS).fill(0);
+            let biofilmUntil = new Array(ROWS * COLS).fill(0);
+            let biofilmStyle = new Array(ROWS * COLS).fill(null);
+            let biofilmTimer = null;
             let boss20PhaseTimer = null;
             let boss20FinalWindowTimer = null;
             let boss20Phase3TransitionTimer = null;
@@ -1226,6 +1240,28 @@ function escapeHtmlAttr(str) {
                             if ((Number(bossGooShieldHits[i]) || 0) > 0 && state[i] !== null) out.push(i);
                         }
                         return out;
+                    }
+                };
+                window.Biofilm = {
+                    get config() { return BIOFILM_CONFIG; },
+                    state: function () {
+                        const out = [];
+                        for (let i = 0; i < biofilmHits.length; i++) {
+                            if ((Number(biofilmHits[i]) || 0) > 0) {
+                                out.push({ index: i, hits: Number(biofilmHits[i]) || 0, until: Number(biofilmUntil[i]) || 0 });
+                            }
+                        }
+                        return out;
+                    },
+                    seed: function (force = true) {
+                        const added = seedBiofilmForBoard(!!force);
+                        scheduleRender();
+                        return { added };
+                    },
+                    clear: function () {
+                        resetBiofilmState(false);
+                        scheduleRender();
+                        return true;
                     }
                 };
                 window.BossPacing = {
@@ -2107,7 +2143,7 @@ function escapeHtmlAttr(str) {
                             'NEW THREATS DETECTED',
                             'Mutations introducing advanced pathogen behaviors.',
                             'MINI-BOSS: takes multiple hits to eliminate and can generate new viruses while active.',
-                            'ARMORED SHELLS: some viruses are shielded; break the shell first before normal growth damage applies.'
+                            'ARMORED SHELLS: stolen lab shielding tech now protects some viruses; break the shell first before normal growth damage applies.'
                         ]
                     };
                 }
@@ -4375,9 +4411,6 @@ function escapeHtmlAttr(str) {
 
 
                     if (persistent) {
-                        // leave it on screen until user clicks the existing #restart button
-                        // ensure restart button exists and wire a one-time handler
-                        const restartBtn = document.getElementById('restart');
                         const popupRestartBtn = el.querySelector('.go-restart-btn');
                         const cleanup = () => {
                             try {
@@ -4388,35 +4421,6 @@ function escapeHtmlAttr(str) {
                                 }
                             } catch (e) { }
                         };
-                        if (restartBtn) {
-                            // avoid double-wiring
-                            if (!restartBtn._gop_wired) {
-                                restartBtn._gop_wired = true;
-                                restartBtn.addEventListener('click', function onRestartFromGOP(e) {
-                                    // cleanup popup and perform reset
-                                    cleanup();
-                                    try {
-                                        // clear the outOfClicksShown guard so future gameovers can show
-                                        outOfClicksShown = false;
-                                    } catch (e) { }
-                                    // call a unified reset if present
-                                    if (typeof performGameReset === 'function') {
-                                        try { performGameReset(); } catch (e) { }
-                                    } else {
-                                        try {
-                                            screensPassed = 0;
-                                            totalScore = 0;
-                                            randomizeBoard(false);
-                                            updateHUD();
-                                        } catch (e) { }
-                                    }
-                                    // remove this handler flag (keep listener but it's idempotent)
-                                });
-                            }
-                        } else {
-                            // If no restart button, leave the popup until manually removed
-                            console.warn('showGameOverPopup: persistent requested but #restart button not found.');
-                        }
                         if (popupRestartBtn) {
                             popupRestartBtn.addEventListener('click', function onPopupRestartClick(e) {
                                 e.preventDefault();
@@ -6810,6 +6814,159 @@ function escapeHtmlAttr(str) {
                 }
             }
 
+            function isBiofilmEnabled(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                return !!(BIOFILM_CONFIG && BIOFILM_CONFIG.enabled !== false && lvl >= Math.max(1, Math.floor(Number(BIOFILM_CONFIG.unlockLevel) || 10)));
+            }
+
+            function stopBiofilmTimer() {
+                if (!biofilmTimer) return;
+                clearTimeout(biofilmTimer);
+                biofilmTimer = null;
+            }
+
+            function resetBiofilmState(stopTimer = true) {
+                for (let i = 0; i < biofilmHits.length; i++) biofilmHits[i] = 0;
+                for (let i = 0; i < biofilmUntil.length; i++) biofilmUntil[i] = 0;
+                for (let i = 0; i < biofilmStyle.length; i++) biofilmStyle[i] = null;
+                if (stopTimer) stopBiofilmTimer();
+            }
+
+            function clearBiofilmAt(index) {
+                const i = Math.floor(Number(index));
+                if (!Number.isFinite(i) || i < 0 || i >= biofilmHits.length) return false;
+                if ((Number(biofilmHits[i]) || 0) <= 0) return false;
+                biofilmHits[i] = 0;
+                biofilmUntil[i] = 0;
+                biofilmStyle[i] = null;
+                return true;
+            }
+
+            function hasBiofilmAt(index) {
+                const i = Math.floor(Number(index));
+                if (!Number.isFinite(i) || i < 0 || i >= biofilmHits.length) return false;
+                if ((Number(biofilmHits[i]) || 0) <= 0) return false;
+                return true;
+            }
+
+            function makeBiofilmStyle() {
+                const pct = () => `${Math.round(28 + (Math.random() * 44))}%`;
+                const radius = `${pct()} ${pct()} ${pct()} ${pct()} / ${pct()} ${pct()} ${pct()} ${pct()}`;
+                const widthPct = `${Math.round(52 + (Math.random() * 34))}%`;
+                const heightPct = `${Math.round(46 + (Math.random() * 38))}%`;
+                const ox = `${Math.round(-14 + (Math.random() * 28))}%`;
+                const oy = `${Math.round(-14 + (Math.random() * 28))}%`;
+                return {
+                    radius,
+                    rot: `${Math.round(-20 + (Math.random() * 40))}deg`,
+                    scale: (0.94 + (Math.random() * 0.22)).toFixed(2),
+                    widthPct,
+                    heightPct,
+                    ox,
+                    oy,
+                    sheenX: `${Math.round(24 + (Math.random() * 44))}%`,
+                    sheenY: `${Math.round(18 + (Math.random() * 38))}%`,
+                    appliedAt: Date.now()
+                };
+            }
+
+            function applyBiofilmAt(index, opts = null) {
+                const i = Math.floor(Number(index));
+                if (!Number.isFinite(i) || i < 0 || i >= state.length) return false;
+                if (state[i] !== null) return false;
+                if (specialState[i] === 'boss') return false;
+                const options = opts || {};
+                biofilmHits[i] = Math.max(1, Math.floor(Number(options.hits) || Number(BIOFILM_CONFIG.maxHitsPerCell) || 1));
+                biofilmUntil[i] = Number.MAX_SAFE_INTEGER;
+                biofilmStyle[i] = makeBiofilmStyle();
+                return true;
+            }
+
+            function consumeBiofilmHit(index) {
+                const i = Math.floor(Number(index));
+                if (!Number.isFinite(i) || i < 0 || i >= state.length) return false;
+                if (!hasBiofilmAt(i)) return false;
+                biofilmHits[i] = Math.max(0, Number(biofilmHits[i]) - 1);
+                if (biofilmHits[i] <= 0) {
+                    biofilmUntil[i] = 0;
+                    biofilmStyle[i] = null;
+                }
+                return true;
+            }
+
+            function pruneBiofilmCells() {
+                let changed = false;
+                for (let i = 0; i < biofilmHits.length; i++) {
+                    const hasHits = (Number(biofilmHits[i]) || 0) > 0;
+                    if (!hasHits) continue;
+                    if ((Number(biofilmHits[i]) || 0) <= 0) {
+                        biofilmHits[i] = 0;
+                        biofilmUntil[i] = 0;
+                        biofilmStyle[i] = null;
+                        changed = true;
+                    }
+                }
+                return changed;
+            }
+
+            function getBiofilmTargetCount(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                const bands = (BIOFILM_CONFIG && Array.isArray(BIOFILM_CONFIG.countsByBand)) ? BIOFILM_CONFIG.countsByBand : [];
+                for (let i = 0; i < bands.length; i++) {
+                    const b = bands[i] || {};
+                    const min = Math.max(1, Math.floor(Number(b.minLevel) || 1));
+                    const max = Math.max(min, Math.floor(Number(b.maxLevel) || 999));
+                    if (lvl >= min && lvl <= max) return Math.max(0, Math.floor(Number(b.count) || 0));
+                }
+                return 0;
+            }
+
+            function seedBiofilmForBoard(force = false, levelNum = getCurrentLevelNumber()) {
+                if (!isBiofilmEnabled(levelNum)) return 0;
+                if (!force) return 0;
+                const target = Math.max(0, getBiofilmTargetCount(levelNum));
+                let active = 0;
+                const candidates = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (hasBiofilmAt(i)) {
+                        active++;
+                        continue;
+                    }
+                    if (state[i] === null && specialState[i] !== 'boss') candidates.push(i);
+                }
+                if (active >= target || !candidates.length) return 0;
+                shuffle(candidates);
+                const need = Math.max(0, Math.min(candidates.length, target - active));
+                let added = 0;
+                for (let i = 0; i < need; i++) {
+                    if (applyBiofilmAt(candidates[i])) added++;
+                }
+                return added;
+            }
+
+            function playBiofilmAbsorbFx(index) {
+                if (!Number.isFinite(index) || !boardEl) return;
+                try {
+                    const cell = boardEl.querySelector(`[data-index='${Math.floor(Number(index))}']`);
+                    if (!cell) return;
+                    cell.classList.remove('biofilm-hit');
+                    void cell.offsetWidth;
+                    cell.classList.add('biofilm-hit');
+                    setTimeout(() => { try { cell.classList.remove('biofilm-hit'); } catch (e) { } }, 300);
+                    const r = cell.getBoundingClientRect();
+                    const fx = document.createElement('div');
+                    fx.className = 'biofilm-absorb-fx';
+                    fx.style.left = Math.round(r.left + (r.width * 0.5)) + 'px';
+                    fx.style.top = Math.round(r.top + (r.height * 0.5)) + 'px';
+                    document.body.appendChild(fx);
+                    setTimeout(() => { try { fx.remove(); } catch (e) { } }, 360);
+                } catch (e) { }
+            }
+
+            function ensureBiofilmTimer() {
+                stopBiofilmTimer();
+            }
+
             function stopBossGooShieldTimer() {
                 if (!bossGooShieldTimer) return;
                 clearTimeout(bossGooShieldTimer);
@@ -7498,6 +7655,7 @@ function escapeHtmlAttr(str) {
                 specialMetaState.fill(null);
                 resetBoss20State();
                 resetBossGooShieldState(true);
+                resetBiofilmState(true);
                 clearTechnoGremlinPowers(true);
                 if (!preserveClicks) {
                     resetRunPerkState();
@@ -7567,6 +7725,8 @@ function escapeHtmlAttr(str) {
                 ensureBoss20PhaseTimer();
                 ensureLevel5HasArmored();
                 normalizeTinyArmoredForBossOpen(levelNum);
+                try { seedBiofilmForBoard(true, levelNum); } catch (e) { }
+                ensureBiofilmTimer();
                 queueLikelyAssetPrefetch(levelNum + 1, 'next-level');
                 if (preserveClicks && (Number(runPerkState.overclockedReservePending) || 0) > 0) {
                     const reservePending = Math.max(0, Number(runPerkState.overclockedReservePending) || 0);
@@ -7583,6 +7743,15 @@ function escapeHtmlAttr(str) {
             }
 
             function findNextBubble(index, dr, dc) { let r = Math.floor(index / COLS), c = index % COLS; while (true) { r += dr; c += dc; if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null; const i = r * COLS + c; if (state[i] !== null) return i; } }
+            function findNextBiofilm(index, dr, dc) {
+                let r = Math.floor(index / COLS), c = index % COLS;
+                while (true) {
+                    r += dr; c += dc;
+                    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
+                    const i = r * COLS + c;
+                    if (hasBiofilmAt(i)) return i;
+                }
+            }
 
             function createPetriElement() { const pet = document.createElement('div'); pet.className = 'petri'; if (PETRI_URL) { const img = document.createElement('img'); img.src = PETRI_URL; img.alt = 'petri'; pet.appendChild(img); } return pet; }
 
@@ -7757,6 +7926,7 @@ function escapeHtmlAttr(str) {
                 specialTelegraphIndex = null;
                 const nowTs = Date.now();
                 pruneBossGooShields();
+                pruneBiofilmCells();
                 boardEl.innerHTML = ''; for (let i = 0; i < ROWS * COLS; i++) {
                     const val = state[i];
                     const specialType = specialState[i];
@@ -7769,6 +7939,22 @@ function escapeHtmlAttr(str) {
                         if (specialDef.className) gridCell.classList.add(specialDef.className);
                     }
                     const pet = createPetriElement(); gridCell.appendChild(pet);
+                    if (hasBiofilmAt(i)) {
+                        gridCell.classList.add('has-biofilm');
+                        const bio = document.createElement('div');
+                        bio.className = 'biofilm-overlay';
+                        const bst = biofilmStyle[i] || {};
+                        if (bst.radius) bio.style.borderRadius = bst.radius;
+                        if (bst.rot) bio.style.setProperty('--b-rot', bst.rot);
+                        if (bst.scale) bio.style.setProperty('--b-scale', String(bst.scale));
+                        if (bst.widthPct) bio.style.setProperty('--b-w', bst.widthPct);
+                        if (bst.heightPct) bio.style.setProperty('--b-h', bst.heightPct);
+                        if (bst.ox) bio.style.setProperty('--b-ox', bst.ox);
+                        if (bst.oy) bio.style.setProperty('--b-oy', bst.oy);
+                        if (bst.sheenX) bio.style.setProperty('--b-sheen-x', bst.sheenX);
+                        if (bst.sheenY) bio.style.setProperty('--b-sheen-y', bst.sheenY);
+                        gridCell.appendChild(bio);
+                    }
                     if (hasBossGooShield(i)) {
                         const goo = document.createElement('div');
                         goo.className = 'goo-shield-overlay';
@@ -7799,6 +7985,7 @@ function escapeHtmlAttr(str) {
                     boardEl.appendChild(gridCell);
                 }
                 ensureBossGooShieldTimer();
+                ensureBiofilmTimer();
                 ensureTechnoGremlinPowerTimer();
                 ensureBoss20PhaseTimer();
                 syncRotatingBlockerUI();
@@ -8158,8 +8345,19 @@ function escapeHtmlAttr(str) {
 
                 dirs.forEach((d, dirIdx) => {
                     const [dr, dc, ox, oy] = d;
-                    // find the closest bubble in this direction (if any)
-                    const next = findNextBubble(cellIndex, dr, dc);
+                    // find closest virus and closest biofilm in this direction
+                    const nextVirus = findNextBubble(cellIndex, dr, dc);
+                    const nextBiofilm = findNextBiofilm(cellIndex, dr, dc);
+                    const originRow = Math.floor(cellIndex / COLS);
+                    const originCol = cellIndex % COLS;
+                    const distTo = (idx) => {
+                        if (!Number.isFinite(idx)) return Number.POSITIVE_INFINITY;
+                        const rr = Math.floor(idx / COLS);
+                        const cc = idx % COLS;
+                        return Math.abs(rr - originRow) + Math.abs(cc - originCol);
+                    };
+                    const useBiofilm = Number.isFinite(nextBiofilm) && (distTo(nextBiofilm) <= distTo(nextVirus));
+                    const next = useBiofilm ? nextBiofilm : nextVirus;
 
                     // spawn exactly one particle for this direction (if below cap)
                     if (activeCount + 1 > MAX_ACTIVE_PARTICLES) return;
@@ -8202,6 +8400,13 @@ function escapeHtmlAttr(str) {
                                 animateParticleTo(p, sx + jitterX, sy + jitterY, tx, ty, dur, () => {
                                     try {
                                         if (sourceBoardGeneration !== boardGeneration) return;
+                                        if (useBiofilm && hasBiofilmAt(next)) {
+                                            consumeBiofilmHit(next);
+                                            playBiofilmAbsorbFx(next);
+                                            try { playSfx('zap'); } catch (e) { }
+                                            scheduleRender();
+                                            return;
+                                        }
                                         if (!hitTargets.has(next)) {
                                             hitTargets.add(next);
                                             handleClick(next, false, tracker);
@@ -8323,6 +8528,7 @@ function escapeHtmlAttr(str) {
                 try { hideFinalOfferPopup(true); } catch (e) { }
                 try { runPerkState.popupOpen = false; } catch (e) { }
                 try { stopBossGooShieldTimer(); } catch (e) { }
+                try { stopBiofilmTimer(); } catch (e) { }
                 try { resetBoss20State(); } catch (e) { }
                 try { clearTechnoGremlinPowers(true); } catch (e) { }
                 if (levelNow === Math.max(1, Math.floor(Number(FINAL_OFFER_CONFIG && FINAL_OFFER_CONFIG.level) || 20)) && musicOverrideMode === 'final-boss') {
@@ -8499,7 +8705,7 @@ function escapeHtmlAttr(str) {
                 stormBtn.classList.toggle('jammed', jammed);
                 try {
                     const jamLabel = stormBtn.querySelector('.storm-armed-label');
-                    if (jamLabel) jamLabel.textContent = jammed ? 'JAM' : 'ARMED';
+                    if (jamLabel) jamLabel.textContent = jammed ? 'JAMMED' : 'ARMED';
                 } catch (e) { }
                 stormBtn.disabled = (stormCharges <= 0) || jammed;
                 stormBtn.setAttribute('aria-pressed', String(!!stormArmed));
@@ -9019,6 +9225,12 @@ function escapeHtmlAttr(str) {
 
                 // handle empty cell (no virus)
                 if (state[index] === null) {
+                    if (hasBiofilmAt(index)) {
+                        clearBiofilmAt(index);
+                        playBiofilmAbsorbFx(index);
+                        try { playSfx('zap'); } catch (e) { }
+                        scheduleRender();
+                    }
                     if (suppressFinalize || stormResolving) return;
                     // unlock since nothing actually happened
                     inputLocked = false;
@@ -9425,6 +9637,23 @@ function escapeHtmlAttr(str) {
                     resetProgressWithConfirm();
                 });
             }
+            const restartRunBtn = document.getElementById('restartRunBtn');
+            if (restartRunBtn) {
+                restartRunBtn.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    const ok = window.confirm('Restart current run? Progress this run will be lost.');
+                    if (!ok) return;
+                    try { performGameReset(); } catch (e) { }
+                    try {
+                        const audioPopup = document.getElementById('audioPopup');
+                        if (audioPopup) {
+                            audioPopup.classList.remove('show', 'open');
+                            audioPopup.style.display = 'none';
+                            audioPopup.setAttribute('aria-hidden', 'true');
+                        }
+                    } catch (e) { }
+                });
+            }
             if (applyTestLevelBtn) {
                 applyTestLevelBtn.addEventListener('click', (ev) => {
                     try { ev.preventDefault(); } catch (e) { }
@@ -9481,8 +9710,6 @@ function escapeHtmlAttr(str) {
                 });
             }
 
-            const restartBtn = document.getElementById('restart');
-            if (restartBtn) { restartBtn.addEventListener('click', () => { screensPassed = 0; totalScore = 0; randomizeBoard(false); }); }
             let startBtn = document.getElementById('startBtn');
 
             let sfxMuted = false;
