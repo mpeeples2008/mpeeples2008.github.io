@@ -267,8 +267,9 @@ function escapeHtmlAttr(str) {
             const MINIBOSS_LEVEL10_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss2_new.png';
             const MINIBOSS_LEVEL15_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techy-goblin.png';
             const MINIBOSS_LEVEL20_PHASE1_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss.png';
-            const MINIBOSS_LEVEL20_PHASE2_SPRITE_URL = MINIBOSS_LEVEL20_PHASE1_SPRITE_URL;
+            const MINIBOSS_LEVEL20_PHASE2_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_phase2_alt.png';
             const MINIBOSS_LEVEL20_PHASE3_SPRITE_URL = MINIBOSS_LEVEL20_PHASE1_SPRITE_URL;
+            const BOSS20_PHASE2_SHATTER_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/shatter.png';
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
             const SFX_URLS = {
                 pop: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/pop2.mp3',
@@ -288,6 +289,7 @@ function escapeHtmlAttr(str) {
                 techno_dead: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techno_dead.mp3',
                 techno_jammer: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techno_jamming.mp3',
                 techno_duplicator: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techno_duplicator.mp3',
+                glass_crack: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/glass_crack.mp3',
                 double_deal: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/double_deal.mp3',
                 achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3',
                 assistant_ai_0: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3',
@@ -342,6 +344,7 @@ function escapeHtmlAttr(str) {
                 techno_dead: 380,
                 techno_jammer: 320,
                 techno_duplicator: 260,
+                glass_crack: 500,
                 double_deal: 500,
                 win: 250,
                 lose: 250,
@@ -350,10 +353,11 @@ function escapeHtmlAttr(str) {
             const SFX_BURST_WINDOW_MS = 120;
             const SFX_BURST_MAX = 6;
             const SFX_VOLUME_MULTIPLIER = {
-                blocker_move_1: 0.62
+                blocker_move_1: 0.62,
+                glass_crack: 1.6
             };
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
-            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'zap', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'goop', 'goop_be_dead', 'techno_dead', 'techno_jammer', 'techno_duplicator', 'double_deal', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'zap', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'goop', 'goop_be_dead', 'techno_dead', 'techno_jammer', 'techno_duplicator', 'glass_crack', 'double_deal', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
             const IMAGE_PREFETCH_MAX = 10;
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
@@ -543,6 +547,7 @@ function escapeHtmlAttr(str) {
                     if (MINIBOSS_LEVEL20_PHASE1_SPRITE_URL) images.push(MINIBOSS_LEVEL20_PHASE1_SPRITE_URL);
                     if (MINIBOSS_LEVEL20_PHASE2_SPRITE_URL) images.push(MINIBOSS_LEVEL20_PHASE2_SPRITE_URL);
                     if (MINIBOSS_LEVEL20_PHASE3_SPRITE_URL) images.push(MINIBOSS_LEVEL20_PHASE3_SPRITE_URL);
+                    if (BOSS20_PHASE2_SHATTER_SPRITE_URL) images.push(BOSS20_PHASE2_SHATTER_SPRITE_URL);
                 }
                 if (VIRUS1_SPRITE_SHEET_URL) images.push(VIRUS1_SPRITE_SHEET_URL);
                 if (VIRUS2_SPRITE_SHEET_URL) images.push(VIRUS2_SPRITE_SHEET_URL);
@@ -562,6 +567,7 @@ function escapeHtmlAttr(str) {
                 if (level >= 10) sfx.push('goop', 'goop_be_dead');
                 if (level >= 15) sfx.push('techno_dead', 'techno_jammer', 'techno_duplicator');
                 if (level >= 10) sfx.push('blocker_move', 'blocker_move_1', 'zap');
+                if (level >= 20) sfx.push('glass_crack');
                 if ((level % 3) === 0) sfx.push('win');
                 if ((level % 4) === 0) sfx.push('lose');
                 return {
@@ -1066,6 +1072,15 @@ function escapeHtmlAttr(str) {
             // Game difficulty & state
             let clicksLeft = 10, screensPassed = 0, totalScore = 0;
             let outOfClicksShown = false;
+            const RUN_CONTINUE_CONFIG = {
+                enabled: true,
+                maxUsesPerRun: 1,
+                disabledAtLevel: 20,
+                grantClicks: 10
+            };
+            let runContinueUses = 0;
+            let continueOfferOpen = false;
+            let continueOfferPopupEl = null;
             let state = new Array(ROWS * COLS).fill(null);
             let specialState = new Array(ROWS * COLS).fill(null);
             let specialMetaState = new Array(ROWS * COLS).fill(null);
@@ -1211,6 +1226,32 @@ function escapeHtmlAttr(str) {
                             if ((Number(bossGooShieldHits[i]) || 0) > 0 && state[i] !== null) out.push(i);
                         }
                         return out;
+                    }
+                };
+                window.BossPacing = {
+                    get profile() { return BOSS_PACING_PROFILE; },
+                    get: function (levelNum = getCurrentLevelNumber(), phaseNum = null, desperation = false) {
+                        const lvl = Math.max(1, Math.floor(Number(levelNum) || getCurrentLevelNumber()));
+                        const ctx = { phase: Number.isFinite(Number(phaseNum)) ? Math.max(1, Math.floor(Number(phaseNum))) : getBossPhaseContext(lvl, null).phase, desperation: !!desperation };
+                        return JSON.parse(JSON.stringify(getBossPacingProfile(lvl, ctx)));
+                    },
+                    ensureFuel: function (levelNum = getCurrentLevelNumber(), force = true) {
+                        const lvl = Math.max(1, Math.floor(Number(levelNum) || getCurrentLevelNumber()));
+                        const bosses = getBossIndicesForLevel(lvl);
+                        const origin = bosses.length ? bosses[0] : null;
+                        const added = ensureBossBoardFuel(lvl, origin, { force: !!force });
+                        return { level: lvl, added };
+                    },
+                    fuelState: function (levelNum = getCurrentLevelNumber()) {
+                        const lvl = Math.max(1, Math.floor(Number(levelNum) || getCurrentLevelNumber()));
+                        let nonBoss = 0;
+                        let empties = 0;
+                        for (let i = 0; i < state.length; i++) {
+                            if (specialState[i] === 'boss') continue;
+                            if (state[i] === null) empties++;
+                            else nonBoss++;
+                        }
+                        return { level: lvl, nonBoss, empties, lastFuelAt: Number(bossFuelLastAtByLevel[lvl]) || 0 };
                     }
                 };
                 window.setLevel = function (levelNum) {
@@ -1499,6 +1540,11 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_PHASE2_REPOP_SIZE_MIX = [0.14, 0.30, 0.34, 0.22];
             const EPIC_BOSS20_PHASE_SHIFT_MS = 2200;
             const EPIC_BOSS20_PHASE_SHIFT_CLICK_REWARD = 8;
+            const EPIC_BOSS20_PHASE2_BREAK_FREEZE_MS = 2000;
+            const EPIC_BOSS20_PHASE2_BREAK_FLASH_MS = 50;
+            const EPIC_BOSS20_PHASE2_BREAK_SHATTER_MS = 440;
+            const EPIC_BOSS20_PHASE2_BREAK_SHAKE_MS = 820;
+            const EPIC_BOSS20_PHASE2_BREAK_SFX_LEAD_MS = 240;
             const EPIC_BOSS20_RESCUE_CINEMATIC_MS = 1800;
             const EPIC_BOSS20_RESCUE_STALL_MS = 4000;
             const EPIC_BOSS20_PHASE3_HP = 24;
@@ -1514,6 +1560,78 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_FINAL_WINDOW_MS = 2500;
             const EPIC_BOSS20_FINAL_DAMAGE_MULT = 2;
             const EPIC_BOSS20_PHASE3_SHIFT_MS = 1700;
+            // Modular boss pacing profile:
+            // - `minNonBossViruses`: keep at least this many non-boss viruses alive during boss combat.
+            // - `fuelSpawnSizeWeights`: [S1,S2,S3,S4] mix used when replenishing board fuel.
+            // - `fuelArmoredChance`: chance replenished viruses start armored.
+            // - `fuelCooldownMs`: minimum delay between automatic replenishment pulses.
+            // - `spawnSizeWeights` / `armoredChance`: defaults for boss-driven spawn bursts.
+            const BOSS_PACING_PROFILE = {
+                default: {
+                    minNonBossViruses: 0,
+                    fuelSpawnSizeWeights: [0.04, 0.24, 0.46, 0.26],
+                    fuelArmoredChance: 0.0,
+                    fuelCooldownMs: 1500,
+                    spawnSizeWeights: null,
+                    armoredChance: null
+                },
+                5: {
+                    minNonBossViruses: 12,
+                    fuelSpawnSizeWeights: [0.00, 0.16, 0.54, 0.30],
+                    fuelArmoredChance: 0.20,
+                    fuelCooldownMs: 1700,
+                    spawnSizeWeights: [0.00, 0.16, 0.56, 0.28],
+                    armoredChance: 1.0
+                },
+                10: {
+                    minNonBossViruses: 14,
+                    fuelSpawnSizeWeights: [0.02, 0.24, 0.48, 0.26],
+                    fuelArmoredChance: 0.18,
+                    fuelCooldownMs: 1500,
+                    spawnSizeWeights: [0.00, 0.12, 0.50, 0.38],
+                    armoredChance: 0.5
+                },
+                15: {
+                    minNonBossViruses: 15,
+                    fuelSpawnSizeWeights: [0.02, 0.22, 0.48, 0.28],
+                    fuelArmoredChance: 0.16,
+                    fuelCooldownMs: 1400
+                },
+                20: {
+                    phase1: {
+                        minNonBossViruses: 16,
+                        fuelSpawnSizeWeights: [0.00, 0.10, 0.56, 0.34],
+                        fuelArmoredChance: 0.22,
+                        fuelCooldownMs: 1200,
+                        spawnSizeWeights: [0.00, 0.00, 0.70, 0.30],
+                        armoredChance: 1.0
+                    },
+                    phase2: {
+                        minNonBossViruses: 18,
+                        fuelSpawnSizeWeights: [0.02, 0.18, 0.52, 0.28],
+                        fuelArmoredChance: 0.26,
+                        fuelCooldownMs: 1000,
+                        spawnSizeWeights: [0.00, 0.00, 0.64, 0.36],
+                        armoredChance: 1.0
+                    },
+                    phase2Desperation: {
+                        minNonBossViruses: 20,
+                        fuelSpawnSizeWeights: [0.64, 0.26, 0.08, 0.02],
+                        fuelArmoredChance: 0.36,
+                        fuelCooldownMs: 760,
+                        spawnSizeWeights: [1.00, 0.00, 0.00, 0.00],
+                        armoredChance: 1.0
+                    },
+                    phase3: {
+                        minNonBossViruses: 17,
+                        fuelSpawnSizeWeights: [0.06, 0.20, 0.46, 0.28],
+                        fuelArmoredChance: 0.24,
+                        fuelCooldownMs: 920,
+                        spawnSizeWeights: [0.00, 0.14, 0.48, 0.38],
+                        armoredChance: 1.0
+                    }
+                }
+            };
             const BOSS_BREAKPOINT_PROFILE = {
                 5: {
                     counts: { b75: 1, b50: 2, b25: 2 },
@@ -1574,6 +1692,7 @@ function escapeHtmlAttr(str) {
                 };
             }
             let boss20State = createDefaultBoss20State();
+            const bossFuelLastAtByLevel = Object.create(null);
             let mobileStormPressTimer = null;
             let mobileStormHoldActive = false;
             let mobileStormPointerId = null;
@@ -1604,7 +1723,7 @@ function escapeHtmlAttr(str) {
                     id: 'final_viral_hostile_buyout',
                     source: 'broker',
                     title: 'Hostile Buyout',
-                    desc: '+15 clicks now, Nano Storm armed now, boss HP -20%. Cost: keep 49% score and no future Double Deals from score.',
+                    desc: '+15 clicks now, +1 Nano Storm charge now, boss HP -20%. Cost: keep 49% score and no future Double Deals from score.',
                     cardFrontUrl: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_quickfix.png'
                 },
                 bossSlowMs: 20000,
@@ -3025,7 +3144,7 @@ function escapeHtmlAttr(str) {
                 } else if (id === brokerId) {
                     clicksLeft = Math.max(0, (Number(clicksLeft) || 0) + 15);
                     stormCharges = Math.min(MAX_STORM_CHARGES, Math.max(1, Number(stormCharges) || 0));
-                    try { setStormArmed(true); } catch (e) { }
+                    try { setStormArmed(false); } catch (e) { }
                     const keep = Math.max(0, Math.min(1, Number(FINAL_OFFER_CONFIG.scoreKeepRatio) || 0.49));
                     totalScore = Math.max(0, Math.floor((Number(totalScore) || 0) * keep));
                     runPerkState.disableScoreDeals = true;
@@ -3088,7 +3207,7 @@ function escapeHtmlAttr(str) {
                     const mountFinalOfferModal = () => {
                         const pixelDesc = '+6 clicks, +1 Nano Storm, and boss systems run slower for a short time.';
                         const soloDesc = 'No bonus and no penalty. Enter level 20 with your current resources.';
-                        const brokerDesc = '+15 clicks, Nano Storm armed, and boss HP -20%; score drops to 49% and future score Double Deals are disabled.';
+                        const brokerDesc = '+15 clicks, +1 Nano Storm charge, and boss HP -20%; score drops to 49% and future score Double Deals are disabled.';
                         const el = document.createElement('div');
                         el.className = 'final-offer-modal';
                         el.setAttribute('role', 'dialog');
@@ -3744,6 +3863,7 @@ function escapeHtmlAttr(str) {
             function restartToIntroScreen() {
                 try { clearFinalVictorySequence(true); } catch (e) { }
                 try { clearGameOverFeedback(); } catch (e) { }
+                try { hideContinueOfferPopup(true); } catch (e) { }
                 try {
                     if (musicOverrideMode === 'final-boss') stopFinalBossTheme({ fadeOutMs: 250, resumeNormal: false });
                 } catch (e) { }
@@ -3753,6 +3873,8 @@ function escapeHtmlAttr(str) {
                     screensPassed = 0;
                     totalScore = 0;
                     outOfClicksShown = false;
+                    runContinueUses = 0;
+                    continueOfferOpen = false;
                     randomizeBoard(false);
                     updateHUD();
                 } catch (e) { }
@@ -4024,11 +4146,14 @@ function escapeHtmlAttr(str) {
                     const fromFinalVictory = isFinalVictoryActive() || !!document.querySelector('.final-victory-overlay');
                     clearFinalVictorySequence(true);
                     clearGameOverFeedback();
+                    hideContinueOfferPopup(true);
                     screensPassed = 0;
                     totalScore = 0;
                     randomizeBoard(false);
                     updateHUD();
                     outOfClicksShown = false;
+                    runContinueUses = 0;
+                    continueOfferOpen = false;
                     if (fromGameOver || fromFinalVictory) {
                         try { switchMusicForNewRun(); } catch (e) { }
                         try { if (fromGameOver && window.Assistant && Assistant.emit) Assistant.emit('postGameWelcome'); } catch (e) { }
@@ -4087,6 +4212,122 @@ function escapeHtmlAttr(str) {
             
 
             // ---------- Game Over popup helper ----------
+
+            function getRunContinueClickGrant() {
+                return Math.max(1, Math.floor(Number(RUN_CONTINUE_CONFIG && RUN_CONTINUE_CONFIG.grantClicks) || 10));
+            }
+
+            function canOfferRunContinue(levelNum = getCurrentLevelNumber()) {
+                if (!(RUN_CONTINUE_CONFIG && RUN_CONTINUE_CONFIG.enabled)) return false;
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                const cutoff = Math.max(1, Math.floor(Number(RUN_CONTINUE_CONFIG.disabledAtLevel) || 20));
+                if (lvl >= cutoff) return false;
+                if (continueOfferOpen) return false;
+                const maxUses = Math.max(0, Math.floor(Number(RUN_CONTINUE_CONFIG.maxUsesPerRun) || 1));
+                if (runContinueUses >= maxUses) return false;
+                return true;
+            }
+
+            function evaluateRunContinueRequirement(levelNum = getCurrentLevelNumber()) {
+                // Placeholder for future continue tasks/challenges.
+                // Return `{ ok: false, reason: '...' }` to block continue until task completion.
+                return { ok: true, reason: '' };
+            }
+
+            function hideContinueOfferPopup(immediate = false) {
+                const el = continueOfferPopupEl || document.querySelector('.continue-offer-popup');
+                if (!el) {
+                    continueOfferPopupEl = null;
+                    continueOfferOpen = false;
+                    return;
+                }
+                const cleanup = () => {
+                    try { el.remove(); } catch (e) { }
+                    if (continueOfferPopupEl === el) continueOfferPopupEl = null;
+                    continueOfferOpen = false;
+                };
+                if (immediate) {
+                    cleanup();
+                    return;
+                }
+                try {
+                    el.classList.remove('show');
+                    el.classList.add('hide');
+                    el.addEventListener('animationend', cleanup, { once: true });
+                } catch (e) {
+                    cleanup();
+                }
+            }
+
+            function showContinueOfferPopup(opts = {}) {
+                try {
+                    const levelNum = Math.max(1, Math.floor(Number(opts.level) || getCurrentLevelNumber()));
+                    if (!canOfferRunContinue(levelNum)) return false;
+                    hideContinueOfferPopup(true);
+                    continueOfferOpen = true;
+                    inputLocked = true;
+                    const el = document.createElement('div');
+                    el.className = 'continue-offer-popup';
+                    el.setAttribute('role', 'alertdialog');
+                    el.innerHTML = `
+                        <div class="co-title">EMERGENCY PROTOCOL</div>
+                        <div class="co-sub">One continue is available for this run.</div>
+                        <div class="co-detail">Restore <b>+${getRunContinueClickGrant()}</b> nano-bots and continue this level?</div>
+                        <div class="co-status" aria-live="polite"></div>
+                        <div class="co-actions">
+                            <button type="button" class="co-continue-btn">CONTINUE</button>
+                            <button type="button" class="co-giveup-btn">GAME OVER</button>
+                        </div>
+                    `;
+                    document.body.appendChild(el);
+                    continueOfferPopupEl = el;
+                    void el.offsetWidth;
+                    el.classList.add('show');
+                    const statusEl = el.querySelector('.co-status');
+                    const continueBtn = el.querySelector('.co-continue-btn');
+                    const giveUpBtn = el.querySelector('.co-giveup-btn');
+                    const closeWith = (fn) => {
+                        hideContinueOfferPopup(false);
+                        setTimeout(() => {
+                            try { if (typeof fn === 'function') fn(); } catch (e) { }
+                        }, 180);
+                    };
+                    if (continueBtn) {
+                        continueBtn.addEventListener('click', () => {
+                            const gate = evaluateRunContinueRequirement(levelNum) || {};
+                            if (!gate.ok) {
+                                if (statusEl) statusEl.textContent = String(gate.reason || 'Continue requirements not met.');
+                                return;
+                            }
+                            runContinueUses = Math.max(0, Number(runContinueUses) || 0) + 1;
+                            const before = Math.max(0, Number(clicksLeft) || 0);
+                            clicksLeft = Math.min(getMaxClicksCap(), before + getRunContinueClickGrant());
+                            const applied = Math.max(0, clicksLeft - before);
+                            outOfClicksShown = false;
+                            inputLocked = false;
+                            try { playSfx('fill'); } catch (e) { }
+                            updateHUD();
+                            if (applied > 0) showLevelClearClickToast(applied);
+                            closeWith(() => {
+                                try { scheduleRender(); } catch (e) { }
+                                if (typeof opts.onContinue === 'function') opts.onContinue({ level: levelNum, grant: applied });
+                            });
+                        }, { once: true });
+                    }
+                    if (giveUpBtn) {
+                        giveUpBtn.addEventListener('click', () => {
+                            closeWith(() => {
+                                if (typeof opts.onDecline === 'function') opts.onDecline({ level: levelNum });
+                            });
+                        }, { once: true });
+                    }
+                    return true;
+                } catch (e) {
+                    continueOfferOpen = false;
+                    inputLocked = false;
+                    return false;
+                }
+            }
 
             function showGameOverPopup(opts = {}) {
                 // opts: { title, subtitle, duration (ms), persistent (bool) }
@@ -5348,6 +5589,108 @@ function escapeHtmlAttr(str) {
                 return getBossIndicesForLevel(levelNum).length > 0;
             }
 
+            function clamp01(v) {
+                return Math.max(0, Math.min(1, Number(v) || 0));
+            }
+
+            function getBossPhaseContext(levelNum = getCurrentLevelNumber(), originIndex = null) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                let phase = 1;
+                let desperation = false;
+                if (lvl === 20) {
+                    phase = Math.max(1, Math.floor(Number(boss20State && boss20State.phase) || 1));
+                    if (Number.isFinite(originIndex)) {
+                        const meta = specialMetaState[Math.floor(Number(originIndex))] || {};
+                        if (Number.isFinite(Number(meta.phase))) {
+                            phase = Math.max(1, Math.floor(Number(meta.phase) || 1));
+                        }
+                    }
+                    desperation = (phase === 2) && isBoss20Phase2DesperationActive();
+                }
+                return { phase, desperation };
+            }
+
+            function getBossPacingProfile(levelNum = getCurrentLevelNumber(), context = null) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                const ctx = context || getBossPhaseContext(lvl, null);
+                const profile = Object.assign({}, BOSS_PACING_PROFILE.default || {});
+                const levelCfg = BOSS_PACING_PROFILE[lvl];
+                if (!levelCfg) return profile;
+                if (lvl === 20 && levelCfg && typeof levelCfg === 'object') {
+                    let phaseCfg = null;
+                    if (Math.max(1, Math.floor(Number(ctx.phase) || 1)) >= 3) {
+                        phaseCfg = levelCfg.phase3;
+                    } else if (Math.max(1, Math.floor(Number(ctx.phase) || 1)) === 2) {
+                        phaseCfg = ctx.desperation ? levelCfg.phase2Desperation : levelCfg.phase2;
+                    } else {
+                        phaseCfg = levelCfg.phase1;
+                    }
+                    if (phaseCfg && typeof phaseCfg === 'object') Object.assign(profile, phaseCfg);
+                    return profile;
+                }
+                if (typeof levelCfg === 'object') Object.assign(profile, levelCfg);
+                return profile;
+            }
+
+            function sampleSizeFromWeights(weights, fallback = 2) {
+                const fb = Math.max(0, Math.min(MAX_SIZE, Math.floor(Number(fallback) || 0)));
+                if (!Array.isArray(weights) || weights.length < 4) return fb;
+                const normalized = [0, 1, 2, 3].map((i) => Math.max(0, Number(weights[i]) || 0));
+                const total = normalized.reduce((acc, n) => acc + n, 0);
+                if (total <= 0) return fb;
+                let roll = Math.random() * total;
+                for (let i = 0; i < 4; i++) {
+                    roll -= normalized[i];
+                    if (roll <= 0) return i;
+                }
+                return fb;
+            }
+
+            function ensureBossBoardFuel(levelNum = getCurrentLevelNumber(), originIndex = null, opts = null) {
+                const options = opts || {};
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                if (!isMiniBossLevel(lvl)) return 0;
+                if (!options.allowWhenBlocked && isBlockingPopupOpen()) return 0;
+                const phaseContext = options.phaseContext || getBossPhaseContext(lvl, originIndex);
+                const pacing = getBossPacingProfile(lvl, phaseContext);
+                const targetMin = Math.max(0, Math.floor(Number(options.minNonBossViruses) || Number(pacing.minNonBossViruses) || 0));
+                if (targetMin <= 0) return 0;
+                const cooldownMs = Math.max(0, Math.floor(Number(options.cooldownMs) || Number(pacing.fuelCooldownMs) || 0));
+                const now = Date.now();
+                if (!options.force && cooldownMs > 0) {
+                    const prev = Math.max(0, Number(bossFuelLastAtByLevel[lvl]) || 0);
+                    if ((now - prev) < cooldownMs) return 0;
+                }
+                const empties = [];
+                let nonBossOccupied = 0;
+                for (let i = 0; i < state.length; i++) {
+                    if (specialState[i] === 'boss') continue;
+                    if (state[i] === null) empties.push(i);
+                    else nonBossOccupied++;
+                }
+                if (nonBossOccupied >= targetMin || !empties.length) return 0;
+                const addCount = Math.max(0, Math.min(empties.length, targetMin - nonBossOccupied));
+                if (addCount <= 0) return 0;
+                const sizeWeights = Array.isArray(options.fuelSpawnSizeWeights) ? options.fuelSpawnSizeWeights : (Array.isArray(pacing.fuelSpawnSizeWeights) ? pacing.fuelSpawnSizeWeights : pacing.spawnSizeWeights);
+                const armoredChance = clamp01(Number.isFinite(Number(options.fuelArmoredChance)) ? Number(options.fuelArmoredChance) : Number(pacing.fuelArmoredChance));
+                shuffle(empties);
+                let spawned = 0;
+                for (let i = 0; i < addCount; i++) {
+                    const idx = empties[i];
+                    if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) continue;
+                    if (state[idx] !== null || specialState[idx] === 'boss') continue;
+                    state[idx] = sampleSizeFromWeights(sizeWeights, 2);
+                    if (Math.random() < armoredChance) setSpecialForCell(idx, 'armored');
+                    else clearSpecialForCell(idx);
+                    spawned++;
+                }
+                if (spawned > 0) {
+                    bossFuelLastAtByLevel[lvl] = now;
+                    scheduleRender();
+                }
+                return spawned;
+            }
+
             function isTechnoGremlinPowerLevel(levelNum = getCurrentLevelNumber()) {
                 const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
                 return !!(TECHNO_GREMLIN_POWER_CONFIG && TECHNO_GREMLIN_POWER_CONFIG.enabled !== false && lvl === Math.max(1, Math.floor(Number(TECHNO_GREMLIN_POWER_CONFIG.level) || 15)));
@@ -5473,7 +5816,13 @@ function escapeHtmlAttr(str) {
                 if (jamActive) choice = 'overclock';
                 else if (overclockActive) choice = 'jam';
                 else choice = Math.random() < 0.58 ? 'jam' : 'overclock';
-                return activateTechnoGremlinPower(choice);
+                const result = activateTechnoGremlinPower(choice);
+                if (result) {
+                    const lvl = Math.max(1, Math.floor(Number(TECHNO_GREMLIN_POWER_CONFIG.level) || 15));
+                    const bosses = getBossIndicesForLevel(lvl);
+                    if (bosses.length) ensureBossBoardFuel(lvl, bosses[0]);
+                }
+                return result;
             }
 
             function ensureTechnoGremlinPowerTimer() {
@@ -5559,10 +5908,20 @@ function escapeHtmlAttr(str) {
                 return 3;
             }
 
+            function isBoardCompletelyFilled() {
+                for (let i = 0; i < state.length; i++) {
+                    if (state[i] === null) return false;
+                }
+                return true;
+            }
+
             function maybeTriggerBoss20Phase2RescueByClicks() {
                 if (!isBoss20Phase2DesperationActive()) return false;
                 if (boss20State.inCinematic || boss20State.rescueUsed) return false;
-                if ((Number(clicksLeft) || 0) > Math.max(0, Number(EPIC_BOSS20_PHASE2_RESCUE_CLICK_THRESHOLD) || 2)) return false;
+                const clickThreshold = Math.max(0, Number(EPIC_BOSS20_PHASE2_RESCUE_CLICK_THRESHOLD) || 2);
+                const lowClicks = (Number(clicksLeft) || 0) <= clickThreshold;
+                const fullBoard = isBoardCompletelyFilled();
+                if (!lowClicks && !fullBoard) return false;
                 const bosses = getBossIndicesForLevel(20);
                 if (!bosses.length) return false;
                 const idx = bosses[0];
@@ -5598,7 +5957,7 @@ function escapeHtmlAttr(str) {
                 } catch (e) { }
                 try {
                     if (window.Assistant && Assistant.show) {
-                        Assistant.show('Critical warning: Omega core destabilizing. Hold on until rescue threshold.', { priority: 2 });
+                        Assistant.show('Critical warning: Omega core destabilizing. Hold on until low charges or full-board saturation.', { priority: 2 });
                     }
                 } catch (e) { }
                 stopBoss20PhaseTimer();
@@ -5696,6 +6055,10 @@ function escapeHtmlAttr(str) {
                     }
                     if (acted <= 0) acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 1.0, offAxisChance: 0.6 });
                 }
+                const fueled = ensureBossBoardFuel(20, origin, {
+                    phaseContext: { phase, desperation: (phase === 2) && isBoss20Phase2DesperationActive() }
+                });
+                if (fueled > 0) acted += fueled;
                 if (acted > 0) {
                     boss20State.actionCounter = Math.max(0, Number(boss20State.actionCounter) || 0) + 1;
                 }
@@ -5752,6 +6115,108 @@ function escapeHtmlAttr(str) {
                     }
                     ensureBoss20PhaseTimer();
                 }, cadence);
+            }
+
+            function setBoss20BoardFreeze(active) {
+                try {
+                    const body = document.body;
+                    if (!body) return;
+                    if (active) body.classList.add('boss20-board-frozen');
+                    else body.classList.remove('boss20-board-frozen');
+                } catch (e) { }
+            }
+
+            function showBoss20Phase2WhiteFlash() {
+                try {
+                    const flash = document.createElement('div');
+                    flash.className = 'boss20-white-flash';
+                    flash.style.setProperty('--boss20-flash-ms', `${Math.max(20, Math.floor(Number(EPIC_BOSS20_PHASE2_BREAK_FLASH_MS) || 50))}ms`);
+                    document.body.appendChild(flash);
+                    setTimeout(() => { try { flash.remove(); } catch (e) { } }, Math.max(120, Math.floor(Number(EPIC_BOSS20_PHASE2_BREAK_FLASH_MS) || 50) + 120));
+                } catch (e) { }
+            }
+
+            function spawnBoss20Phase2ShatterFx(index) {
+                if (!Number.isFinite(index) || !boardEl) return;
+                try {
+                    const cell = boardEl.querySelector(`[data-index='${Math.floor(Number(index))}']`);
+                    if (!cell) return;
+                    const r = cell.getBoundingClientRect();
+                    const cx = Math.round(r.left + (r.width * 0.5));
+                    const cy = Math.round(r.top + (r.height * 0.5));
+                    const spriteSize = Math.round(Math.max(r.width, r.height) * 1.55);
+                    const shatter = document.createElement('div');
+                    shatter.className = 'boss20-shatter-sprite';
+                    shatter.style.left = cx + 'px';
+                    shatter.style.top = cy + 'px';
+                    shatter.style.width = spriteSize + 'px';
+                    shatter.style.height = spriteSize + 'px';
+                    if (BOSS20_PHASE2_SHATTER_SPRITE_URL) {
+                        shatter.style.backgroundImage = `url('${BOSS20_PHASE2_SHATTER_SPRITE_URL}')`;
+                    }
+                    document.body.appendChild(shatter);
+
+                    const shardCount = 16;
+                    for (let i = 0; i < shardCount; i++) {
+                        const shard = document.createElement('div');
+                        shard.className = 'boss20-shatter-shard';
+                        const angle = ((Math.PI * 2) * i / shardCount) + ((Math.random() - 0.5) * 0.36);
+                        const dist = 24 + (Math.random() * 62);
+                        const tx = Math.round(Math.cos(angle) * dist);
+                        const ty = Math.round(Math.sin(angle) * dist);
+                        const rot = Math.round((Math.random() - 0.5) * 320);
+                        shard.style.left = cx + 'px';
+                        shard.style.top = cy + 'px';
+                        shard.style.setProperty('--tx', `${tx}px`);
+                        shard.style.setProperty('--ty', `${ty}px`);
+                        shard.style.setProperty('--rot', `${rot}deg`);
+                        shard.style.animationDelay = `${Math.round(Math.random() * 48)}ms`;
+                        document.body.appendChild(shard);
+                        setTimeout(() => { try { shard.remove(); } catch (e) { } }, 540);
+                    }
+                    setTimeout(() => { try { shatter.remove(); } catch (e) { } }, 620);
+                } catch (e) { }
+            }
+
+            function playBoss20Phase2SwapShake(index, durationMs = EPIC_BOSS20_PHASE2_BREAK_SHAKE_MS) {
+                if (!Number.isFinite(index) || !boardEl) return;
+                try {
+                    const cell = boardEl.querySelector(`[data-index='${Math.floor(Number(index))}']`);
+                    if (!cell) return;
+                    cell.classList.remove('boss20-phase2-transform');
+                    void cell.offsetWidth;
+                    cell.classList.add('boss20-phase2-transform');
+                    setTimeout(() => {
+                        try { cell.classList.remove('boss20-phase2-transform'); } catch (e) { }
+                    }, Math.max(320, Math.floor(Number(durationMs) || 820)));
+                } catch (e) { }
+            }
+
+            function runBoss20Phase2BreakSequence(index, sourceBoardGeneration = boardGeneration) {
+                return new Promise((resolve) => {
+                    const freezeMs = Math.max(200, Math.floor(Number(EPIC_BOSS20_PHASE2_BREAK_FREEZE_MS) || 2000));
+                    const shatterMs = Math.max(240, Math.floor(Number(EPIC_BOSS20_PHASE2_BREAK_SHATTER_MS) || 560));
+                    const sfxLeadMs = Math.max(0, Math.floor(Number(EPIC_BOSS20_PHASE2_BREAK_SFX_LEAD_MS) || 0));
+                    const sfxDelay = Math.max(0, freezeMs - sfxLeadMs);
+                    setBoss20BoardFreeze(true);
+                    setTimeout(() => {
+                        if (sourceBoardGeneration !== boardGeneration) return;
+                        try { playSfx('glass_crack'); } catch (e) { }
+                    }, sfxDelay);
+                    setTimeout(() => {
+                        if (sourceBoardGeneration !== boardGeneration) {
+                            setBoss20BoardFreeze(false);
+                            resolve(false);
+                            return;
+                        }
+                        showBoss20Phase2WhiteFlash();
+                        spawnBoss20Phase2ShatterFx(index);
+                        setTimeout(() => {
+                            setBoss20BoardFreeze(false);
+                            resolve(true);
+                        }, shatterMs);
+                    }, freezeMs);
+                });
             }
 
             function showBoss20PhaseShiftOverlay() {
@@ -6170,66 +6635,81 @@ function escapeHtmlAttr(str) {
                 stopBoss20PhaseTimer();
                 inputLocked = true;
                 const sourceBoardGeneration = boardGeneration;
-                const overlay = showBoss20PhaseShiftOverlay();
-                try { playMiniBossBurstEffect(idx, true); } catch (e) { }
-                setTimeout(() => { try { playMiniBossBurstEffect(idx, true); } catch (e) { } }, 640);
-                try { playSfx('boss_level'); } catch (e) { }
-                let phase2Spawned = 0;
-                if (state[idx] !== null && specialState[idx] === 'boss') {
-                    const phase2Hp = getBoss20ScaledHp(EPIC_BOSS20_PHASE2_HP);
-                    meta.phase = 2;
-                    meta.hp = phase2Hp;
-                    meta.maxHp = phase2Hp;
-                    meta.breaks = { b75: false, b50: false, b25: false };
-                    specialMetaState[idx] = meta;
-                    boss20State.active = true;
-                    boss20State.phase = 2;
-                    boss20State.hp = phase2Hp;
-                    boss20State.maxHp = phase2Hp;
-                    boss20State.actionCadenceMs = EPIC_BOSS20_PHASE2_ACTION_MS;
-                    boss20State.actionCounter = 0;
-                    boss20State.inFinalWindow = false;
-                    boss20State.finalWindowUntil = 0;
-                    boss20State.finalChargeUntil = 0;
-                    boss20State.weakPointUntil = 0;
-                    boss20State.heroMarkUntil = 0;
-                    boss20State.heroMarkCell = idx;
-                    boss20State.nextHeroMarkAt = 0;
-                    boss20State.phase3Started = false;
-                    boss20State.phase2DesperationActive = false;
-                    boss20State.phase2DesperationStartedAt = 0;
-                    boss20State.phase2RescueQueued = false;
-                    boss20State.phase2LastRegenAt = 0;
-                    phase2Spawned = populateBoss20Phase2Board(idx);
-                    clicksLeft = Math.min(getMaxClicksCap(), Math.max(0, Number(clicksLeft) || 0) + Math.max(0, Number(EPIC_BOSS20_PHASE_SHIFT_CLICK_REWARD) || 0));
-                    setMiniBossStateFromMeta(idx, meta);
-                }
-                try { render(); } catch (e) { scheduleRender(); }
-                scheduleRender();
-                updateHUD();
-                waitForBoss20CinematicAcknowledge(overlay).then(() => {
-                    try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
-                    if (sourceBoardGeneration !== boardGeneration) {
-                        boss20State.inCinematic = false;
-                        inputLocked = false;
-                        return;
-                    }
-                    if (state[idx] === null || specialState[idx] !== 'boss') {
-                        boss20State.inCinematic = false;
-                        inputLocked = false;
-                        return;
-                    }
+                const abortTransition = () => {
+                    setBoss20BoardFreeze(false);
                     boss20State.inCinematic = false;
                     inputLocked = false;
-                    try {
-                        if (window.Assistant && Assistant.show) {
-                            const filledMsg = phase2Spawned > 0 ? ` Swarm surge detected: ${phase2Spawned} host cells re-seeded.` : '';
-                            Assistant.show('Containment failure. Host entity has reconstituted into a stronger form. Emergency nanobot refill granted.' + filledMsg, { priority: 2 });
-                        }
-                    } catch (e) { }
+                };
+                runBoss20Phase2BreakSequence(idx, sourceBoardGeneration).then((ok) => {
+                    if (!ok || sourceBoardGeneration !== boardGeneration) {
+                        abortTransition();
+                        return;
+                    }
+                    const overlay = showBoss20PhaseShiftOverlay();
+                    try { playSfx('boss_level'); } catch (e) { }
+                    let phase2Spawned = 0;
+                    if (state[idx] !== null && specialState[idx] === 'boss') {
+                        const phase2Hp = getBoss20ScaledHp(EPIC_BOSS20_PHASE2_HP);
+                        meta.phase = 2;
+                        meta.hp = phase2Hp;
+                        meta.maxHp = phase2Hp;
+                        meta.breaks = { b75: false, b50: false, b25: false };
+                        specialMetaState[idx] = meta;
+                        boss20State.active = true;
+                        boss20State.phase = 2;
+                        boss20State.hp = phase2Hp;
+                        boss20State.maxHp = phase2Hp;
+                        boss20State.actionCadenceMs = EPIC_BOSS20_PHASE2_ACTION_MS;
+                        boss20State.actionCounter = 0;
+                        boss20State.inFinalWindow = false;
+                        boss20State.finalWindowUntil = 0;
+                        boss20State.finalChargeUntil = 0;
+                        boss20State.weakPointUntil = 0;
+                        boss20State.heroMarkUntil = 0;
+                        boss20State.heroMarkCell = idx;
+                        boss20State.nextHeroMarkAt = 0;
+                        boss20State.phase3Started = false;
+                        boss20State.phase2DesperationActive = false;
+                        boss20State.phase2DesperationStartedAt = 0;
+                        boss20State.phase2RescueQueued = false;
+                        boss20State.phase2LastRegenAt = 0;
+                        phase2Spawned = populateBoss20Phase2Board(idx);
+                        clicksLeft = Math.min(getMaxClicksCap(), Math.max(0, Number(clicksLeft) || 0) + Math.max(0, Number(EPIC_BOSS20_PHASE_SHIFT_CLICK_REWARD) || 0));
+                        setMiniBossStateFromMeta(idx, meta);
+                    }
+                    try { render(); } catch (e) { scheduleRender(); }
+                    playBoss20Phase2SwapShake(idx, EPIC_BOSS20_PHASE2_BREAK_SHAKE_MS);
+                    try { playMiniBossBurstEffect(idx, true); } catch (e) { }
+                    setTimeout(() => { try { playMiniBossBurstEffect(idx, true); } catch (e) { } }, 260);
                     scheduleRender();
                     updateHUD();
-                    ensureBoss20PhaseTimer();
+                    waitForBoss20CinematicAcknowledge(overlay).then(() => {
+                        try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                        if (sourceBoardGeneration !== boardGeneration) {
+                            abortTransition();
+                            return;
+                        }
+                        if (state[idx] === null || specialState[idx] !== 'boss') {
+                            abortTransition();
+                            return;
+                        }
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        try {
+                            if (window.Assistant && Assistant.show) {
+                                const filledMsg = phase2Spawned > 0 ? ` Swarm surge detected: ${phase2Spawned} host cells re-seeded.` : '';
+                                Assistant.show('Containment failure. Host entity has reconstituted into a stronger form. Emergency nanobot refill granted.' + filledMsg, { priority: 2 });
+                            }
+                        } catch (e) { }
+                        scheduleRender();
+                        updateHUD();
+                        ensureBoss20PhaseTimer();
+                    }).catch(() => {
+                        try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                        abortTransition();
+                    });
+                }).catch(() => {
+                    abortTransition();
                 });
                 return true;
             }
@@ -6438,6 +6918,7 @@ function escapeHtmlAttr(str) {
                     if (isBlockingPopupOpen()) return;
                     if (applyBossGooShieldAt(targetIndex)) {
                         try { playSfx(bossLevel === 10 ? 'goop' : 'miniboss_laugh'); } catch (e) { }
+                        try { ensureBossBoardFuel(bossLevel, bossIndex); } catch (e) { }
                         scheduleRender();
                     }
                 };
@@ -6522,7 +7003,7 @@ function escapeHtmlAttr(str) {
                 const anyBoardChance = Math.max(0, Math.min(1, Number(opts && opts.anyBoardChance) || 0));
                 const spawnSizeRaw = Number(opts && opts.spawnSize);
                 const spawnSize = Number.isFinite(spawnSizeRaw) ? Math.max(0, Math.min(MAX_SIZE, Math.floor(spawnSizeRaw))) : MAX_SIZE;
-                const spawnSizeWeights = Array.isArray(opts && opts.spawnSizeWeights) ? opts.spawnSizeWeights.slice(0, 4) : null;
+                let spawnSizeWeights = Array.isArray(opts && opts.spawnSizeWeights) ? opts.spawnSizeWeights.slice(0, 4) : null;
                 const pickSpawnSize = () => {
                     if (!spawnSizeWeights || spawnSizeWeights.length < 4) return spawnSize;
                     const weights = spawnSizeWeights.map((w) => Math.max(0, Number(w) || 0));
@@ -6545,6 +7026,17 @@ function escapeHtmlAttr(str) {
                     originRow = Math.floor(Number(originIndex) / COLS);
                     originCol = Number(originIndex) % COLS;
                 }
+                const phaseContext = getBossPhaseContext(bossLevel, originIndex);
+                const pacingProfile = getBossPacingProfile(bossLevel, phaseContext);
+                if (!spawnSizeWeights && Array.isArray(pacingProfile.spawnSizeWeights)) {
+                    spawnSizeWeights = pacingProfile.spawnSizeWeights.slice(0, 4);
+                }
+                const armoredChanceFromOpts = Number(opts && opts.armoredChance);
+                const armoredChance = clamp01(
+                    Number.isFinite(armoredChanceFromOpts)
+                        ? armoredChanceFromOpts
+                        : (Number.isFinite(Number(pacingProfile.armoredChance)) ? Number(pacingProfile.armoredChance) : (bossLevel === 10 ? 0.5 : 1))
+                );
                 const useLevel5SummonFx = (bossLevel === 5 && Number.isFinite(originIndex));
                 const anyCandidates = [];
                 for (let i = 0; i < state.length; i++) {
@@ -6604,7 +7096,7 @@ function escapeHtmlAttr(str) {
                     if (idx === null) idx = takeFrom(anyCandidates);
                     if (idx === null) break;
                     state[idx] = pickSpawnSize();
-                    const shouldArmored = bossLevel === 10 ? (Math.random() < 0.5) : true;
+                    const shouldArmored = Math.random() < armoredChance;
                     if (shouldArmored) setSpecialForCell(idx, 'armored');
                     else clearSpecialForCell(idx);
                     if (useLevel5SummonFx) {
@@ -6615,11 +7107,17 @@ function escapeHtmlAttr(str) {
                     }
                     spawned++;
                 }
+                // Keep a minimum amount of board fuel during boss encounters.
+                const fueled = ensureBossBoardFuel(bossLevel, originIndex, {
+                    phaseContext,
+                    fuelSpawnSizeWeights: pacingProfile.fuelSpawnSizeWeights,
+                    fuelArmoredChance: pacingProfile.fuelArmoredChance
+                });
                 if (spawned > 0) {
                     try { playSfx(bossLevel === 10 ? 'goop' : 'miniboss_laugh'); } catch (e) { }
                     scheduleRender();
                 }
-                return spawned;
+                return spawned + Math.max(0, Number(fueled) || 0);
             }
 
             function spawnBossProjectionPulse(count = 2, originIndex = null) {
@@ -6902,7 +7400,20 @@ function escapeHtmlAttr(str) {
                     return false;
                 }
                 const empties = Array.isArray(preferredEmptyList) ? preferredEmptyList.filter((i) => state[i] === null) : [];
-                const candidate = empties.length ? empties.slice() : Array.from({ length: state.length }, (_, i) => i);
+                const isEpic20 = isEpicBoss20Level(levelNum);
+                let candidate = empties.length ? empties.slice() : Array.from({ length: state.length }, (_, i) => i);
+                if (isEpic20) {
+                    // Force level 20 boss spawn into one of the four center-most petri dishes.
+                    const centerRows = [Math.floor((ROWS - 1) / 2), Math.ceil((ROWS - 1) / 2)];
+                    const centerCols = [Math.floor((COLS - 1) / 2), Math.ceil((COLS - 1) / 2)];
+                    const centerSet = new Set();
+                    for (let r = 0; r < centerRows.length; r++) {
+                        for (let c = 0; c < centerCols.length; c++) {
+                            centerSet.add((centerRows[r] * COLS) + centerCols[c]);
+                        }
+                    }
+                    candidate = Array.from(centerSet).filter((i) => i >= 0 && i < state.length);
+                }
                 shuffle(candidate);
                 const bossCount = Math.max(1, Math.floor(getMiniBossCountForLevel(levelNum)));
                 const spawnCount = Math.max(1, Math.min(bossCount, candidate.length));
@@ -6916,12 +7427,15 @@ function escapeHtmlAttr(str) {
                         hp,
                         maxHp: hp,
                         bossLevel: Math.max(1, Math.floor(Number(levelNum) || 1)),
-                        phase: isEpicBoss20Level(levelNum) ? 1 : 0,
+                        phase: isEpic20 ? 1 : 0,
                         breaks: { b75: false, b50: false, b25: false }
                     };
                 }
+                if (spawnCount > 0) {
+                    try { ensureBossBoardFuel(levelNum, candidate[0], { force: true }); } catch (e) { }
+                }
                 syncMiniBossStateFromBoard();
-                if (isEpicBoss20Level(levelNum)) {
+                if (isEpic20) {
                     bootstrapBoss20PhaseOne();
                     ensureBoss20PhaseTimer();
                 } else {
@@ -6976,6 +7490,8 @@ function escapeHtmlAttr(str) {
 
             function randomizeBoard(preserveClicks = false) {
                 boardGeneration += 1;
+                try { setBoss20BoardFreeze(false); } catch (e) { }
+                try { Object.keys(bossFuelLastAtByLevel).forEach((k) => { delete bossFuelLastAtByLevel[k]; }); } catch (e) { }
                 clearFinalVictorySequence(false);
                 state.fill(null);
                 specialState.fill(null);
@@ -7799,28 +8315,42 @@ function escapeHtmlAttr(str) {
             }
 
             // ----- Cleaned out-of-clicks handling (previously corrupted) -----
+            function triggerRunFailureGameOver(levelNow = getCurrentLevelNumber()) {
+                outOfClicksShown = true;
+                continueOfferOpen = false;
+                try { hideContinueOfferPopup(true); } catch (e) { }
+                try { hideRunPerkPopup(true); } catch (e) { }
+                try { hideFinalOfferPopup(true); } catch (e) { }
+                try { runPerkState.popupOpen = false; } catch (e) { }
+                try { stopBossGooShieldTimer(); } catch (e) { }
+                try { resetBoss20State(); } catch (e) { }
+                try { clearTechnoGremlinPowers(true); } catch (e) { }
+                if (levelNow === Math.max(1, Math.floor(Number(FINAL_OFFER_CONFIG && FINAL_OFFER_CONFIG.level) || 20)) && musicOverrideMode === 'final-boss') {
+                    try { stopFinalBossTheme({ fadeOutMs: 700, resumeNormal: true }); } catch (e) { }
+                }
+                try { playSfx('lose'); } catch (e) { }
+                // Show persistent popup - will remain until the player clicks try again/restart.
+                showGameOverPopup({ title: 'GAME OVER', subtitle: 'Containment failed', persistent: true });
+            }
+
             function checkOutOfClicks() {
                 if (isFinalVictoryActive()) return;
                 if (clicksLeft <= 0 && isBoss20RescueShieldActive()) {
                     return;
                 }
+                if (clicksLeft <= 0 && continueOfferOpen) {
+                    return;
+                }
                 if (clicksLeft <= 0 && !outOfClicksShown) {
-                    outOfClicksShown = true;
                     const levelNow = getCurrentLevelNumber();
-                    try { hideRunPerkPopup(true); } catch (e) { }
-                    try { hideFinalOfferPopup(true); } catch (e) { }
-                    try { runPerkState.popupOpen = false; } catch (e) { }
-                    try { stopBossGooShieldTimer(); } catch (e) { }
-                    try { resetBoss20State(); } catch (e) { }
-                    try { clearTechnoGremlinPowers(true); } catch (e) { }
-                    if (levelNow === Math.max(1, Math.floor(Number(FINAL_OFFER_CONFIG && FINAL_OFFER_CONFIG.level) || 20)) && musicOverrideMode === 'final-boss') {
-                        try { stopFinalBossTheme({ fadeOutMs: 700, resumeNormal: true }); } catch (e) { }
+                    if (canOfferRunContinue(levelNow)) {
+                        const shown = showContinueOfferPopup({
+                            level: levelNow,
+                            onDecline: () => triggerRunFailureGameOver(levelNow)
+                        });
+                        if (shown) return;
                     }
-                    try { playSfx('lose'); } catch (e) { }
-
-                    // Show persistent popup � will remain until the player clicks the existing restart button
-                    showGameOverPopup({ title: 'GAME OVER', subtitle: 'Containment failed', persistent: true });
-                    // wait a bit longer than popup animation
+                    triggerRunFailureGameOver(levelNow);
                 }
             }
 
@@ -8282,7 +8812,7 @@ function escapeHtmlAttr(str) {
                     for (let i = 0; i < modalIds.length; i++) {
                         if (isElementVisiblyOpen(document.getElementById(modalIds[i]))) return true;
                     }
-                    const modalSelectors = ['.level-complete', '.game-over-popup', '.run-perk-popup', '.final-offer-modal', '.final-victory-overlay'];
+                    const modalSelectors = ['.level-complete', '.game-over-popup', '.continue-offer-popup', '.run-perk-popup', '.final-offer-modal', '.final-victory-overlay'];
                     for (let i = 0; i < modalSelectors.length; i++) {
                         if (isElementVisiblyOpen(document.querySelector(modalSelectors[i]))) return true;
                     }
