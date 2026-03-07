@@ -279,9 +279,9 @@ function escapeHtmlAttr(str) {
                 fill: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/bubblefill2.mp3',
                 win: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/win2.mp3',
                 lose: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/lose2.mp3',
-                blocker_move_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil1.mp3',
+                blocker_move_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nano_bot_move.mp3',
                 nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3',
-                blocker_move: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil2.mp3',
+                blocker_move: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nano_bot_move.mp3',
                 evil1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil1.mp3',
                 evil2: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil2.mp3',
                 evil3: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil3.mp3',
@@ -296,6 +296,7 @@ function escapeHtmlAttr(str) {
                 techno_jammer: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techno_jamming.mp3',
                 techno_duplicator: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techno_duplicator.mp3',
                 glass_crack: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/glass_shatter_sound.mp3',
+                final_entrance: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/final_entrance.mp3',
                 double_deal: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/double_deal.mp3',
                 achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3',
                 assistant_ai_0: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3',
@@ -355,6 +356,7 @@ function escapeHtmlAttr(str) {
                 techno_jammer: 320,
                 techno_duplicator: 260,
                 glass_crack: 500,
+                final_entrance: 900,
                 double_deal: 500,
                 win: 250,
                 lose: 250,
@@ -371,7 +373,7 @@ function escapeHtmlAttr(str) {
                 glass_crack: 1.6
             };
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
-            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'evil1', 'evil2', 'evil3', 'evil4', 'zap', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'goop', 'goop_be_dead', 'techno_dead', 'techno_jammer', 'techno_duplicator', 'glass_crack', 'double_deal', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'evil1', 'evil2', 'evil3', 'evil4', 'zap', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'goop', 'goop_be_dead', 'techno_dead', 'techno_jammer', 'techno_duplicator', 'glass_crack', 'final_entrance', 'double_deal', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
             const IMAGE_PREFETCH_MAX = 10;
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
@@ -1505,6 +1507,7 @@ function escapeHtmlAttr(str) {
                         boss20State.phase2DesperationStartedAt = 0;
                         boss20State.phase2RescueQueued = false;
                         boss20State.phase2LastRegenAt = 0;
+                        boss20State.phase2OmegaQueued = false;
                         setMiniBossStateFromMeta(idx, meta);
                         scheduleRender();
                         ensureBoss20PhaseTimer();
@@ -1607,8 +1610,9 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_PHASE2_BREAK_SHAKE_MS = 820;
             const EPIC_BOSS20_PHASE2_BREAK_SFX_LEAD_MS = 240;
             const EPIC_BOSS20_PHASE2_POST_SWAP_HOLD_MS = 2000;
-            const EPIC_BOSS20_PHASE2_TO_RESCUE_BLACKOUT_MS = 1500;
+            const EPIC_BOSS20_PHASE2_TO_RESCUE_BLACKOUT_MS = 800;
             const EPIC_BOSS20_FINALFORM_PRE_RESCUE_HOLD_MS = 2000;
+            const EPIC_BOSS20_PHASE2_TO_PHASE3_HP_RATIO = 0.10;
             const EPIC_BOSS20_RESCUE_CINEMATIC_MS = 1800;
             const EPIC_BOSS20_RESCUE_STALL_MS = 4000;
             const EPIC_BOSS20_PHASE3_HP = 24;
@@ -1754,6 +1758,7 @@ function escapeHtmlAttr(str) {
                     phase2RescueQueued: false,
                     phase2LastRegenAt: 0,
                     phase2DrainInProgress: false,
+                    phase2OmegaQueued: false,
                     finalFormActive: false,
                     finalFormAnchor: -1,
                     finalFormCells: null
@@ -7105,6 +7110,7 @@ function escapeHtmlAttr(str) {
                             boss20State.phase = Math.max(2, Math.floor(Number(bossMeta.phase) || 2));
                             boss20State.hp = Math.max(0, Number(bossMeta.hp) || 0);
                             boss20State.maxHp = Math.max(1, Number(bossMeta.maxHp) || 1);
+                            boss20State.phase2OmegaQueued = false;
                             boss20State.finalFormActive = true;
                             boss20State.finalFormAnchor = anchor;
                             boss20State.finalFormCells = coreCells.slice();
@@ -7112,6 +7118,14 @@ function escapeHtmlAttr(str) {
                             try { overlay.remove(); } catch (e) { }
                             setBoss20BoardFreeze(false);
                             try { render(); } catch (e) { scheduleRender(); }
+                            try { playSfx('final_entrance'); } catch (e) { }
+                            setTimeout(() => {
+                                try {
+                                    const bossTalkKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                                    const pick = bossTalkKeys[Math.floor(Math.random() * bossTalkKeys.length)] || 'evil1';
+                                    playSfx(pick);
+                                } catch (e) { }
+                            }, 360);
                             resolve(true);
                         }, fadeMs);
                     } catch (e) {
@@ -7136,6 +7150,7 @@ function escapeHtmlAttr(str) {
                 boss20State.phase2RescueQueued = false;
                 boss20State.phase2DrainInProgress = false;
                 boss20State.phase2LastRegenAt = 0;
+                boss20State.phase2OmegaQueued = false;
                 boss20State.rescueShieldUntil = Date.now() + Math.max(1200, EPIC_BOSS20_RESCUE_CINEMATIC_MS + 500);
                 stopBoss20PhaseTimer();
                 inputLocked = true;
@@ -7171,9 +7186,21 @@ function escapeHtmlAttr(str) {
                     try { setStormArmed(false); } catch (e) { }
                     try { flashStormChargeGain(); } catch (e) { }
                     try { runPerkState.armorPiercerPermanent = true; } catch (e) { }
+                    try {
+                        const bossMetaAfterRescue = ensureSpecialMeta(bossIndex) || {};
+                        const maxHpAfterRescue = Math.max(1, Number(bossMetaAfterRescue.maxHp) || Number(boss20State.maxHp) || getBoss20ScaledHp(EPIC_BOSS20_PHASE2_HP));
+                        bossMetaAfterRescue.hp = maxHpAfterRescue;
+                        bossMetaAfterRescue.maxHp = maxHpAfterRescue;
+                        specialMetaState[bossIndex] = bossMetaAfterRescue;
+                        boss20State.hp = maxHpAfterRescue;
+                        boss20State.maxHp = maxHpAfterRescue;
+                        setMiniBossStateFromMeta(bossIndex, bossMetaAfterRescue);
+                    } catch (e) { }
+                    try { populateBoss20PostRescueBoard(bossIndex); } catch (e) { }
                     boss20State.inCinematic = false;
                     boss20State.heroStallUntil = Date.now() + Math.max(700, Math.floor(EPIC_BOSS20_RESCUE_STALL_MS * 0.35));
                     boss20State.rescueShieldUntil = Math.max(Number(boss20State.rescueShieldUntil) || 0, Date.now() + 220);
+                    boss20State.phase2OmegaQueued = false;
                     inputLocked = false;
                     try {
                         if (window.Assistant && Assistant.show) {
@@ -7183,19 +7210,6 @@ function escapeHtmlAttr(str) {
                     scheduleRender();
                     updateHUD();
                     ensureBoss20PhaseTimer();
-                    if (boss20Phase3TransitionTimer) {
-                        clearTimeout(boss20Phase3TransitionTimer);
-                        boss20Phase3TransitionTimer = null;
-                    }
-                    boss20Phase3TransitionTimer = setTimeout(() => {
-                        boss20Phase3TransitionTimer = null;
-                        if (sourceBoardGeneration !== boardGeneration) return;
-                        const liveBossIndices = getBossIndicesForLevel(20);
-                        const liveBossIndex = liveBossIndices.length ? liveBossIndices[0] : bossIndex;
-                        if (state[liveBossIndex] === null || specialState[liveBossIndex] !== 'boss') return;
-                        const m = ensureSpecialMeta(liveBossIndex) || meta || {};
-                        triggerBoss20PhaseThreeTransition(liveBossIndex, m);
-                    }, Math.max(420, Math.floor(EPIC_BOSS20_RESCUE_STALL_MS * 0.38)));
                     });
                     }, holdMs);
                 }).catch(() => {
@@ -7245,6 +7259,7 @@ function escapeHtmlAttr(str) {
                     boss20State.phase2DesperationStartedAt = 0;
                     boss20State.phase2RescueQueued = false;
                     boss20State.phase2LastRegenAt = 0;
+                    boss20State.phase2OmegaQueued = false;
                     phase3Spawned = populateBoss20Phase3Board(idx);
                     setMiniBossStateFromMeta(idx, meta);
                 }
@@ -7335,6 +7350,7 @@ function escapeHtmlAttr(str) {
                         boss20State.phase2DesperationStartedAt = 0;
                         boss20State.phase2RescueQueued = false;
                         boss20State.phase2LastRegenAt = 0;
+                        boss20State.phase2OmegaQueued = false;
                         phase2Spawned = populateBoss20Phase2Board(idx);
                         clicksLeft = Math.min(getMaxClicksCap(), Math.max(0, Number(clicksLeft) || 0) + Math.max(0, Number(EPIC_BOSS20_PHASE_SHIFT_CLICK_REWARD) || 0));
                         setMiniBossStateFromMeta(idx, meta);
@@ -7442,6 +7458,50 @@ function escapeHtmlAttr(str) {
                         state[cellIndex] = null;
                     }
                     clearSpecialForCell(cellIndex);
+                }
+                return spawned;
+            }
+
+            function populateBoss20PostRescueBoard(bossIndex) {
+                if (!isEpicBoss20Level()) return 0;
+                const idx = Math.floor(Number(bossIndex));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
+                if (state[idx] === null || specialState[idx] !== 'boss') return 0;
+                const coreSet = new Set(getBoss20CoreCells());
+                const boardSlots = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (i === idx) continue;
+                    if (coreSet.has(i)) {
+                        state[i] = null;
+                        clearSpecialForCell(i);
+                        clearBossGooShieldAt(i);
+                        clearBiofilmAt(i);
+                        continue;
+                    }
+                    boardSlots.push(i);
+                    clearSpecialForCell(i);
+                }
+                if (!boardSlots.length) return 0;
+                const spawnProfileLevel = getSpawnProfileLevel(18);
+                const spawnProfileCompleted = Math.max(0, Math.min(9, spawnProfileLevel - 1));
+                const difficulty = getDifficultyForLevel(spawnProfileLevel);
+                const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
+                const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
+                const density = Math.max(0.52, Math.min(0.74, baseDensity + (spawnProfileCompleted * densityGrowth)));
+                const targetOccupied = Math.round((ROWS * COLS) * density);
+                const targetNonBoss = Math.max(18, Math.min(Math.min(24, boardSlots.length), Math.max(18, targetOccupied - 1)));
+                shuffle(boardSlots);
+                let spawned = 0;
+                for (let i = 0; i < boardSlots.length; i++) {
+                    const cellIndex = boardSlots[i];
+                    if (i < targetNonBoss) {
+                        state[cellIndex] = sampleSizeRandom(spawnProfileLevel, spawnProfileCompleted);
+                        setSpecialForCell(cellIndex, rollSpecialVirusType(18));
+                        spawned++;
+                    } else {
+                        state[cellIndex] = null;
+                        clearSpecialForCell(cellIndex);
+                    }
                 }
                 return spawned;
             }
@@ -8219,6 +8279,44 @@ function escapeHtmlAttr(str) {
                             if (maybeTriggerBoss20Phase2RescueByClicks()) {
                                 return { cancelGrowth: true };
                             }
+                        }
+                    }
+                    if (boss20State.phase === 2 && boss20State.rescueUsed) {
+                        const maxHp2 = Math.max(1, Number(meta.maxHp) || Number(boss20State.maxHp) || 1);
+                        const omegaFloorHp = Math.max(1, Math.ceil(maxHp2 * Math.max(0.02, Math.min(0.9, Number(EPIC_BOSS20_PHASE2_TO_PHASE3_HP_RATIO) || 0.10))));
+                        if (Number(meta.hp) <= omegaFloorHp) {
+                            meta.hp = omegaFloorHp;
+                            boss20State.hp = omegaFloorHp;
+                            setMiniBossStateFromMeta(idx, meta);
+                            scheduleRender();
+                            if (!boss20State.phase2OmegaQueued && !boss20State.inCinematic) {
+                                boss20State.phase2OmegaQueued = true;
+                                inputLocked = true;
+                                setTimeout(() => {
+                                    try {
+                                        if (!isEpicBoss20Level()) return;
+                                        if (state[idx] === null || specialState[idx] !== 'boss') {
+                                            boss20State.phase2OmegaQueued = false;
+                                            inputLocked = false;
+                                            return;
+                                        }
+                                        const m2 = ensureSpecialMeta(idx) || meta || {};
+                                        // Skip Omega popup but silently promote to final stage so finale logic remains intact.
+                                        m2.phase = Math.max(3, Math.floor(Number(m2.phase) || 3));
+                                        specialMetaState[idx] = m2;
+                                        boss20State.phase = Math.max(3, Math.floor(Number(m2.phase) || 3));
+                                        const started = !!triggerBoss20FinalWindow(idx, m2);
+                                        if (!started) {
+                                            boss20State.phase2OmegaQueued = false;
+                                            inputLocked = false;
+                                        }
+                                    } catch (e) {
+                                        boss20State.phase2OmegaQueued = false;
+                                        inputLocked = false;
+                                    }
+                                }, 120);
+                            }
+                            return { cancelGrowth: true };
                         }
                     }
                     if (boss20State.phase >= 3 && !boss20State.inFinalWindow && Number(meta.hp) <= Math.max(1, Number(EPIC_BOSS20_FINAL_WINDOW_HP) || 2)) {
