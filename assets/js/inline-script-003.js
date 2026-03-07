@@ -270,6 +270,8 @@ function escapeHtmlAttr(str) {
             const MINIBOSS_LEVEL20_PHASE2_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_phase2_alt.png';
             const MINIBOSS_LEVEL20_PHASE3_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/final%20form.png';
             const LEVEL20_BOSS_TALK_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_talk.png';
+            const LEVEL20_BOSS_MODAL_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_final_modal.png';
+            const LEVEL20_BOSS_PHASESHIFT_TALK_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/final-boss.png';
             const BOSS20_PHASE2_SHATTER_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/shatter.png';
             const NANOBOT_DRAIN_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanobot_hover.png';
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
@@ -3113,6 +3115,304 @@ function escapeHtmlAttr(str) {
                                 </div>
                                 <div class="b20t-actor b20t-actor-boss" data-actor="boss">
                                     <img src="${LEVEL20_BOSS_TALK_SPRITE_URL}" alt="Boss Core">
+                                    <div class="b20t-name">VIRAXIS PRIME</div>
+                                </div>
+                            </div>
+                            <div class="b20t-dialog-wrap">
+                                <div class="b20t-speaker" data-role="speaker">...</div>
+                                <div class="b20t-dialog" data-role="line">...</div>
+                            </div>
+                            <div class="b20t-actions">
+                                <button type="button" class="b20t-next">NEXT</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(el);
+                    level20TalkCutsceneEl = el;
+                    el.style.opacity = '1';
+                    requestAnimationFrame(() => { try { el.classList.add('show'); } catch (e) { } });
+
+                    const pixelEl = el.querySelector('[data-actor="pixel"]');
+                    const bossEl = el.querySelector('[data-actor="boss"]');
+                    const speakerEl = el.querySelector('[data-role="speaker"]');
+                    const lineEl = el.querySelector('[data-role="line"]');
+                    const nextBtn = el.querySelector('.b20t-next');
+
+                    const step = () => {
+                        const row = lines[Math.max(0, Math.min(lines.length - 1, i))];
+                        const isBoss = row.who === 'boss';
+                        if (speakerEl) speakerEl.textContent = isBoss ? 'VIRAXIS PRIME' : 'PIXEL';
+                        if (lineEl) lineEl.textContent = row.text;
+                        try {
+                            if (pixelEl) pixelEl.classList.remove('talking');
+                            if (bossEl) bossEl.classList.remove('talking');
+                            if (isBoss) {
+                                if (bossEl) bossEl.classList.add('talking');
+                                playSfx(pickBossSfx());
+                            } else {
+                                if (pixelEl) pixelEl.classList.add('talking');
+                                playSfx(pickPixelSfx());
+                            }
+                        } catch (e) { }
+                        if (nextBtn) nextBtn.textContent = (i >= lines.length - 1) ? 'CONTINUE' : 'NEXT';
+                    };
+
+                    const finish = () => {
+                        try { if (boss20State) boss20State.inCinematic = priorBoss20Cinematic; } catch (e) { }
+                        try { inputLocked = false; } catch (e) { }
+                        hideLevel20BossTalkCutscene(false);
+                        if (typeof onDone === 'function') {
+                            try { onDone(); } catch (e) { }
+                        }
+                    };
+                    if (nextBtn) {
+                        nextBtn.addEventListener('click', () => {
+                            if (i >= lines.length - 1) {
+                                finish();
+                                return;
+                            }
+                            i += 1;
+                            step();
+                        });
+                    }
+                    step();
+                } catch (e) {
+                    if (typeof onDone === 'function') {
+                        try { onDone(); } catch (e2) { }
+                    }
+                }
+            }
+
+            function showBoss20PhaseShiftTalkCutscene(onDone = null) {
+                hideLevel20BossTalkCutscene(true);
+                try {
+                    level20TalkSfxOnly = true;
+                    const lines = [
+                        { who: 'pixel', text: 'We are winning. Keep the pressure on!' },
+                        { who: 'boss', text: 'Fool. You have not won. You have only set me free.' },
+                        { who: 'pixel', text: 'Operator, distract him a little longer. I have an idea.' }
+                    ];
+                    let i = 0;
+                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                    const pickBossSfx = () => bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
+                    const pickPixelSfx = () => `assistant_ai_${Math.floor(Math.random() * 7)}`;
+                    const priorBoss20Cinematic = !!(boss20State && boss20State.inCinematic);
+                    try { if (boss20State) boss20State.inCinematic = true; } catch (e) { }
+                    try { stopBoss20PhaseTimer(); } catch (e) { }
+                    try { inputLocked = true; } catch (e) { }
+
+                    const el = document.createElement('div');
+                    el.className = 'boss20-talk-modal';
+                    el.innerHTML = `
+                        <div class="b20t-backdrop"></div>
+                        <div class="b20t-panel">
+                            <div class="b20t-cast">
+                                <div class="b20t-actor b20t-actor-pixel" data-actor="pixel">
+                                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PC_assistant_sm.png" alt="PIXEL">
+                                    <div class="b20t-name">PIXEL</div>
+                                </div>
+                                <div class="b20t-actor b20t-actor-boss" data-actor="boss">
+                                    <img src="${LEVEL20_BOSS_PHASESHIFT_TALK_SPRITE_URL}" alt="VIRAXIS PRIME">
+                                    <div class="b20t-name">VIRAXIS PRIME</div>
+                                </div>
+                            </div>
+                            <div class="b20t-dialog-wrap">
+                                <div class="b20t-speaker" data-role="speaker">...</div>
+                                <div class="b20t-dialog" data-role="line">...</div>
+                            </div>
+                            <div class="b20t-actions">
+                                <button type="button" class="b20t-next">NEXT</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(el);
+                    level20TalkCutsceneEl = el;
+                    el.style.opacity = '1';
+                    requestAnimationFrame(() => { try { el.classList.add('show'); } catch (e) { } });
+
+                    const pixelEl = el.querySelector('[data-actor="pixel"]');
+                    const bossEl = el.querySelector('[data-actor="boss"]');
+                    const bossImg = bossEl ? bossEl.querySelector('img') : null;
+                    if (bossImg) bossImg.style.transform = 'scaleX(-1)';
+                    const speakerEl = el.querySelector('[data-role="speaker"]');
+                    const lineEl = el.querySelector('[data-role="line"]');
+                    const nextBtn = el.querySelector('.b20t-next');
+
+                    const step = () => {
+                        const row = lines[Math.max(0, Math.min(lines.length - 1, i))];
+                        const isBoss = row.who === 'boss';
+                        if (speakerEl) speakerEl.textContent = isBoss ? 'VIRAXIS PRIME' : 'PIXEL';
+                        if (lineEl) lineEl.textContent = row.text;
+                        try {
+                            if (pixelEl) pixelEl.classList.remove('talking');
+                            if (bossEl) bossEl.classList.remove('talking');
+                            if (isBoss) {
+                                if (bossEl) bossEl.classList.add('talking');
+                                playSfx(pickBossSfx());
+                            } else {
+                                if (pixelEl) pixelEl.classList.add('talking');
+                                playSfx(pickPixelSfx());
+                            }
+                        } catch (e) { }
+                        if (nextBtn) nextBtn.textContent = (i >= lines.length - 1) ? 'CONTINUE' : 'NEXT';
+                    };
+
+                    const finish = () => {
+                        try { if (boss20State) boss20State.inCinematic = priorBoss20Cinematic; } catch (e) { }
+                        try { inputLocked = false; } catch (e) { }
+                        hideLevel20BossTalkCutscene(false);
+                        if (typeof onDone === 'function') {
+                            try { onDone(); } catch (e) { }
+                        }
+                    };
+                    if (nextBtn) {
+                        nextBtn.addEventListener('click', () => {
+                            if (i >= lines.length - 1) {
+                                finish();
+                                return;
+                            }
+                            i += 1;
+                            step();
+                        });
+                    }
+                    step();
+                } catch (e) {
+                    if (typeof onDone === 'function') {
+                        try { onDone(); } catch (e2) { }
+                    }
+                }
+            }
+
+            function showBoss20RescueTalkCutscene(onDone = null) {
+                hideLevel20BossTalkCutscene(true);
+                try {
+                    level20TalkSfxOnly = true;
+                    const lines = [
+                        { who: 'boss', text: 'Yes... victory is mine. You are finished.' },
+                        { who: 'pixel', text: "Don't be so sure." },
+                        { who: 'boss', text: 'I am invincible. I stole your viral shielding technology.' },
+                        { who: 'pixel', text: "Operator, now is our chance. I hacked the mainframe and super-charged your nanobots. Shields won't be a problem now." }
+                    ];
+                    let i = 0;
+                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                    const pickBossSfx = () => bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
+                    const pickPixelSfx = () => `assistant_ai_${Math.floor(Math.random() * 7)}`;
+                    const priorBoss20Cinematic = !!(boss20State && boss20State.inCinematic);
+                    try { if (boss20State) boss20State.inCinematic = true; } catch (e) { }
+                    try { stopBoss20PhaseTimer(); } catch (e) { }
+                    try { inputLocked = true; } catch (e) { }
+
+                    const el = document.createElement('div');
+                    el.className = 'boss20-talk-modal';
+                    el.innerHTML = `
+                        <div class="b20t-backdrop"></div>
+                        <div class="b20t-panel">
+                            <div class="b20t-cast">
+                                <div class="b20t-actor b20t-actor-pixel" data-actor="pixel">
+                                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PC_assistant_sm.png" alt="PIXEL">
+                                    <div class="b20t-name">PIXEL</div>
+                                </div>
+                                <div class="b20t-actor b20t-actor-boss" data-actor="boss">
+                                    <img src="${LEVEL20_BOSS_MODAL_SPRITE_URL}" alt="VIRAXIS PRIME">
+                                    <div class="b20t-name">VIRAXIS PRIME</div>
+                                </div>
+                            </div>
+                            <div class="b20t-dialog-wrap">
+                                <div class="b20t-speaker" data-role="speaker">...</div>
+                                <div class="b20t-dialog" data-role="line">...</div>
+                            </div>
+                            <div class="b20t-actions">
+                                <button type="button" class="b20t-next">NEXT</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(el);
+                    level20TalkCutsceneEl = el;
+                    el.style.opacity = '1';
+                    requestAnimationFrame(() => { try { el.classList.add('show'); } catch (e) { } });
+
+                    const pixelEl = el.querySelector('[data-actor="pixel"]');
+                    const bossEl = el.querySelector('[data-actor="boss"]');
+                    const speakerEl = el.querySelector('[data-role="speaker"]');
+                    const lineEl = el.querySelector('[data-role="line"]');
+                    const nextBtn = el.querySelector('.b20t-next');
+
+                    const step = () => {
+                        const row = lines[Math.max(0, Math.min(lines.length - 1, i))];
+                        const isBoss = row.who === 'boss';
+                        if (speakerEl) speakerEl.textContent = isBoss ? 'VIRAXIS PRIME' : 'PIXEL';
+                        if (lineEl) lineEl.textContent = row.text;
+                        try {
+                            if (pixelEl) pixelEl.classList.remove('talking');
+                            if (bossEl) bossEl.classList.remove('talking');
+                            if (isBoss) {
+                                if (bossEl) bossEl.classList.add('talking');
+                                playSfx(pickBossSfx());
+                            } else {
+                                if (pixelEl) pixelEl.classList.add('talking');
+                                playSfx(pickPixelSfx());
+                            }
+                        } catch (e) { }
+                        if (nextBtn) nextBtn.textContent = (i >= lines.length - 1) ? 'CONTINUE' : 'NEXT';
+                    };
+
+                    const finish = () => {
+                        try { if (boss20State) boss20State.inCinematic = priorBoss20Cinematic; } catch (e) { }
+                        try { inputLocked = false; } catch (e) { }
+                        hideLevel20BossTalkCutscene(false);
+                        if (typeof onDone === 'function') {
+                            try { onDone(); } catch (e) { }
+                        }
+                    };
+                    if (nextBtn) {
+                        nextBtn.addEventListener('click', () => {
+                            if (i >= lines.length - 1) {
+                                finish();
+                                return;
+                            }
+                            i += 1;
+                            step();
+                        });
+                    }
+                    step();
+                } catch (e) {
+                    if (typeof onDone === 'function') {
+                        try { onDone(); } catch (e2) { }
+                    }
+                }
+            }
+
+            function showBoss20FinalWindowTalkCutscene(onDone = null) {
+                hideLevel20BossTalkCutscene(true);
+                try {
+                    level20TalkSfxOnly = true;
+                    const lines = [
+                        { who: 'boss', text: "No... this can't be. I can never be defeated!" },
+                        { who: 'pixel', text: 'Your biggest mistake was attempting to use our own tools against us!' },
+                        { who: 'boss', text: "I'll destroy you!" },
+                        { who: 'pixel', text: "He's setting up for one final attack. Don't worry, I'll help you target his weakspot. Just one more good hit should do it." }
+                    ];
+                    let i = 0;
+                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                    const pickBossSfx = () => bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
+                    const pickPixelSfx = () => `assistant_ai_${Math.floor(Math.random() * 7)}`;
+                    const priorBoss20Cinematic = !!(boss20State && boss20State.inCinematic);
+                    try { if (boss20State) boss20State.inCinematic = true; } catch (e) { }
+                    try { stopBoss20PhaseTimer(); } catch (e) { }
+                    try { inputLocked = true; } catch (e) { }
+
+                    const el = document.createElement('div');
+                    el.className = 'boss20-talk-modal';
+                    el.innerHTML = `
+                        <div class="b20t-backdrop"></div>
+                        <div class="b20t-panel">
+                            <div class="b20t-cast">
+                                <div class="b20t-actor b20t-actor-pixel" data-actor="pixel">
+                                    <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PC_assistant_sm.png" alt="PIXEL">
+                                    <div class="b20t-name">PIXEL</div>
+                                </div>
+                                <div class="b20t-actor b20t-actor-boss" data-actor="boss">
+                                    <img src="${LEVEL20_BOSS_MODAL_SPRITE_URL}" alt="VIRAXIS PRIME">
                                     <div class="b20t-name">VIRAXIS PRIME</div>
                                 </div>
                             </div>
@@ -7006,15 +7306,13 @@ function escapeHtmlAttr(str) {
                 stopBoss20PhaseTimer();
                 inputLocked = true;
                 const sourceBoardGeneration = boardGeneration;
-                const overlay = showBoss20FinalChargeOverlay();
                 try { playSfx('boss_level'); } catch (e) { }
                 try { playBossSummonPulse(idx, 'blue'); } catch (e) { }
                 if (boss20FinalWindowTimer) {
                     clearTimeout(boss20FinalWindowTimer);
                     boss20FinalWindowTimer = null;
                 }
-                waitForBoss20CinematicAcknowledge(overlay).then(() => {
-                    try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                showBoss20FinalWindowTalkCutscene(() => {
                     if (sourceBoardGeneration !== boardGeneration) {
                         boss20State.inCinematic = false;
                         inputLocked = false;
@@ -7167,10 +7465,7 @@ function escapeHtmlAttr(str) {
                     }
                     const activeBossIndices = getBossIndicesForLevel(20);
                     const bossIndex = activeBossIndices.length ? activeBossIndices[0] : idx;
-                    const overlay = showBoss20RescueOverlay();
-                    try { playSfx('achievement'); } catch (e) { }
-                    waitForBoss20CinematicAcknowledge(overlay).then(() => {
-                    try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                    showBoss20RescueTalkCutscene(() => {
                     if (sourceBoardGeneration !== boardGeneration) {
                         boss20State.inCinematic = false;
                         inputLocked = false;
@@ -7371,10 +7666,8 @@ function escapeHtmlAttr(str) {
                             abortTransition();
                             return;
                         }
-                        const overlay = showBoss20PhaseShiftOverlay();
                         try { playSfx('boss_level'); } catch (e) { }
-                        waitForBoss20CinematicAcknowledge(overlay).then(() => {
-                            try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                        showBoss20PhaseShiftTalkCutscene(() => {
                             if (sourceBoardGeneration !== boardGeneration) {
                                 abortTransition();
                                 return;
@@ -7394,9 +7687,6 @@ function escapeHtmlAttr(str) {
                             scheduleRender();
                             updateHUD();
                             ensureBoss20PhaseTimer();
-                        }).catch(() => {
-                            try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
-                            abortTransition();
                         });
                     }, holdMs);
                 }).catch(() => {

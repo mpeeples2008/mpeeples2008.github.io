@@ -3899,6 +3899,15 @@
             image-rendering: pixelated;
         }
 
+        .boss20-talk-modal .b20t-boss-sheet-static {
+            width: min(100%, 132px);
+            height: min(100%, 132px);
+            background-repeat: no-repeat;
+            background-size: 400% 400%;
+            background-position: 33.333% 100%;
+            image-rendering: pixelated;
+        }
+
         .boss20-talk-modal .b20t-actor-pixel img {
             transform: scaleX(-1);
             transform-origin: center center;
