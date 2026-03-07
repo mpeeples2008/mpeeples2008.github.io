@@ -380,14 +380,38 @@
 
         @keyframes blockerRetreatLeft {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            55% { transform: translate(calc(-50% + 48vw), calc(-50% - 6vh)) scale(1.04); opacity: 0.98; }
-            100% { transform: translate(calc(-50% + 100vw), calc(-50% - 28vh)) scale(0.74); opacity: 0; }
+            55% {
+                transform: translate(
+                    calc(-50% + var(--retreat-mid-x, 48vw)),
+                    calc(-50% + var(--retreat-mid-y, -6vh))
+                ) scale(1.04);
+                opacity: 0.98;
+            }
+            100% {
+                transform: translate(
+                    calc(-50% + var(--retreat-end-x, 100vw)),
+                    calc(-50% + var(--retreat-end-y, -28vh))
+                ) scale(0.74);
+                opacity: 0;
+            }
         }
 
         @keyframes blockerRetreatRight {
             0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            55% { transform: translate(calc(-50% - 48vw), calc(-50% - 6vh)) scale(1.04); opacity: 0.98; }
-            100% { transform: translate(calc(-50% - 100vw), calc(-50% - 28vh)) scale(0.74); opacity: 0; }
+            55% {
+                transform: translate(
+                    calc(-50% + var(--retreat-mid-x, -48vw)),
+                    calc(-50% + var(--retreat-mid-y, -6vh))
+                ) scale(1.04);
+                opacity: 0.98;
+            }
+            100% {
+                transform: translate(
+                    calc(-50% + var(--retreat-end-x, -100vw)),
+                    calc(-50% + var(--retreat-end-y, -28vh))
+                ) scale(0.74);
+                opacity: 0;
+            }
         }
 
         @keyframes blockerBeamBob {
@@ -3715,6 +3739,131 @@
                 font-size: 7px;
                 padding: 6px 4px;
             }
+        }
+
+        .boss20-talk-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483645;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: auto;
+        }
+
+        .boss20-talk-modal.show { animation: b20TalkFadeIn 220ms ease-out forwards; }
+        .boss20-talk-modal.hide { animation: b20TalkFadeOut 220ms ease-in forwards; }
+
+        .boss20-talk-modal .b20t-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(4, 8, 14, 0.88);
+            z-index: 1;
+        }
+
+        .boss20-talk-modal .b20t-panel {
+            position: relative;
+            z-index: 2;
+            width: min(880px, 94vw);
+            border: 3px solid rgba(121, 156, 220, 0.5);
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(8, 18, 34, 0.96), rgba(6, 12, 22, 0.94));
+            box-shadow: 0 0 0 2px rgba(23, 42, 76, 0.55), 0 16px 36px rgba(0, 0, 0, 0.45);
+            padding: 12px 12px 10px 12px;
+        }
+
+        .boss20-talk-modal .b20t-cast {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .boss20-talk-modal .b20t-actor {
+            border: 2px solid rgba(90, 122, 174, 0.48);
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(10, 22, 42, 0.9), rgba(8, 16, 30, 0.9));
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            min-height: 180px;
+        }
+
+        .boss20-talk-modal .b20t-actor img {
+            max-width: 100%;
+            max-height: 210px;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        .boss20-talk-modal .b20t-actor-pixel img {
+            transform: scaleX(-1);
+            transform-origin: center center;
+        }
+
+        .boss20-talk-modal .b20t-actor .b20t-name {
+            margin-top: 4px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: #e7f1ff;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        .boss20-talk-modal .b20t-dialog-wrap {
+            margin-top: 10px;
+            border: 2px solid rgba(120, 168, 234, 0.52);
+            border-radius: 8px;
+            background: rgba(8, 18, 34, 0.86);
+            padding: 8px 9px;
+        }
+
+        .boss20-talk-modal .b20t-speaker {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: #ffe8a8;
+            margin-bottom: 6px;
+        }
+
+        .boss20-talk-modal .b20t-dialog {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            line-height: 1.45;
+            color: #f4f8ff;
+        }
+
+        .boss20-talk-modal .b20t-actions {
+            margin-top: 10px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .boss20-talk-modal .b20t-next {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            border: 3px solid rgba(0, 0, 0, 0.24);
+            border-radius: 7px;
+            background: linear-gradient(180deg, #fff8d2, #f3df8b);
+            color: #13233e;
+            padding: 8px 12px;
+            cursor: pointer;
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .boss20-talk-modal .b20t-actor-pixel.talking { animation: b20PixelTalk 260ms ease-in-out 2; }
+        .boss20-talk-modal .b20t-actor-boss.talking { animation: b20BossTalkShake 170ms linear 3; }
+
+        @keyframes b20TalkFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes b20TalkFadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes b20PixelTalk { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-3px); } }
+        @keyframes b20BossTalkShake {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(-2px, 1px); }
+            50% { transform: translate(2px, -1px); }
+            75% { transform: translate(-1px, -1px); }
+            100% { transform: translate(0, 0); }
         }
 
         .run-perk-popup .rp-card-wrap {
