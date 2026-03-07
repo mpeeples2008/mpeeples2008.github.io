@@ -270,6 +270,7 @@ function escapeHtmlAttr(str) {
             const MINIBOSS_LEVEL20_PHASE2_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_phase2_alt.png';
             const MINIBOSS_LEVEL20_PHASE3_SPRITE_URL = MINIBOSS_LEVEL20_PHASE1_SPRITE_URL;
             const BOSS20_PHASE2_SHATTER_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/shatter.png';
+            const NANOBOT_DRAIN_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanobot_hover.png';
             const PETRI_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/petri%20dish.png';
             const SFX_URLS = {
                 pop: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/pop2.mp3',
@@ -289,7 +290,7 @@ function escapeHtmlAttr(str) {
                 techno_dead: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techno_dead.mp3',
                 techno_jammer: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techno_jamming.mp3',
                 techno_duplicator: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techno_duplicator.mp3',
-                glass_crack: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/glass_crack.mp3',
+                glass_crack: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/glass_shatter_sound.mp3',
                 double_deal: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/double_deal.mp3',
                 achievement: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/achievement.mp3',
                 assistant_ai_0: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/AI1.mp3',
@@ -1071,6 +1072,7 @@ function escapeHtmlAttr(str) {
 
             // Game difficulty & state
             let clicksLeft = 10, screensPassed = 0, totalScore = 0;
+            let levelAdvancePending = false;
             let outOfClicksShown = false;
             const RUN_CONTINUE_CONFIG = {
                 enabled: true,
@@ -1546,6 +1548,9 @@ function escapeHtmlAttr(str) {
             let blockerTickTimer = null;
             let blockerFlashTimeout = null;
             let blockerUserBoostUntil = 0;
+            let boss20BlockerHidden = false;
+            let boss20BlockerPaused = false;
+            let blockerRetreatUntil = 0;
             let stormCharges = 1;
             let stormArmed = false;
             let stormHoverIndex = null;
@@ -1577,7 +1582,7 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_PHASE_SHIFT_MS = 2200;
             const EPIC_BOSS20_PHASE_SHIFT_CLICK_REWARD = 8;
             const EPIC_BOSS20_PHASE2_BREAK_FREEZE_MS = 2000;
-            const EPIC_BOSS20_PHASE2_BREAK_FLASH_MS = 50;
+            const EPIC_BOSS20_PHASE2_BREAK_FLASH_MS = 500;
             const EPIC_BOSS20_PHASE2_BREAK_SHATTER_MS = 440;
             const EPIC_BOSS20_PHASE2_BREAK_SHAKE_MS = 820;
             const EPIC_BOSS20_PHASE2_BREAK_SFX_LEAD_MS = 240;
@@ -1724,7 +1729,8 @@ function escapeHtmlAttr(str) {
                     phase2DesperationActive: false,
                     phase2DesperationStartedAt: 0,
                     phase2RescueQueued: false,
-                    phase2LastRegenAt: 0
+                    phase2LastRegenAt: 0,
+                    phase2DrainInProgress: false
                 };
             }
             let boss20State = createDefaultBoss20State();
@@ -1807,7 +1813,7 @@ function escapeHtmlAttr(str) {
                     id: 'overclocked_reserve',
                     source: 'pixel',
                     title: 'Overclocked Reserve',
-                    desc: '+1 click at next level start. Can temporarily exceed max clicks'
+                    desc: '+1 click at the start of the next 2 levels. Can temporarily exceed max clicks.'
                 },
                 reserve_expansion: {
                     id: 'reserve_expansion',
@@ -1896,6 +1902,7 @@ function escapeHtmlAttr(str) {
                     armorPiercerHits: 0,
                     bossBreakerHits: 0,
                     overclockedReservePending: 0,
+                    overclockedReserveLevelsPending: 0,
                     blockerFrozenUntil: 0,
                     blockerDisabledUntil: 0,
                     blockerSpeedFactor: 1,
@@ -2997,7 +3004,7 @@ function escapeHtmlAttr(str) {
                 if (id === 'containment_freeze') return isRotatingBlockerActive(levelNum) && !isBlockerTemporarilyDisabled();
                 if (id === 'laser_jammer') return isRotatingBlockerActive(levelNum) && !isBlockerTemporarilyDisabled() && (Number(runPerkState.blockerSpeedFactor) || 1) <= 1.01;
                 if (id === 'boss_breaker') return true;
-                if (id === 'overclocked_reserve') return (runPerkState.overclockedReservePending <= 0);
+                if (id === 'overclocked_reserve') return (runPerkState.overclockedReserveLevelsPending <= 0);
                 if (id === 'reserve_expansion') return (Number(runPerkState.clickCapDelta) || 0) < 6;
                 if (id === 'storm_tuning') return (Number(runPerkState.stormRechargeDelta) || 0) > -9;
                 if (id === 'broker_quickfix') return (Number(runPerkState.levelClearClicksPenalty) || 0) < 3;
@@ -3088,7 +3095,7 @@ function escapeHtmlAttr(str) {
                 } else if (id === 'boss_breaker') {
                     runPerkState.bossBreakerHits = Math.max(0, Number(runPerkState.bossBreakerHits) || 0) + 2;
                 } else if (id === 'overclocked_reserve') {
-                    runPerkState.overclockedReservePending = Math.max(1, Number(runPerkState.overclockedReservePending) || 0);
+                    runPerkState.overclockedReserveLevelsPending = Math.max(0, Number(runPerkState.overclockedReserveLevelsPending) || 0) + 2;
                 } else if (id === 'reserve_expansion') {
                     runPerkState.clickCapDelta = Math.min(6, (Number(runPerkState.clickCapDelta) || 0) + 2);
                 } else if (id === 'storm_tuning') {
@@ -3564,6 +3571,21 @@ function escapeHtmlAttr(str) {
                     disp.textContent = s;
                 }
 
+                // Global click-gain toast near nano-bot meter for any gain source.
+                try {
+                    const currentClicks = Math.max(0, Math.floor(Number(clicksLeft) || 0));
+                    if (typeof window.__lastHudClicksForToast !== 'number' || !Number.isFinite(window.__lastHudClicksForToast)) {
+                        window.__lastHudClicksForToast = currentClicks;
+                    } else {
+                        const gained = currentClicks - window.__lastHudClicksForToast;
+                        const likelyFreshRunBaseline = (totalScore <= 0 && screensPassed <= 0 && currentClicks >= 10 && window.__lastHudClicksForToast <= 0);
+                        if (gained > 0 && !likelyFreshRunBaseline) {
+                            showLevelClearClickToast(gained);
+                        }
+                        window.__lastHudClicksForToast = currentClicks;
+                    }
+                } catch (e) { }
+
                 // Always update meter visuals and notify assistant when clicks are low
                 try {
                     if (boardEl && boardEl.classList) {
@@ -3601,9 +3623,115 @@ function escapeHtmlAttr(str) {
 
                 // update pixel meter visualization (10 segments)
                 try { updateClicksMeter(clicksLeft); } catch (e) { }
+                try { updatePerkHudIndicators(); } catch (e) { }
                 try { updateStormUI(); } catch (e) { }
                 try { queueRunPerkMilestonesFromScore(); } catch (e) { }
                 try { maybeShowPendingRunPerkPopup(); } catch (e) { }
+            }
+
+            function updatePerkHudIndicators() {
+                const wrap = document.getElementById('perkHud');
+                if (!wrap) return;
+                const state = runPerkState || {};
+                const sc = Math.max(0, Number(state.stormCapacitorCharges) || 0);
+                const ap = Math.max(0, Number(state.armorPiercerHits) || 0);
+                const bb = Math.max(0, Number(state.bossBreakerHits) || 0);
+                const apPermanent = !!state.armorPiercerPermanent;
+                const stActive = (Number(state.stormRechargeDelta) || 0) < 0;
+                const reserveExpansionDelta = Math.max(0, Math.floor(Number(state.clickCapDelta) || 0));
+                const overclockedReserveLevels = Math.max(0, Math.floor(Number(state.overclockedReserveLevelsPending) || 0));
+                const ventureDownsides = [
+                    (Number(state.levelClearClicksPenalty) || 0) > 0,
+                    (Number(state.hotwireNextRechargePenalty) || 0) > 0,
+                    (Number(state.clickCapDelta) || 0) < 0,
+                    (Number(state.scoreMultiplier) || 1) < 0.999,
+                    (Number(state.miniBossBonusPenalty) || 0) > 0,
+                    !!state.stormNoDiagonals,
+                    (Number(state.specialVirusChanceDelta) || 0) > 0,
+                    (Number(state.blockerSpeedFactor) || 1) > 1.01
+                ];
+                const activeVentureDownsideCount = ventureDownsides.reduce((n, on) => n + (on ? 1 : 0), 0);
+
+                const chips = {
+                    storm_capacitor: wrap.querySelector('[data-perk-chip="storm_capacitor"]'),
+                    armor_piercer: wrap.querySelector('[data-perk-chip="armor_piercer"]'),
+                    boss_breaker: wrap.querySelector('[data-perk-chip="boss_breaker"]'),
+                    storm_tuning: wrap.querySelector('[data-perk-chip="storm_tuning"]'),
+                    reserve_expansion: wrap.querySelector('[data-perk-chip="reserve_expansion"]'),
+                    overclocked_reserve: wrap.querySelector('[data-perk-chip="overclocked_reserve"]'),
+                    viral_ventures: wrap.querySelector('[data-perk-chip="viral_ventures"]')
+                };
+                const counts = {
+                    storm_capacitor: wrap.querySelector('[data-perk-count="storm_capacitor"]'),
+                    armor_piercer: wrap.querySelector('[data-perk-count="armor_piercer"]'),
+                    boss_breaker: wrap.querySelector('[data-perk-count="boss_breaker"]'),
+                    reserve_expansion: wrap.querySelector('[data-perk-count="reserve_expansion"]'),
+                    overclocked_reserve: wrap.querySelector('[data-perk-count="overclocked_reserve"]'),
+                    viral_ventures: wrap.querySelector('[data-perk-count="viral_ventures"]')
+                };
+
+                const setVisible = (el, on) => {
+                    if (!el) return;
+                    el.style.display = on ? 'inline-flex' : 'none';
+                };
+
+                if (counts.storm_capacitor) counts.storm_capacitor.textContent = String(sc);
+                if (counts.armor_piercer) counts.armor_piercer.textContent = apPermanent ? 'INF' : String(ap);
+                if (counts.boss_breaker) counts.boss_breaker.textContent = String(bb);
+
+                setVisible(chips.storm_capacitor, sc > 0);
+                setVisible(chips.armor_piercer, apPermanent || ap > 0);
+                setVisible(chips.boss_breaker, bb > 0);
+                setVisible(chips.storm_tuning, stActive);
+                setVisible(chips.reserve_expansion, reserveExpansionDelta > 0);
+                setVisible(chips.overclocked_reserve, overclockedReserveLevels > 0);
+                setVisible(chips.viral_ventures, activeVentureDownsideCount > 0);
+
+                if (chips.storm_capacitor) {
+                    chips.storm_capacitor.classList.toggle('pulse', sc > 0);
+                    chips.storm_capacitor.title = sc > 0 ? `Storm Capacitor active (${sc})` : 'Storm Capacitor inactive';
+                }
+                if (chips.armor_piercer) {
+                    chips.armor_piercer.classList.toggle('pulse', apPermanent || ap > 0);
+                    chips.armor_piercer.classList.toggle('persistent', apPermanent);
+                    chips.armor_piercer.title = apPermanent
+                        ? 'Armor Piercer active (permanent)'
+                        : (ap > 0 ? `Armor Piercer active (${ap})` : 'Armor Piercer inactive');
+                }
+                if (chips.boss_breaker) {
+                    chips.boss_breaker.classList.toggle('pulse', bb > 0);
+                    chips.boss_breaker.title = bb > 0 ? `Boss Breaker active (${bb})` : 'Boss Breaker inactive';
+                }
+                if (chips.storm_tuning) {
+                    chips.storm_tuning.classList.toggle('pulse', stActive);
+                    chips.storm_tuning.classList.toggle('persistent', stActive);
+                    chips.storm_tuning.title = stActive ? 'Storm Tuning active' : 'Storm Tuning inactive';
+                }
+                if (chips.reserve_expansion) {
+                    if (counts.reserve_expansion) counts.reserve_expansion.textContent = `+${reserveExpansionDelta}`;
+                    chips.reserve_expansion.classList.toggle('pulse', reserveExpansionDelta > 0);
+                    chips.reserve_expansion.classList.toggle('persistent', reserveExpansionDelta > 0);
+                    chips.reserve_expansion.title = reserveExpansionDelta > 0
+                        ? `Reserve Expansion active (+${reserveExpansionDelta} max clicks)`
+                        : 'Reserve Expansion inactive';
+                }
+                if (chips.overclocked_reserve) {
+                    if (counts.overclocked_reserve) counts.overclocked_reserve.textContent = String(overclockedReserveLevels);
+                    chips.overclocked_reserve.classList.toggle('pulse', overclockedReserveLevels > 0);
+                    chips.overclocked_reserve.classList.toggle('persistent', overclockedReserveLevels > 0);
+                    chips.overclocked_reserve.title = overclockedReserveLevels > 0
+                        ? `Overclocked Reserve active (${overclockedReserveLevels} level${overclockedReserveLevels === 1 ? '' : 's'} remaining)`
+                        : 'Overclocked Reserve inactive';
+                }
+                if (chips.viral_ventures) {
+                    if (counts.viral_ventures) counts.viral_ventures.textContent = String(activeVentureDownsideCount);
+                    chips.viral_ventures.classList.toggle('pulse', activeVentureDownsideCount > 0);
+                    chips.viral_ventures.title = activeVentureDownsideCount > 0
+                        ? `Viral Venture drawbacks active (${activeVentureDownsideCount})`
+                        : 'No Viral Venture drawbacks active';
+                }
+
+                // Keep strip visible at all times; only chips toggle on/off.
             }
 
             let levelClearClickToastTimer = null;
@@ -4009,7 +4137,7 @@ function escapeHtmlAttr(str) {
                     const delay = delays[i];
                     setTimeout(() => {
                         if (!isFinalVictoryActive()) return;
-                        try { playSfx('techno_dead'); } catch (e) { }
+                        try { playSfx('miniboss_dies'); } catch (e) { }
                     }, delay);
                 }
             }
@@ -4343,7 +4471,6 @@ function escapeHtmlAttr(str) {
                             inputLocked = false;
                             try { playSfx('fill'); } catch (e) { }
                             updateHUD();
-                            if (applied > 0) showLevelClearClickToast(applied);
                             closeWith(() => {
                                 try { scheduleRender(); } catch (e) { }
                                 if (typeof opts.onContinue === 'function') opts.onContinue({ level: levelNum, grant: applied });
@@ -4791,9 +4918,45 @@ function escapeHtmlAttr(str) {
 
             function isRotatingBlockerActive(levelNum = getCurrentLevelNumber()) {
                 if (!FEATURE_FLAGS || FEATURE_FLAGS.rotatingBlocker === false) return false;
+                if (Date.now() < Number(blockerRetreatUntil || 0)) return false;
                 if (isEpicBoss20Level(levelNum)) return false;
                 const cfg = getBlockerSettings(levelNum);
                 return levelNum >= cfg.unlockLevel;
+            }
+
+            function playBlockerRetreatSequence(onDone = null, opts = null) {
+                try {
+                    const options = opts || {};
+                    const preLaunchMs = Math.max(200, Math.floor(Number(options.preLaunchMs) || 1000));
+                    const launchMs = Math.max(300, Math.floor(Number(options.launchMs) || 980));
+                    const postPauseMs = Math.max(0, Math.floor(Number(options.postPauseMs) || 0));
+                    blockerRetreatUntil = Date.now() + preLaunchMs + launchMs + postPauseMs + 420;
+                    stopRotatingBlockerTicker();
+                    const el = document.getElementById('rotatingBlocker');
+                    if (!el) {
+                        if (typeof onDone === 'function') {
+                            if (postPauseMs > 0) setTimeout(() => { try { onDone(); } catch (e) { } }, postPauseMs);
+                            else onDone();
+                        }
+                        return;
+                    }
+                    el.classList.add('retreating');
+                    setTimeout(() => {
+                        el.classList.add('retreat-launch');
+                        try { playBlockerMoveSfx(); } catch (e) { }
+                        setTimeout(() => { try { playBlockerMoveSfx(); } catch (e) { } }, Math.max(180, Math.floor(launchMs * 0.35)));
+                        setTimeout(() => {
+                            try { el.remove(); } catch (e) { }
+                            try { syncRotatingBlockerUI(); } catch (e) { }
+                            if (typeof onDone === 'function') {
+                                if (postPauseMs > 0) setTimeout(() => { try { onDone(); } catch (e) { } }, postPauseMs);
+                                else onDone();
+                            }
+                        }, launchMs);
+                    }, preLaunchMs);
+                } catch (e) {
+                    if (typeof onDone === 'function') onDone();
+                }
             }
 
             function getRotatingBlockerSegment() {
@@ -4845,6 +5008,7 @@ function escapeHtmlAttr(str) {
             function advanceRotatingBlockerOverTime() {
                 if (!isRotatingBlockerActive()) return;
                 if (finalOfferModalOpen) return;
+                if (boss20BlockerPaused && isEpicBoss20Level()) return;
                 if (isBlockerTemporarilyFrozen() || isBlockerTemporarilyDisabled()) return;
                 const prevOrientation = blockerOrientationDeg;
                 const prevLane = blockerLaneIndex;
@@ -5493,6 +5657,8 @@ function escapeHtmlAttr(str) {
                     }
                 } catch (e) { }
                 boss20State = createDefaultBoss20State();
+                boss20BlockerHidden = false;
+                boss20BlockerPaused = false;
                 return boss20State;
             }
 
@@ -5933,6 +6099,43 @@ function escapeHtmlAttr(str) {
                 if (!meta.isBoss || meta.isProjection) return false;
                 meta.phase = 2;
                 specialMetaState[idx] = meta;
+                if (fullBoard && !lowClicks) {
+                    if (boss20State.phase2DrainInProgress) return true;
+                    if (inputLocked || stormResolving || (typeof particlesActive === 'function' && particlesActive())) {
+                        boss20State.phase2RescueQueued = true;
+                        return false;
+                    }
+                    boss20State.phase2RescueQueued = false;
+                    boss20State.phase2DrainInProgress = true;
+                    inputLocked = true;
+                    try { stopBoss20PhaseTimer(); } catch (e) { }
+                    try { setBoss20BoardFreeze(true); } catch (e) { }
+                    const seqGen = boardGeneration;
+                    playBoss20NanoBotDrainSequence(idx, 0).then(() => {
+                        boss20State.phase2DrainInProgress = false;
+                        if (seqGen !== boardGeneration || !isEpicBoss20Level()) {
+                            try { setBoss20BoardFreeze(false); } catch (e) { }
+                            inputLocked = false;
+                            return;
+                        }
+                        setTimeout(() => {
+                            if (seqGen !== boardGeneration || !isEpicBoss20Level()) {
+                                try { setBoss20BoardFreeze(false); } catch (e) { }
+                                inputLocked = false;
+                                return;
+                            }
+                            try { setBoss20BoardFreeze(false); } catch (e) { }
+                            const m = ensureSpecialMeta(idx) || {};
+                            const started = !!triggerBoss20RescueSequence(idx, m);
+                            if (!started) inputLocked = false;
+                        }, 2000);
+                    }).catch(() => {
+                        boss20State.phase2DrainInProgress = false;
+                        try { setBoss20BoardFreeze(false); } catch (e) { }
+                        inputLocked = false;
+                    });
+                    return true;
+                }
                 if (inputLocked) {
                     boss20State.phase2RescueQueued = true;
                     return false;
@@ -6140,6 +6343,93 @@ function escapeHtmlAttr(str) {
                 } catch (e) { }
             }
 
+            function spawnBoss20DrainBotFx(layer, sx, sy, tx, ty, durationMs = 420) {
+                try {
+                    if (!layer) return;
+                    const bot = document.createElement('div');
+                    bot.className = 'boss20-drain-bot';
+                    if (NANOBOT_DRAIN_SPRITE_URL) bot.style.backgroundImage = `url('${NANOBOT_DRAIN_SPRITE_URL}')`;
+                    bot.style.left = `${Math.round(sx)}px`;
+                    bot.style.top = `${Math.round(sy)}px`;
+                    bot.style.setProperty('--dx', `${Math.round(tx - sx)}px`);
+                    bot.style.setProperty('--dy', `${Math.round(ty - sy)}px`);
+                    bot.style.setProperty('--dur', `${Math.max(220, Math.floor(Number(durationMs) || 420))}ms`);
+                    layer.appendChild(bot);
+                    setTimeout(() => { try { bot.remove(); } catch (e) { } }, Math.max(300, Math.floor(Number(durationMs) || 420) + 120));
+                } catch (e) { }
+            }
+
+            function playBoss20NanoBotDrainSequence(bossIndex, targetClicks = 0) {
+                return new Promise((resolve) => {
+                    try {
+                        const idx = Math.floor(Number(bossIndex));
+                        if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) { resolve(false); return; }
+                        const startClicks = Math.max(0, Math.floor(Number(clicksLeft) || 0));
+                        const endClicks = Math.max(0, Math.min(startClicks, Math.floor(Number(targetClicks) || 0)));
+                        if (startClicks <= endClicks) { resolve(true); return; }
+                        const meter = document.getElementById('clicksMeter');
+                        const bossCenter = getBoardCellCenter(idx);
+                        if (!meter || !bossCenter) {
+                            clicksLeft = endClicks;
+                            try { updateHUD(); } catch (e) { }
+                            resolve(true);
+                            return;
+                        }
+                        const meterRect = meter.getBoundingClientRect();
+                        const sxBase = meterRect.left + Math.min(18, meterRect.width * 0.24);
+                        const syBase = meterRect.top + (meterRect.height * 0.52);
+                        const txBase = Number(bossCenter.x) || (window.innerWidth * 0.5);
+                        const tyBase = Number(bossCenter.y) || (window.innerHeight * 0.5);
+
+                        const layer = document.createElement('div');
+                        layer.className = 'boss20-drain-layer';
+                        const beam = document.createElement('div');
+                        beam.className = 'boss20-drain-beam';
+                        const dx = txBase - sxBase;
+                        const dy = tyBase - syBase;
+                        const dist = Math.max(16, Math.sqrt((dx * dx) + (dy * dy)));
+                        const ang = Math.atan2(dy, dx) * (180 / Math.PI);
+                        beam.style.left = `${Math.round(sxBase)}px`;
+                        beam.style.top = `${Math.round(syBase)}px`;
+                        beam.style.width = `${Math.round(dist)}px`;
+                        beam.style.transform = `translate(0, -50%) rotate(${ang}deg)`;
+                        layer.appendChild(beam);
+                        document.body.appendChild(layer);
+
+                        try { playSfx('miniboss_laugh'); } catch (e) { }
+                        setTimeout(() => { try { playSfx('miniboss_laugh'); } catch (e) { } }, 780);
+                        setTimeout(() => { try { playSfx('miniboss_laugh'); } catch (e) { } }, 1580);
+
+                        const steps = Math.max(1, startClicks - endClicks);
+                        const leadInMs = 2000;
+                        const drainTotalMs = Math.max(1800, Math.min(3200, Math.floor(2200 + (steps * 35))));
+                        const stepMs = Math.max(120, Math.floor(drainTotalMs / steps));
+                        let leftToDrain = steps;
+                        const step = () => {
+                            if (leftToDrain <= 0) {
+                                setTimeout(() => {
+                                    try { layer.remove(); } catch (e) { }
+                                    resolve(true);
+                                }, 120);
+                                return;
+                            }
+                            clicksLeft = Math.max(endClicks, Math.max(0, Number(clicksLeft) - 1));
+                            try { updateHUD(); } catch (e) { }
+                            const sx = sxBase + ((Math.random() - 0.5) * 20);
+                            const sy = syBase + ((Math.random() - 0.5) * 14);
+                            const tx = txBase + ((Math.random() - 0.5) * 16);
+                            const ty = tyBase + ((Math.random() - 0.5) * 16);
+                            spawnBoss20DrainBotFx(layer, sx, sy, tx, ty, Math.max(520, Math.floor(stepMs * 1.4) + Math.floor(Math.random() * 180)));
+                            leftToDrain -= 1;
+                            setTimeout(step, stepMs);
+                        };
+                        setTimeout(step, leadInMs);
+                    } catch (e) {
+                        resolve(false);
+                    }
+                });
+            }
+
             function spawnBoss20Phase2ShatterFx(index) {
                 if (!Number.isFinite(index) || !boardEl) return;
                 try {
@@ -6148,7 +6438,7 @@ function escapeHtmlAttr(str) {
                     const r = cell.getBoundingClientRect();
                     const cx = Math.round(r.left + (r.width * 0.5));
                     const cy = Math.round(r.top + (r.height * 0.5));
-                    const spriteSize = Math.round(Math.max(r.width, r.height) * 1.55);
+                    const spriteSize = Math.round(Math.max(r.width, r.height) * 0.78);
                     const shatter = document.createElement('div');
                     shatter.className = 'boss20-shatter-sprite';
                     shatter.style.left = cx + 'px';
@@ -6202,6 +6492,7 @@ function escapeHtmlAttr(str) {
                     const shatterMs = Math.max(240, Math.floor(Number(EPIC_BOSS20_PHASE2_BREAK_SHATTER_MS) || 560));
                     const sfxLeadMs = Math.max(0, Math.floor(Number(EPIC_BOSS20_PHASE2_BREAK_SFX_LEAD_MS) || 0));
                     const sfxDelay = Math.max(0, freezeMs - sfxLeadMs);
+                    boss20BlockerPaused = true;
                     setBoss20BoardFreeze(true);
                     setTimeout(() => {
                         if (sourceBoardGeneration !== boardGeneration) return;
@@ -6213,6 +6504,9 @@ function escapeHtmlAttr(str) {
                             resolve(false);
                             return;
                         }
+                        boss20BlockerHidden = true;
+                        boss20BlockerPaused = false;
+                        try { syncRotatingBlockerUI(); } catch (e) { }
                         showBoss20Phase2WhiteFlash();
                         spawnBoss20Phase2ShatterFx(index);
                         setTimeout(() => {
@@ -6503,6 +6797,7 @@ function escapeHtmlAttr(str) {
                 boss20State.phase2DesperationActive = false;
                 boss20State.phase2DesperationStartedAt = 0;
                 boss20State.phase2RescueQueued = false;
+                boss20State.phase2DrainInProgress = false;
                 boss20State.phase2LastRegenAt = 0;
                 boss20State.rescueShieldUntil = Date.now() + Math.max(1200, EPIC_BOSS20_RESCUE_CINEMATIC_MS + 500);
                 stopBoss20PhaseTimer();
@@ -6644,7 +6939,7 @@ function escapeHtmlAttr(str) {
                     boss20State.inCinematic = false;
                     inputLocked = false;
                 };
-                runBoss20Phase2BreakSequence(idx, sourceBoardGeneration).then((ok) => {
+                const startPhaseBreak = () => runBoss20Phase2BreakSequence(idx, sourceBoardGeneration).then((ok) => {
                     if (!ok || sourceBoardGeneration !== boardGeneration) {
                         abortTransition();
                         return;
@@ -6715,6 +7010,26 @@ function escapeHtmlAttr(str) {
                 }).catch(() => {
                     abortTransition();
                 });
+
+                const waitForCascadeIdle = (cb) => {
+                    const startAt = Date.now();
+                    const maxWaitMs = 3200;
+                    const tick = () => {
+                        try {
+                            const busy = !!(stormResolving || (typeof particlesActive === 'function' && particlesActive()));
+                            if (!busy || (Date.now() - startAt) >= maxWaitMs) {
+                                cb();
+                                return;
+                            }
+                        } catch (e) {
+                            cb();
+                            return;
+                        }
+                        requestAnimationFrame(tick);
+                    };
+                    tick();
+                };
+                waitForCascadeIdle(startPhaseBreak);
                 return true;
             }
 
@@ -6850,22 +7165,14 @@ function escapeHtmlAttr(str) {
             }
 
             function makeBiofilmStyle() {
-                const pct = () => `${Math.round(28 + (Math.random() * 44))}%`;
-                const radius = `${pct()} ${pct()} ${pct()} ${pct()} / ${pct()} ${pct()} ${pct()} ${pct()}`;
-                const widthPct = `${Math.round(52 + (Math.random() * 34))}%`;
-                const heightPct = `${Math.round(46 + (Math.random() * 38))}%`;
-                const ox = `${Math.round(-14 + (Math.random() * 28))}%`;
-                const oy = `${Math.round(-14 + (Math.random() * 28))}%`;
                 return {
-                    radius,
-                    rot: `${Math.round(-20 + (Math.random() * 40))}deg`,
-                    scale: (0.94 + (Math.random() * 0.22)).toFixed(2),
-                    widthPct,
-                    heightPct,
-                    ox,
-                    oy,
-                    sheenX: `${Math.round(24 + (Math.random() * 44))}%`,
-                    sheenY: `${Math.round(18 + (Math.random() * 38))}%`,
+                    radius: '50%',
+                    scale: (0.95 + (Math.random() * 0.10)).toFixed(2),
+                    sizePct: `${Math.round(60 + (Math.random() * 12))}%`,
+                    sheenX: `${Math.round(32 + (Math.random() * 22))}%`,
+                    sheenY: `${Math.round(24 + (Math.random() * 18))}%`,
+                    wobbleMs: `${Math.round(1200 + (Math.random() * 420))}ms`,
+                    wobbleDelay: `${Math.round(-500 + (Math.random() * 500))}ms`,
                     appliedAt: Date.now()
                 };
             }
@@ -7455,6 +7762,12 @@ function escapeHtmlAttr(str) {
                 if (!meta.isBoss) return null;
                 const isProjection = !!meta.isProjection;
                 const bossLevel = Math.max(1, Math.floor(Number(meta.bossLevel) || getCurrentLevelNumber()));
+                if (bossLevel === 20 && isEpicBoss20Level() && !!ctx.isUser) {
+                    // Level 20 boss entities are immune to direct clicks; damage must come from cascades/other effects.
+                    try { playSfx('zap'); } catch (e) { }
+                    scheduleRender();
+                    return { cancelGrowth: true };
+                }
                 if (!isProjection && bossLevel === 20 && isEpicBoss20Level() && !Number.isFinite(Number(meta.phase))) {
                     meta.phase = Math.max(1, Math.floor(Number(boss20State && boss20State.phase) || 1));
                 }
@@ -7646,6 +7959,7 @@ function escapeHtmlAttr(str) {
 
 
             function randomizeBoard(preserveClicks = false) {
+                levelAdvancePending = false;
                 boardGeneration += 1;
                 try { setBoss20BoardFreeze(false); } catch (e) { }
                 try { Object.keys(bossFuelLastAtByLevel).forEach((k) => { delete bossFuelLastAtByLevel[k]; }); } catch (e) { }
@@ -7734,6 +8048,10 @@ function escapeHtmlAttr(str) {
                     const reserveGrant = Math.max(1, Math.min(2, reservePending));
                     clicksLeft = Math.max(0, (Number(clicksLeft) || 0) + reserveGrant);
                     runPerkState.overclockedReservePending = Math.max(0, reservePending - reserveGrant);
+                }
+                if (preserveClicks && (Number(runPerkState.overclockedReserveLevelsPending) || 0) > 0) {
+                    clicksLeft = Math.max(0, (Number(clicksLeft) || 0) + 1);
+                    runPerkState.overclockedReserveLevelsPending = Math.max(0, Number(runPerkState.overclockedReserveLevelsPending) - 1);
                 }
                 scheduleRender();
                 updateHUD();
@@ -7949,10 +8267,13 @@ function escapeHtmlAttr(str) {
                         if (bst.scale) bio.style.setProperty('--b-scale', String(bst.scale));
                         if (bst.widthPct) bio.style.setProperty('--b-w', bst.widthPct);
                         if (bst.heightPct) bio.style.setProperty('--b-h', bst.heightPct);
+                        if (bst.sizePct) bio.style.setProperty('--b-size', bst.sizePct);
                         if (bst.ox) bio.style.setProperty('--b-ox', bst.ox);
                         if (bst.oy) bio.style.setProperty('--b-oy', bst.oy);
                         if (bst.sheenX) bio.style.setProperty('--b-sheen-x', bst.sheenX);
                         if (bst.sheenY) bio.style.setProperty('--b-sheen-y', bst.sheenY);
+                        if (bst.wobbleMs) bio.style.setProperty('--b-wobble-ms', bst.wobbleMs);
+                        if (bst.wobbleDelay) bio.style.setProperty('--b-wobble-delay', bst.wobbleDelay);
                         gridCell.appendChild(bio);
                     }
                     if (hasBossGooShield(i)) {
@@ -8003,7 +8324,10 @@ function escapeHtmlAttr(str) {
                 const remaining = state.filter(x => x !== null).length;
 
                 if (remaining === 0) {
+                    if (levelAdvancePending) return;
+                    levelAdvancePending = true;
                     if (isFinalVictoryActive()) {
+                        levelAdvancePending = false;
                         return;
                     }
                     // single, unified "level complete" path
@@ -8013,14 +8337,12 @@ function escapeHtmlAttr(str) {
                     const clicksBeforeClearReward = Math.max(0, Number(clicksLeft) || 0);
                     const clearRewardClicks = Math.max(0, 1 + (Number(clearBonusClicks) || 0));
                     clicksLeft = Math.min(getMaxClicksCap(), clicksBeforeClearReward + clearRewardClicks);
-                    const clearRewardApplied = Math.max(0, clicksLeft - clicksBeforeClearReward);
                     playSfx('win');
                     screensPassed += 1;
                     incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
                     const nextLevelNum = screensPassed + 1;
                     setAchievementBest('runLevelReached', nextLevelNum, 'run');
                     updateHUD();
-                    showLevelClearClickToast(clearRewardApplied);
                     tutorialEvent('firstLevelClear');
 
                     const showFinalOfferNow = shouldShowFinalOfferForLevel(nextLevelNum);
@@ -8056,22 +8378,33 @@ function escapeHtmlAttr(str) {
                             });
                         };
                         try {
-                            showLevelComplete({
-                                title: `LEVEL ${clearedLevelNum} COMPLETE`,
-                                onDismiss: () => {
-                                    if (nextLevelNum === 20) {
-                                        beginLevel20BossIntro();
-                                        return;
+                            const showPostClearPopup = () => {
+                                showLevelComplete({
+                                    title: `LEVEL ${clearedLevelNum} COMPLETE`,
+                                    onDismiss: () => {
+                                        if (nextLevelNum === 20) {
+                                            beginLevel20BossIntro();
+                                            return;
+                                        }
+                                        randomizeBoard(true);
+                                        applyFinalOfferClickFloor();
+                                        updateHUD();
+                                        openPendingFinalOffer();
                                     }
-                                    randomizeBoard(true);
-                                    applyFinalOfferClickFloor();
-                                    updateHUD();
-                                    openPendingFinalOffer();
-                                }
-                            });
+                                });
+                            };
+                            if (nextLevelNum === 20) {
+                                playBlockerRetreatSequence(() => {
+                                    showPostClearPopup();
+                                }, { preLaunchMs: 1000, launchMs: 980, postPauseMs: 2000 });
+                            } else {
+                                showPostClearPopup();
+                            }
                         } catch (e) {
                             if (nextLevelNum === 20) {
-                                beginLevel20BossIntro();
+                                playBlockerRetreatSequence(() => {
+                                    beginLevel20BossIntro();
+                                }, { preLaunchMs: 1000, launchMs: 980, postPauseMs: 2000 });
                                 return;
                             }
                             randomizeBoard(true);

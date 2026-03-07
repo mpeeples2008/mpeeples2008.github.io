@@ -334,6 +334,31 @@
             animation-duration: 520ms, 960ms;
         }
 
+        .rotating-blocker.retreating {
+            background: transparent !important;
+            box-shadow: none !important;
+            opacity: 0.18;
+            transition: opacity 140ms linear;
+        }
+
+        .rotating-blocker.retreating::before,
+        .rotating-blocker.retreating::after {
+            opacity: 0 !important;
+            animation: none !important;
+        }
+
+        .rotating-blocker.retreating .blocker-emitter {
+            filter: drop-shadow(0 0 6px rgba(170, 230, 255, 0.58)) saturate(1.06);
+        }
+
+        .rotating-blocker.retreating.retreat-launch .blocker-emitter.e-left {
+            animation: blockerRetreatLeft 980ms cubic-bezier(0.2, 0.72, 0.2, 1) forwards !important;
+        }
+
+        .rotating-blocker.retreating.retreat-launch .blocker-emitter.e-right {
+            animation: blockerRetreatRight 980ms cubic-bezier(0.2, 0.72, 0.2, 1) forwards !important;
+        }
+
         @keyframes blockerBeamBodyBob {
             0%, 100% {
                 translate: 0 -2px;
@@ -351,6 +376,18 @@
             100% {
                 background-position: 64px 0;
             }
+        }
+
+        @keyframes blockerRetreatLeft {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            55% { transform: translate(calc(-50% + 48vw), calc(-50% - 6vh)) scale(1.04); opacity: 0.98; }
+            100% { transform: translate(calc(-50% + 100vw), calc(-50% - 28vh)) scale(0.74); opacity: 0; }
+        }
+
+        @keyframes blockerRetreatRight {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            55% { transform: translate(calc(-50% - 48vw), calc(-50% - 6vh)) scale(1.04); opacity: 0.98; }
+            100% { transform: translate(calc(-50% - 100vw), calc(-50% - 28vh)) scale(0.74); opacity: 0; }
         }
 
         @keyframes blockerBeamBob {
@@ -1193,6 +1230,53 @@
             animation: boss20ShatterShard 420ms ease-out forwards;
         }
 
+        .boss20-drain-layer {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 95269;
+            overflow: hidden;
+        }
+
+        .boss20-drain-beam {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 10px;
+            border-radius: 999px;
+            transform-origin: left center;
+            pointer-events: none;
+            z-index: 95269;
+            background:
+                linear-gradient(90deg,
+                    rgba(112, 224, 255, 0.08) 0%,
+                    rgba(196, 246, 255, 0.9) 20%,
+                    rgba(255, 255, 255, 0.98) 50%,
+                    rgba(196, 246, 255, 0.9) 80%,
+                    rgba(112, 224, 255, 0.08) 100%);
+            box-shadow:
+                0 0 10px rgba(166, 234, 255, 0.78),
+                0 0 26px rgba(116, 216, 255, 0.58),
+                inset 0 0 10px rgba(255, 255, 255, 0.66);
+            animation: boss20DrainBeamPulse 220ms ease-in-out infinite alternate;
+        }
+
+        .boss20-drain-bot {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 15px;
+            height: 15px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            image-rendering: pixelated;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: contain;
+            filter: drop-shadow(0 0 8px rgba(152, 236, 255, 0.72));
+            animation: boss20DrainBotFly var(--dur, 420ms) cubic-bezier(0.1, 0.72, 0.2, 1) forwards;
+        }
+
         .cell.boss20-phase2-transform .virus.special-boss.special-boss-level20 {
             animation: boss20Phase2SwapShake 820ms cubic-bezier(0.14, 0.72, 0.18, 1) both;
         }
@@ -1542,6 +1626,28 @@
             }
         }
 
+        @keyframes boss20DrainBotFly {
+            0% {
+                opacity: 0.96;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(0.42);
+            }
+        }
+
+        @keyframes boss20DrainBeamPulse {
+            0% {
+                opacity: 0.68;
+                filter: brightness(0.92);
+            }
+            100% {
+                opacity: 0.98;
+                filter: brightness(1.14);
+            }
+        }
+
         @keyframes boss20Phase2SwapShake {
             0% {
                 transform: translate(0, 0) rotate(0deg) scale(1);
@@ -1829,10 +1935,10 @@
             position: absolute;
             left: 50%;
             top: 50%;
-            width: var(--b-w, 74%);
-            height: var(--b-h, 74%);
-            transform: translate(calc(-50% + var(--b-ox, 0%)), calc(-50% + var(--b-oy, 0%))) rotate(var(--b-rot, 0deg)) scale(var(--b-scale, 1));
-            border-radius: 56% 44% 52% 48% / 46% 54% 42% 58%;
+            width: var(--b-size, 68%);
+            height: var(--b-size, 68%);
+            transform: translate(-50%, -50%) scale(var(--b-scale, 1));
+            border-radius: 50%;
             pointer-events: none;
             z-index: 4;
             background:
@@ -1840,7 +1946,8 @@
                 radial-gradient(circle at 66% 68%, rgba(246, 208, 86, 0.82) 0%, rgba(224, 170, 58, 0.5) 42%, rgba(160, 118, 38, 0.18) 72%, rgba(124, 90, 24, 0) 100%);
             box-shadow: inset 0 0 12px rgba(255, 244, 174, 0.26), 0 0 8px rgba(255, 212, 108, 0.36);
             opacity: 0.93;
-            animation: biofilmIdle 1800ms ease-in-out infinite alternate;
+            animation: biofilmWobble var(--b-wobble-ms, 1400ms) ease-in-out infinite;
+            animation-delay: var(--b-wobble-delay, 0ms);
         }
 
         .biofilm-overlay::before {
@@ -1875,9 +1982,10 @@
             animation: biofilmAbsorbFx 280ms ease-out forwards;
         }
 
-        @keyframes biofilmIdle {
-            0% { filter: saturate(0.96) brightness(0.96); transform: translate(calc(-50% + var(--b-ox, 0%)), calc(-50% + var(--b-oy, 0%))) rotate(var(--b-rot, 0deg)) scale(var(--b-scale, 1)); }
-            100% { filter: saturate(1.06) brightness(1.06); transform: translate(calc(-50% + var(--b-ox, 0%)), calc(-50% + var(--b-oy, 0%))) rotate(calc(var(--b-rot, 0deg) + 2deg)) scale(calc(var(--b-scale, 1) * 1.02)); }
+        @keyframes biofilmWobble {
+            0% { filter: saturate(0.98) brightness(0.96); transform: translate(-50%, -50%) scale(calc(var(--b-scale, 1) * 0.985)); }
+            40% { filter: saturate(1.03) brightness(1.02); transform: translate(-50%, -51%) scale(calc(var(--b-scale, 1) * 1.02)); }
+            100% { filter: saturate(0.99) brightness(0.98); transform: translate(-50%, -50%) scale(var(--b-scale, 1)); }
         }
 
         @keyframes biofilmHitPulse {
@@ -4168,6 +4276,78 @@
             text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.55)
         }
 
+        .perk-strip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 6px;
+            border-radius: 7px;
+            border: 2px solid rgba(0, 0, 0, 0.22);
+            background: linear-gradient(180deg, rgba(16, 22, 34, 0.82), rgba(8, 12, 20, 0.72));
+            min-height: 22px;
+            width: fit-content;
+            max-width: 100%;
+        }
+
+        .perk-strip-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            color: #b7c9e7;
+            opacity: 0.92;
+            letter-spacing: 0.03em;
+            margin-right: 2px;
+        }
+
+        .perk-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            min-height: 14px;
+            padding: 1px 4px;
+            border-radius: 4px;
+            border: 1px solid rgba(108, 138, 190, 0.5);
+            background: linear-gradient(180deg, rgba(38, 62, 96, 0.96), rgba(22, 36, 58, 0.96));
+            color: #e9f4ff;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 7px;
+            line-height: 1;
+        }
+
+        .perk-chip-key {
+            opacity: 0.96;
+        }
+
+        .perk-chip-count {
+            color: #fff3b2;
+            min-width: 8px;
+            text-align: right;
+        }
+
+        .perk-chip.persistent {
+            border-color: rgba(126, 205, 226, 0.62);
+            background: linear-gradient(180deg, rgba(44, 74, 112, 0.96), rgba(22, 44, 70, 0.96));
+        }
+
+        .perk-chip.perk-chip-negative {
+            border-color: rgba(232, 110, 96, 0.72);
+            background: linear-gradient(180deg, rgba(124, 42, 38, 0.96), rgba(78, 24, 22, 0.96));
+            color: #ffe3d8;
+        }
+
+        .perk-chip.perk-chip-negative .perk-chip-count {
+            color: #ffd1b3;
+        }
+
+        .perk-chip.pulse {
+            animation: perkChipPulse 700ms ease-in-out infinite;
+        }
+
+        @keyframes perkChipPulse {
+            0%, 100% { filter: brightness(1); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 0 0 rgba(120, 196, 255, 0); }
+            50% { filter: brightness(1.12); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 0 6px rgba(120, 196, 255, 0.38); }
+        }
+
         .combo-meter {
             flex-direction: column !important;
             align-items: stretch !important;
@@ -6227,43 +6407,43 @@ html.assistant-disabled .assistant-fallback-bubble {
              .control-trio .storm-btn::before {
                 content: '';
                 position: absolute;
-                left: 5px;
-                right: 9px;
-                top: 7px;
-                bottom: 5px;
+                left: 3px;
+                right: 3px;
+                top: 3px;
+                bottom: 3px;
                 border-radius: 3px;
                 border: 2px solid rgba(176, 190, 202, 0.52);
-                background: rgba(10, 14, 20, 0.78);
-                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.24);
+                background: transparent;
+                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
                 pointer-events: none;
-                z-index: 3;
+                z-index: 2;
              }
 
              .control-trio .storm-btn::after {
                 content: '';
                 position: absolute;
-                left: 8px;
-                right: 12px;
-                top: 10px;
-                bottom: 8px;
-                border-radius: 1px;
+                left: 4px;
+                right: 4px;
+                top: 4px;
+                bottom: 4px;
+                border-radius: 2px;
                 background:
-                    linear-gradient(90deg, rgba(90, 132, 255, 0.92), rgba(255, 225, 110, 0.96));
+                    linear-gradient(90deg, #2ca7ff 0%, #48c8ff 48%, #ffe76f 100%);
                 transform-origin: left center;
                 transform: scaleX(var(--storm-combo-ratio));
-                opacity: 0.94;
+                opacity: 1;
                 transition: transform 120ms linear, opacity 120ms linear, filter 120ms linear, box-shadow 120ms linear;
-                box-shadow: 0 0 7px rgba(104, 180, 255, 0.34);
+                box-shadow: 0 0 10px rgba(86, 194, 255, 0.6), inset 0 0 4px rgba(255, 255, 255, 0.22);
                 pointer-events: none;
-                z-index: 2;
+                z-index: 3;
              }
 
              .control-trio .storm-btn .storm-bolt {
                 position: absolute;
                 left: 50%;
-                top: 54%;
+                top: 50%;
                 transform: translate(-50%, -50%);
-                font-size: 15px;
+                font-size: 13px;
                 line-height: 1;
                 color: #ffe992;
                 text-shadow: 0 0 5px rgba(255, 218, 108, 0.45);
@@ -6313,7 +6493,7 @@ html.assistant-disabled .assistant-fallback-bubble {
 
              .control-trio .storm-btn.jammed::before {
                 border-color: rgba(255, 206, 122, 0.6);
-                background: rgba(28, 18, 8, 0.78);
+                background: transparent;
              }
 
              .control-trio .storm-btn.jammed::after {
@@ -6345,21 +6525,21 @@ html.assistant-disabled .assistant-fallback-bubble {
              }
 
              .control-trio .storm-btn.combo-near::after {
-                background: linear-gradient(90deg, #7aa6ff, #d8e47a);
-                box-shadow: 0 0 12px rgba(150, 180, 230, 0.5);
+                background: linear-gradient(90deg, #49bbff, #ffe27a);
+                box-shadow: 0 0 14px rgba(92, 202, 255, 0.62);
             }
 
              .control-trio .storm-btn.combo-hot::after {
-                background: linear-gradient(90deg, #9fb8ff, #efe78a);
-                box-shadow: 0 0 14px rgba(194, 196, 120, 0.64);
+                background: linear-gradient(90deg, #67c9ff, #fff0a0);
+                box-shadow: 0 0 16px rgba(255, 231, 124, 0.72);
                 animation: stormFillSweep 520ms linear infinite, stormComboHotPulse 520ms ease-in-out infinite;
             }
 
              .control-trio .storm-btn.charged::after {
                 transform: scaleX(1);
-                opacity: 0.98;
-                background: linear-gradient(90deg, #a7bcff, #f2ea92);
-                box-shadow: 0 0 14px rgba(198, 201, 126, 0.6);
+                opacity: 1;
+                background: linear-gradient(90deg, #7dd9ff, #fff49e);
+                box-shadow: 0 0 18px rgba(255, 236, 130, 0.78), inset 0 0 6px rgba(255, 255, 255, 0.26);
                 animation: none;
             }
 
@@ -6407,6 +6587,72 @@ html.assistant-disabled .assistant-fallback-bubble {
                 cursor: default;
              }
 
+        /* Manual style switch:
+           index.html <body data-storm-style="battery"> (current) or "sprite" (legacy). */
+             body[data-storm-style="sprite"] .control-trio .storm-btn {
+                width: 54px;
+                min-width: 54px;
+                height: 54px;
+                border: 0;
+                border-radius: 0;
+                background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/meter_back.png');
+                background-repeat: no-repeat;
+                background-size: 100% 100%;
+                background-position: center center;
+                box-shadow: none;
+                filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.34));
+             }
+
+             body[data-storm-style="sprite"] .control-trio .storm-btn::before {
+                left: 5px;
+                right: 5px;
+                top: auto;
+                bottom: 3px;
+                height: 6px;
+                border-radius: 2px;
+                border: 1px solid rgba(180, 230, 255, 0.22);
+                background: rgba(8, 14, 20, 0.72);
+                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+             }
+
+             body[data-storm-style="sprite"] .control-trio .storm-btn::after {
+                left: 6px;
+                right: 6px;
+                top: auto;
+                bottom: 4px;
+                height: 4px;
+                border-radius: 2px;
+                background: linear-gradient(90deg, #2ca7ff 0%, #48c8ff 48%, #ffe76f 100%);
+                box-shadow: 0 0 8px rgba(94, 216, 255, 0.4);
+             }
+
+             body[data-storm-style="sprite"] .control-trio .storm-btn .storm-bolt {
+                top: 50%;
+                font-size: 13px;
+             }
+
+             body[data-storm-style="sprite"] .control-trio .storm-btn .storm-batt-cap {
+                display: none;
+             }
+
+             body[data-storm-style="sprite"] .control-trio .storm-btn.combo-tracking,
+             body[data-storm-style="sprite"] .control-trio .storm-btn.combo-near,
+             body[data-storm-style="sprite"] .control-trio .storm-btn.combo-hot,
+             body[data-storm-style="sprite"] .control-trio .storm-btn.charged,
+             body[data-storm-style="sprite"] .control-trio .storm-btn.storm-idle {
+                background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/meter_filling.png') !important;
+                background-size: 200% 200% !important;
+                background-position: 0% 0% !important;
+                animation: howtoStormMeterFramesCharged 640ms steps(4, end) infinite;
+             }
+
+             body[data-storm-style="sprite"] .control-trio .storm-btn.empty {
+                background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/meter_back.png') !important;
+                background-size: 100% 100% !important;
+                background-position: center center !important;
+                animation: none !important;
+             }
+
         /* Slightly smaller on narrow screens */
         @media (max-width:420px) {
             .control-trio .ctrl {
@@ -6419,6 +6665,12 @@ html.assistant-disabled .assistant-fallback-bubble {
                 width: 46px;
                 min-width: 46px;
                 height: 32px;
+             }
+
+             body[data-storm-style="sprite"] .control-trio .storm-btn {
+                width: 50px;
+                min-width: 50px;
+                height: 50px;
              }
         }
 
@@ -6609,8 +6861,14 @@ html.assistant-disabled .assistant-fallback-bubble {
             width: 100%;
         }
 
-        .hud > .control-trio {
+        .hud > #perkHud {
             order: 3;
+            flex: 0 0 100%;
+            width: 100%;
+        }
+
+        .hud > .control-trio {
+            order: 4;
             flex: 0 0 100%;
             width: 100%;
             justify-content: center;
@@ -6642,6 +6900,13 @@ html.assistant-disabled .assistant-fallback-bubble {
                 margin-right: 0;
             }
 
+            .hud > #perkHud {
+                flex: 0 0 auto;
+                width: auto;
+                margin-left: 0;
+                margin-right: auto;
+            }
+
             .hud > .control-trio {
                 flex: 0 0 auto;
                 width: auto;
@@ -6662,6 +6927,16 @@ html.assistant-disabled .assistant-fallback-bubble {
                 width: 52px;
                 min-width: 52px;
                 height: 34px;
+            }
+
+            body[data-storm-style="sprite"] .hud > .control-trio .storm-btn {
+                width: 54px;
+                min-width: 54px;
+                height: 54px;
+            }
+
+            .perk-strip-label {
+                font-size: 6px;
             }
         }
 

@@ -41,7 +41,7 @@
 
 </head>
 
-<body>
+<body data-storm-style="battery">
     <div class="wrap">
         <div class="title-sprite">
             <img src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Gone_Viral_long.png"
@@ -73,6 +73,36 @@
                     <div class="seg" data-idx="9"></div>
                 </div>
                 <div class="meter-count"> <span id="clicks">10</span></div>
+            </div>
+            <div id="perkHud" class="perk-strip" aria-live="polite" aria-label="Active buffs">
+                <span class="perk-strip-label">MODS</span>
+                <span class="perk-chip" data-perk-chip="storm_capacitor" title="Storm Capacitor active">
+                    <span class="perk-chip-key">SC</span>
+                    <span class="perk-chip-count" data-perk-count="storm_capacitor">1</span>
+                </span>
+                <span class="perk-chip" data-perk-chip="armor_piercer" title="Armor Piercer active">
+                    <span class="perk-chip-key">AP</span>
+                    <span class="perk-chip-count" data-perk-count="armor_piercer">0</span>
+                </span>
+                <span class="perk-chip" data-perk-chip="boss_breaker" title="Boss Breaker active">
+                    <span class="perk-chip-key">BB</span>
+                    <span class="perk-chip-count" data-perk-count="boss_breaker">0</span>
+                </span>
+                <span class="perk-chip" data-perk-chip="storm_tuning" title="Storm Tuning active">
+                    <span class="perk-chip-key">ST</span>
+                </span>
+                <span class="perk-chip" data-perk-chip="reserve_expansion" title="Reserve Expansion active">
+                    <span class="perk-chip-key">RE</span>
+                    <span class="perk-chip-count" data-perk-count="reserve_expansion">+0</span>
+                </span>
+                <span class="perk-chip" data-perk-chip="overclocked_reserve" title="Overclocked Reserve active">
+                    <span class="perk-chip-key">OR</span>
+                    <span class="perk-chip-count" data-perk-count="overclocked_reserve">0</span>
+                </span>
+                <span class="perk-chip perk-chip-negative" data-perk-chip="viral_ventures" title="Viral Venture drawbacks active">
+                    <span class="perk-chip-key">VV</span>
+                    <span class="perk-chip-count" data-perk-count="viral_ventures">0</span>
+                </span>
             </div>
 
             <div class="control-trio" role="group" aria-label="Controls">
