@@ -1605,6 +1605,7 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_PHASE2_BREAK_SHATTER_MS = 440;
             const EPIC_BOSS20_PHASE2_BREAK_SHAKE_MS = 820;
             const EPIC_BOSS20_PHASE2_BREAK_SFX_LEAD_MS = 240;
+            const EPIC_BOSS20_PHASE2_POST_SWAP_HOLD_MS = 2000;
             const EPIC_BOSS20_RESCUE_CINEMATIC_MS = 1800;
             const EPIC_BOSS20_RESCUE_STALL_MS = 4000;
             const EPIC_BOSS20_PHASE3_HP = 24;
@@ -7114,8 +7115,6 @@ function escapeHtmlAttr(str) {
                         abortTransition();
                         return;
                     }
-                    const overlay = showBoss20PhaseShiftOverlay();
-                    try { playSfx('boss_level'); } catch (e) { }
                     let phase2Spawned = 0;
                     if (state[idx] !== null && specialState[idx] === 'boss') {
                         const phase2Hp = getBoss20ScaledHp(EPIC_BOSS20_PHASE2_HP);
@@ -7152,8 +7151,8 @@ function escapeHtmlAttr(str) {
                     setTimeout(() => { try { playMiniBossBurstEffect(idx, true); } catch (e) { } }, 260);
                     scheduleRender();
                     updateHUD();
-                    waitForBoss20CinematicAcknowledge(overlay).then(() => {
-                        try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                    const holdMs = Math.max(0, Math.floor(Number(EPIC_BOSS20_PHASE2_POST_SWAP_HOLD_MS) || 2000));
+                    setTimeout(() => {
                         if (sourceBoardGeneration !== boardGeneration) {
                             abortTransition();
                             return;
@@ -7162,21 +7161,34 @@ function escapeHtmlAttr(str) {
                             abortTransition();
                             return;
                         }
-                        boss20State.inCinematic = false;
-                        inputLocked = false;
-                        try {
-                            if (window.Assistant && Assistant.show) {
-                                const filledMsg = phase2Spawned > 0 ? ` Swarm surge detected: ${phase2Spawned} host cells re-seeded.` : '';
-                                Assistant.show('Containment failure. Host entity has reconstituted into a stronger form. Emergency nanobot refill granted.' + filledMsg, { priority: 2 });
+                        const overlay = showBoss20PhaseShiftOverlay();
+                        try { playSfx('boss_level'); } catch (e) { }
+                        waitForBoss20CinematicAcknowledge(overlay).then(() => {
+                            try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                            if (sourceBoardGeneration !== boardGeneration) {
+                                abortTransition();
+                                return;
                             }
-                        } catch (e) { }
-                        scheduleRender();
-                        updateHUD();
-                        ensureBoss20PhaseTimer();
-                    }).catch(() => {
-                        try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
-                        abortTransition();
-                    });
+                            if (state[idx] === null || specialState[idx] !== 'boss') {
+                                abortTransition();
+                                return;
+                            }
+                            boss20State.inCinematic = false;
+                            inputLocked = false;
+                            try {
+                                if (window.Assistant && Assistant.show) {
+                                    const filledMsg = phase2Spawned > 0 ? ` Swarm surge detected: ${phase2Spawned} host cells re-seeded.` : '';
+                                    Assistant.show('Containment failure. Host entity has reconstituted into a stronger form. Emergency nanobot refill granted.' + filledMsg, { priority: 2 });
+                                }
+                            } catch (e) { }
+                            scheduleRender();
+                            updateHUD();
+                            ensureBoss20PhaseTimer();
+                        }).catch(() => {
+                            try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
+                            abortTransition();
+                        });
+                    }, holdMs);
                 }).catch(() => {
                     abortTransition();
                 });
