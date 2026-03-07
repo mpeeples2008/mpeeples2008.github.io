@@ -268,7 +268,7 @@ function escapeHtmlAttr(str) {
             const MINIBOSS_LEVEL15_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/techy-goblin.png';
             const MINIBOSS_LEVEL20_PHASE1_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss.png';
             const MINIBOSS_LEVEL20_PHASE2_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_phase2_alt.png';
-            const MINIBOSS_LEVEL20_PHASE3_SPRITE_URL = MINIBOSS_LEVEL20_PHASE1_SPRITE_URL;
+            const MINIBOSS_LEVEL20_PHASE3_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/final%20form.png';
             const LEVEL20_BOSS_TALK_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_talk.png';
             const BOSS20_PHASE2_SHATTER_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/shatter.png';
             const NANOBOT_DRAIN_SPRITE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanobot_hover.png';
@@ -1149,6 +1149,7 @@ function escapeHtmlAttr(str) {
             let boss20PhaseTimer = null;
             let boss20FinalWindowTimer = null;
             let boss20Phase3TransitionTimer = null;
+            let boss20FinalFormOverlayEl = null;
             let technoGremlinPowerTimer = null;
             let technoGremlinJamUntil = 0;
             let technoGremlinOverclockUntil = 0;
@@ -1606,6 +1607,8 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_PHASE2_BREAK_SHAKE_MS = 820;
             const EPIC_BOSS20_PHASE2_BREAK_SFX_LEAD_MS = 240;
             const EPIC_BOSS20_PHASE2_POST_SWAP_HOLD_MS = 2000;
+            const EPIC_BOSS20_PHASE2_TO_RESCUE_BLACKOUT_MS = 1500;
+            const EPIC_BOSS20_FINALFORM_PRE_RESCUE_HOLD_MS = 2000;
             const EPIC_BOSS20_RESCUE_CINEMATIC_MS = 1800;
             const EPIC_BOSS20_RESCUE_STALL_MS = 4000;
             const EPIC_BOSS20_PHASE3_HP = 24;
@@ -1750,8 +1753,116 @@ function escapeHtmlAttr(str) {
                     phase2DesperationStartedAt: 0,
                     phase2RescueQueued: false,
                     phase2LastRegenAt: 0,
-                    phase2DrainInProgress: false
+                    phase2DrainInProgress: false,
+                    finalFormActive: false,
+                    finalFormAnchor: -1,
+                    finalFormCells: null
                 };
+            }
+
+            function getBoss20CoreCells() {
+                const r0 = Math.max(0, Math.floor((ROWS / 2) - 1));
+                const r1 = Math.min(ROWS - 1, r0 + 1);
+                const c0 = Math.max(0, Math.floor((COLS / 2) - 1));
+                const c1 = Math.min(COLS - 1, c0 + 1);
+                return [r0 * COLS + c0, r0 * COLS + c1, r1 * COLS + c0, r1 * COLS + c1];
+            }
+
+            function isBoss20FinalFormCell(index) {
+                if (!isEpicBoss20Level()) return false;
+                if (!boss20State || !boss20State.finalFormActive) return false;
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx)) return false;
+                const cells = Array.isArray(boss20State.finalFormCells) && boss20State.finalFormCells.length
+                    ? boss20State.finalFormCells
+                    : getBoss20CoreCells();
+                return cells.indexOf(idx) >= 0;
+            }
+
+            function clearBoss20FinalFormOverlay() {
+                try {
+                    if (boss20FinalFormOverlayEl && boss20FinalFormOverlayEl.parentNode) {
+                        boss20FinalFormOverlayEl.parentNode.removeChild(boss20FinalFormOverlayEl);
+                    }
+                } catch (e) { }
+                boss20FinalFormOverlayEl = null;
+            }
+
+            function syncBoss20FinalFormOverlay() {
+                try {
+                    if (!isEpicBoss20Level() || !boss20State || !boss20State.finalFormActive || !boardEl) {
+                        clearBoss20FinalFormOverlay();
+                        return;
+                    }
+                    const cells = Array.isArray(boss20State.finalFormCells) && boss20State.finalFormCells.length
+                        ? boss20State.finalFormCells.slice(0, 4)
+                        : getBoss20CoreCells();
+                    if (!cells.length) {
+                        clearBoss20FinalFormOverlay();
+                        return;
+                    }
+                    const rects = [];
+                    for (let i = 0; i < cells.length; i++) {
+                        const cellEl = boardEl.querySelector(`[data-index='${Math.floor(Number(cells[i]))}']`);
+                        if (!cellEl) continue;
+                        const r = cellEl.getBoundingClientRect();
+                        if (r && r.width > 0 && r.height > 0) rects.push(r);
+                    }
+                    if (!rects.length) {
+                        clearBoss20FinalFormOverlay();
+                        return;
+                    }
+                    let minL = rects[0].left;
+                    let minT = rects[0].top;
+                    let maxR = rects[0].right;
+                    let maxB = rects[0].bottom;
+                    for (let i = 1; i < rects.length; i++) {
+                        minL = Math.min(minL, rects[i].left);
+                        minT = Math.min(minT, rects[i].top);
+                        maxR = Math.max(maxR, rects[i].right);
+                        maxB = Math.max(maxB, rects[i].bottom);
+                    }
+                    if (!boss20FinalFormOverlayEl) {
+                        const el = document.createElement('div');
+                        el.className = 'boss20-final-form-overlay';
+                        const sheet = document.createElement('div');
+                        sheet.className = 'boss20-final-form-sheet';
+                        sheet.style.backgroundImage = `url('${MINIBOSS_LEVEL20_PHASE3_SPRITE_URL || MINIBOSS_LEVEL20_PHASE2_SPRITE_URL || MINIBOSS_SPRITE_URL}')`;
+                        const hp = document.createElement('div');
+                        hp.className = 'boss20-final-form-hp';
+                        const hpFill = document.createElement('span');
+                        hp.appendChild(hpFill);
+                        el.appendChild(sheet);
+                        el.appendChild(hp);
+                        document.body.appendChild(el);
+                        boss20FinalFormOverlayEl = el;
+                    }
+                    boss20FinalFormOverlayEl.style.left = `${Math.round(minL)}px`;
+                    boss20FinalFormOverlayEl.style.top = `${Math.round(minT)}px`;
+                    boss20FinalFormOverlayEl.style.width = `${Math.max(1, Math.round(maxR - minL))}px`;
+                    boss20FinalFormOverlayEl.style.height = `${Math.max(1, Math.round(maxB - minT))}px`;
+                    try {
+                        const hpEl = boss20FinalFormOverlayEl.querySelector('.boss20-final-form-hp');
+                        const hpFill = hpEl ? hpEl.querySelector('span') : null;
+                        const m = specialMetaState[Math.floor(Number(boss20State.finalFormAnchor))] || {};
+                        const hpNow = Math.max(0, Number(m.hp) || Number(boss20State.hp) || 0);
+                        const hpMax = Math.max(1, Number(m.maxHp) || Number(boss20State.maxHp) || 1);
+                        const ratio = Math.max(0, Math.min(1, hpNow / hpMax));
+                        if (hpFill) hpFill.style.transform = `scaleX(${ratio})`;
+                    } catch (e) { }
+                } catch (e) {
+                    clearBoss20FinalFormOverlay();
+                }
+            }
+
+            function mapBoss20FinalFormHitIndex(index) {
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx)) return idx;
+                if (!isBoss20FinalFormCell(idx)) return idx;
+                const anchor = Math.floor(Number(boss20State && boss20State.finalFormAnchor));
+                if (!Number.isFinite(anchor) || anchor < 0 || anchor >= state.length) return idx;
+                if (specialState[anchor] !== 'boss' || state[anchor] === null) return idx;
+                return anchor;
             }
             let boss20State = createDefaultBoss20State();
             const bossFuelLastAtByLevel = Object.create(null);
@@ -5813,6 +5924,7 @@ function escapeHtmlAttr(str) {
                         });
                     }
                 } catch (e) { }
+                clearBoss20FinalFormOverlay();
                 boss20State = createDefaultBoss20State();
                 boss20BlockerHidden = false;
                 boss20BlockerPaused = false;
@@ -5991,6 +6103,7 @@ function escapeHtmlAttr(str) {
                 const empties = [];
                 let nonBossOccupied = 0;
                 for (let i = 0; i < state.length; i++) {
+                    if (isBoss20FinalFormCell(i)) continue;
                     if (specialState[i] === 'boss') continue;
                     if (state[i] === null) empties.push(i);
                     else nonBossOccupied++;
@@ -6005,6 +6118,7 @@ function escapeHtmlAttr(str) {
                 for (let i = 0; i < addCount; i++) {
                     const idx = empties[i];
                     if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) continue;
+                    if (isBoss20FinalFormCell(idx)) continue;
                     if (state[idx] !== null || specialState[idx] === 'boss') continue;
                     state[idx] = sampleSizeFromWeights(sizeWeights, 2);
                     if (Math.random() < armoredChance) setSpecialForCell(idx, 'armored');
@@ -6944,6 +7058,69 @@ function escapeHtmlAttr(str) {
                 return Date.now() < Number(boss20State && boss20State.rescueShieldUntil);
             }
 
+            function runBoss20RescueBlackoutAndFinalForm(index, meta, sourceBoardGeneration = boardGeneration) {
+                return new Promise((resolve) => {
+                    try {
+                        const idx = Math.floor(Number(index));
+                        if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) {
+                            resolve(false);
+                            return;
+                        }
+                        const overlay = document.createElement('div');
+                        overlay.className = 'boss20-global-blackout';
+                        const fadeMs = Math.max(200, Math.floor(Number(EPIC_BOSS20_PHASE2_TO_RESCUE_BLACKOUT_MS) || 1500));
+                        overlay.style.setProperty('--boss20-blackout-ms', `${fadeMs}ms`);
+                        document.body.appendChild(overlay);
+                        setBoss20BoardFreeze(true);
+                        requestAnimationFrame(() => {
+                            try { overlay.classList.add('show'); } catch (e) { }
+                        });
+                        setTimeout(() => {
+                            if (sourceBoardGeneration !== boardGeneration) {
+                                try { overlay.remove(); } catch (e) { }
+                                setBoss20BoardFreeze(false);
+                                resolve(false);
+                                return;
+                            }
+                            const coreCells = getBoss20CoreCells();
+                            const anchor = coreCells[0];
+                            for (let i = 0; i < coreCells.length; i++) {
+                                const cellIndex = coreCells[i];
+                                state[cellIndex] = null;
+                                clearSpecialForCell(cellIndex);
+                                clearBossGooShieldAt(cellIndex);
+                                clearBiofilmAt(cellIndex);
+                            }
+                            state[anchor] = 3;
+                            specialState[anchor] = 'boss';
+                            const bossMeta = Object.assign({}, meta || ensureSpecialMeta(idx) || {});
+                            bossMeta.isBoss = true;
+                            bossMeta.bossLevel = 20;
+                            bossMeta.isFinalForm = true;
+                            if (!Number.isFinite(Number(bossMeta.phase)) || Number(bossMeta.phase) < 2) bossMeta.phase = 2;
+                            if (!Number.isFinite(Number(bossMeta.hp)) || Number(bossMeta.hp) <= 0) bossMeta.hp = Math.max(1, Number(boss20State.hp) || 1);
+                            if (!Number.isFinite(Number(bossMeta.maxHp)) || Number(bossMeta.maxHp) <= 0) bossMeta.maxHp = Math.max(1, Number(boss20State.maxHp) || Number(bossMeta.hp) || 1);
+                            specialMetaState[anchor] = bossMeta;
+                            boss20State.active = true;
+                            boss20State.phase = Math.max(2, Math.floor(Number(bossMeta.phase) || 2));
+                            boss20State.hp = Math.max(0, Number(bossMeta.hp) || 0);
+                            boss20State.maxHp = Math.max(1, Number(bossMeta.maxHp) || 1);
+                            boss20State.finalFormActive = true;
+                            boss20State.finalFormAnchor = anchor;
+                            boss20State.finalFormCells = coreCells.slice();
+                            try { setMiniBossStateFromMeta(anchor, bossMeta); } catch (e) { }
+                            try { overlay.remove(); } catch (e) { }
+                            setBoss20BoardFreeze(false);
+                            try { render(); } catch (e) { scheduleRender(); }
+                            resolve(true);
+                        }, fadeMs);
+                    } catch (e) {
+                        setBoss20BoardFreeze(false);
+                        resolve(false);
+                    }
+                });
+            }
+
             function triggerBoss20RescueSequence(index, meta) {
                 if (!isEpicBoss20Level()) return false;
                 if (!meta || !meta.isBoss) return false;
@@ -6965,16 +7142,26 @@ function escapeHtmlAttr(str) {
                 clicksLeft = 0;
                 updateHUD();
                 const sourceBoardGeneration = boardGeneration;
-                const overlay = showBoss20RescueOverlay();
-                try { playSfx('achievement'); } catch (e) { }
-                waitForBoss20CinematicAcknowledge(overlay).then(() => {
+                runBoss20RescueBlackoutAndFinalForm(idx, meta, sourceBoardGeneration).then(() => {
+                    const holdMs = Math.max(0, Math.floor(Number(EPIC_BOSS20_FINALFORM_PRE_RESCUE_HOLD_MS) || 2000));
+                    setTimeout(() => {
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        boss20State.inCinematic = false;
+                        inputLocked = false;
+                        return;
+                    }
+                    const activeBossIndices = getBossIndicesForLevel(20);
+                    const bossIndex = activeBossIndices.length ? activeBossIndices[0] : idx;
+                    const overlay = showBoss20RescueOverlay();
+                    try { playSfx('achievement'); } catch (e) { }
+                    waitForBoss20CinematicAcknowledge(overlay).then(() => {
                     try { if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay); } catch (e) { }
                     if (sourceBoardGeneration !== boardGeneration) {
                         boss20State.inCinematic = false;
                         inputLocked = false;
                         return;
                     }
-                    if (state[idx] === null || specialState[idx] !== 'boss') {
+                    if (state[bossIndex] === null || specialState[bossIndex] !== 'boss') {
                         boss20State.inCinematic = false;
                         inputLocked = false;
                         return;
@@ -7003,10 +7190,17 @@ function escapeHtmlAttr(str) {
                     boss20Phase3TransitionTimer = setTimeout(() => {
                         boss20Phase3TransitionTimer = null;
                         if (sourceBoardGeneration !== boardGeneration) return;
-                        if (state[idx] === null || specialState[idx] !== 'boss') return;
-                        const m = ensureSpecialMeta(idx) || meta || {};
-                        triggerBoss20PhaseThreeTransition(idx, m);
+                        const liveBossIndices = getBossIndicesForLevel(20);
+                        const liveBossIndex = liveBossIndices.length ? liveBossIndices[0] : bossIndex;
+                        if (state[liveBossIndex] === null || specialState[liveBossIndex] !== 'boss') return;
+                        const m = ensureSpecialMeta(liveBossIndex) || meta || {};
+                        triggerBoss20PhaseThreeTransition(liveBossIndex, m);
                     }, Math.max(420, Math.floor(EPIC_BOSS20_RESCUE_STALL_MS * 0.38)));
+                    });
+                    }, holdMs);
+                }).catch(() => {
+                    boss20State.inCinematic = false;
+                    inputLocked = false;
                 });
                 return true;
             }
@@ -7271,6 +7465,7 @@ function escapeHtmlAttr(str) {
                 const empties = [];
                 for (let i = 0; i < state.length; i++) {
                     if (i === idx) continue;
+                    if (isBoss20FinalFormCell(i)) continue;
                     if (state[i] === null) {
                         empties.push(i);
                         continue;
@@ -7364,6 +7559,7 @@ function escapeHtmlAttr(str) {
             function applyBiofilmAt(index, opts = null) {
                 const i = Math.floor(Number(index));
                 if (!Number.isFinite(i) || i < 0 || i >= state.length) return false;
+                if (isBoss20FinalFormCell(i)) return false;
                 if (state[i] !== null) return false;
                 if (specialState[i] === 'boss') return false;
                 const options = opts || {};
@@ -7640,6 +7836,7 @@ function escapeHtmlAttr(str) {
                     c += dc;
                     if (r < 0 || r >= ROWS || c < 0 || c >= COLS) break;
                     const idx = r * COLS + c;
+                    if (isBoss20FinalFormCell(idx)) continue;
                     if (state[idx] === null) out.push(idx);
                 }
                 return out;
@@ -7688,6 +7885,7 @@ function escapeHtmlAttr(str) {
                 const useLevel5SummonFx = (bossLevel === 5 && Number.isFinite(originIndex));
                 const anyCandidates = [];
                 for (let i = 0; i < state.length; i++) {
+                    if (isBoss20FinalFormCell(i)) continue;
                     if (state[i] === null) anyCandidates.push(i);
                 }
                 if (!anyCandidates.length) return 0;
@@ -7723,6 +7921,7 @@ function escapeHtmlAttr(str) {
                         const pick = pool.pop();
                         if (!Number.isFinite(pick)) continue;
                         if (used.has(pick)) continue;
+                        if (isBoss20FinalFormCell(pick)) continue;
                         if (state[pick] !== null) continue;
                         used.add(pick);
                         return pick;
@@ -7781,6 +7980,7 @@ function escapeHtmlAttr(str) {
                     const originRow = Math.floor(origin / COLS);
                     const originCol = origin % COLS;
                     for (let i = 0; i < state.length; i++) {
+                        if (isBoss20FinalFormCell(i)) continue;
                         if (state[i] !== null) continue;
                         const row = Math.floor(i / COLS);
                         const col = i % COLS;
@@ -7789,6 +7989,7 @@ function escapeHtmlAttr(str) {
                 }
                 if (!candidates.length) {
                     for (let i = 0; i < state.length; i++) {
+                        if (isBoss20FinalFormCell(i)) continue;
                         if (state[i] === null) candidates.push(i);
                     }
                 }
@@ -8255,7 +8456,17 @@ function escapeHtmlAttr(str) {
                 }
             }
 
-            function findNextBubble(index, dr, dc) { let r = Math.floor(index / COLS), c = index % COLS; while (true) { r += dr; c += dc; if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null; const i = r * COLS + c; if (state[i] !== null) return i; } }
+            function findNextBubble(index, dr, dc) {
+                let r = Math.floor(index / COLS), c = index % COLS;
+                while (true) {
+                    r += dr;
+                    c += dc;
+                    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return null;
+                    const i = r * COLS + c;
+                    if (isBoss20FinalFormCell(i)) return i;
+                    if (state[i] !== null) return i;
+                }
+            }
             function findNextBiofilm(index, dr, dc) {
                 let r = Math.floor(index / COLS), c = index % COLS;
                 while (true) {
@@ -8367,7 +8578,10 @@ function escapeHtmlAttr(str) {
                     const isProjection = !!meta.isProjection;
                     const bossLevel = Math.floor(Number(meta.bossLevel) || 0);
                     const bossPhase = (bossLevel === 20) ? Math.floor(Number(meta.phase) || 0) : 0;
-                    const bossSpriteProfile = getBossSpriteProfileForLevel(bossLevel, bossPhase);
+                    const isFinalForm = !!meta.isFinalForm;
+                    const bossSpriteProfile = isFinalForm
+                        ? { url: MINIBOSS_LEVEL20_PHASE3_SPRITE_URL || MINIBOSS_LEVEL20_PHASE2_SPRITE_URL || MINIBOSS_SPRITE_URL, sheetClass: 'boss-sprite-sheet--grid16', containerClass: 'special-boss-level20-finalform' }
+                        : getBossSpriteProfileForLevel(bossLevel, bossPhase);
                     const bossSpriteUrl = (bossSpriteProfile && bossSpriteProfile.url) || MINIBOSS_SPRITE_URL;
                     if (isProjection) container.classList.add('special-boss-projection');
                     if (bossLevel === 10) container.classList.add('special-boss-level10');
@@ -8375,6 +8589,7 @@ function escapeHtmlAttr(str) {
                     if (bossLevel === 20) container.classList.add('special-boss-level20');
                     if (bossLevel === 20 && bossPhase >= 2) container.classList.add('special-boss-level20-phase2');
                     if (bossLevel === 20 && bossPhase >= 3) container.classList.add('special-boss-level20-phase3');
+                    if (bossLevel === 20 && isFinalForm) container.classList.add('special-boss-level20-finalform');
                     if (bossSpriteProfile && bossSpriteProfile.containerClass) container.classList.add(bossSpriteProfile.containerClass);
                     if (!isProjection && bossLevel === 20) {
                         const now = Date.now();
@@ -8447,6 +8662,8 @@ function escapeHtmlAttr(str) {
                     const gridCell = document.createElement('div');
                     gridCell.className = 'cell';
                     gridCell.dataset.index = i; // petri underlay
+                    if (isBoss20FinalFormCell(i)) gridCell.classList.add('boss20-core-zone');
+                    if (Number(i) === Number(boss20State && boss20State.finalFormAnchor)) gridCell.classList.add('boss20-core-anchor');
                     if (specialDef) {
                         gridCell.classList.add('has-special');
                         if (specialDef.className) gridCell.classList.add(specialDef.className);
@@ -8500,6 +8717,7 @@ function escapeHtmlAttr(str) {
                     }
                     boardEl.appendChild(gridCell);
                 }
+                syncBoss20FinalFormOverlay();
                 ensureBossGooShieldTimer();
                 ensureBiofilmTimer();
                 ensureTechnoGremlinPowerTimer();
@@ -8939,9 +9157,10 @@ function escapeHtmlAttr(str) {
                                             scheduleRender();
                                             return;
                                         }
-                                        if (!hitTargets.has(next)) {
-                                            hitTargets.add(next);
-                                            handleClick(next, false, tracker);
+                                        const hitIndex = mapBoss20FinalFormHitIndex(next);
+                                        if (!hitTargets.has(hitIndex)) {
+                                            hitTargets.add(hitIndex);
+                                            handleClick(hitIndex, false, tracker);
                                         }
                                     } catch (e) { }
                                 });
@@ -9883,6 +10102,11 @@ function escapeHtmlAttr(str) {
                 const afterChain = () => {
                     if (isUser) {
                         try { moveBlockerAfterResolution(); } catch (e) { }
+                    }
+                    // Keep input locked while level-20 boss cinematics/transitions are active.
+                    if (isEpicBoss20Level() && boss20State && boss20State.inCinematic) {
+                        inputLocked = true;
+                        return;
                     }
                     inputLocked = false; // allow next click
                     if (isUser && maybeTriggerBoss20Phase2RescueByClicks()) return;

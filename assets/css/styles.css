@@ -963,6 +963,13 @@
                 transform-origin: center center;
             }
 
+            .virus.special-boss .boss-sprite-sheet.boss-sprite-sheet--grid16 {
+                background-position: 0% 0%;
+                background-size: 400% 400%;
+                animation: minibossSpriteFrames16 1200ms step-end infinite;
+                transform-origin: center center;
+            }
+
             .virus.special-boss.special-boss-level10,
             .virus.special-boss.special-boss-grid9 {
                 animation: none;
@@ -1038,6 +1045,19 @@
             .virus.special-boss.special-boss-level20-phase3::before {
                 background: radial-gradient(circle at 35% 30%, rgba(255, 230, 205, 0.72), rgba(255, 154, 102, 0.36) 46%, rgba(82, 26, 10, 0.22) 100%);
             }
+
+        .cell.boss20-core-zone {
+            outline: 1px solid rgba(255, 176, 132, 0.16);
+            outline-offset: -1px;
+        }
+
+        .cell.boss20-core-anchor .virus.special-boss.special-boss-level20-finalform .face-sprite {
+            opacity: 0;
+        }
+
+        .cell.boss20-core-anchor .virus.special-boss.special-boss-level20-finalform .boss-mini-hp {
+            display: none;
+        }
 
         .virus.special-boss.special-boss-level20-weak {
             box-shadow: 0 0 0 1px rgba(148, 224, 255, 0.85), 0 0 24px rgba(112, 202, 255, 0.7), inset 0 0 18px rgba(146, 230, 255, 0.28);
@@ -1216,6 +1236,67 @@
             background: #fff;
             opacity: 0;
             animation: boss20WhiteFlash var(--boss20-flash-ms, 50ms) linear forwards;
+        }
+
+        .boss20-global-blackout {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 95273;
+            background: #000;
+            opacity: 0;
+            transition: opacity var(--boss20-blackout-ms, 1500ms) linear;
+        }
+
+        .boss20-global-blackout.show {
+            opacity: 1;
+        }
+
+        .boss20-final-form-overlay {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 120px;
+            height: 120px;
+            pointer-events: none;
+            z-index: 95239;
+            overflow: visible;
+        }
+
+        .boss20-final-form-sheet {
+            width: 100%;
+            height: 100%;
+            background-repeat: no-repeat;
+            background-position: 0% 0%;
+            background-size: 400% 400%;
+            image-rendering: pixelated;
+            animation: minibossSpriteFrames16 1200ms step-end infinite;
+            filter: drop-shadow(0 0 16px rgba(255, 156, 108, 0.45));
+        }
+
+        .boss20-final-form-hp {
+            position: absolute;
+            left: 4%;
+            right: 4%;
+            top: -14px;
+            height: 13px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 236, 164, 0.98);
+            background: rgba(22, 16, 6, 0.94);
+            box-shadow: 0 0 12px rgba(255, 220, 110, 0.55), inset 0 0 0 1px rgba(255, 244, 196, 0.26);
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .boss20-final-form-hp > span {
+            display: block;
+            width: 100%;
+            height: 100%;
+            transform-origin: left center;
+            transform: scaleX(1);
+            background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0 8px, rgba(255, 255, 255, 0.05) 8px 16px), linear-gradient(90deg, #f2bf38, #fff0a2);
+            box-shadow: 0 0 14px rgba(255, 222, 120, 0.8);
+            transition: transform 140ms ease-out;
         }
 
         .boss20-shatter-sprite {
@@ -1730,6 +1811,25 @@
             50.001%, 66.666% { background-position: 100% 50%; }
             66.667%, 83.333% { background-position: 0% 100%; }
             83.334%, 100% { background-position: 100% 100%; }
+        }
+
+        @keyframes minibossSpriteFrames16 {
+            0%, 6.25% { background-position: 0% 0%; }
+            6.251%, 12.5% { background-position: 33.333% 0%; }
+            12.501%, 18.75% { background-position: 66.666% 0%; }
+            18.751%, 25% { background-position: 100% 0%; }
+            25.001%, 31.25% { background-position: 0% 33.333%; }
+            31.251%, 37.5% { background-position: 33.333% 33.333%; }
+            37.501%, 43.75% { background-position: 66.666% 33.333%; }
+            43.751%, 50% { background-position: 100% 33.333%; }
+            50.001%, 56.25% { background-position: 0% 66.666%; }
+            56.251%, 62.5% { background-position: 33.333% 66.666%; }
+            62.501%, 68.75% { background-position: 66.666% 66.666%; }
+            68.751%, 75% { background-position: 100% 66.666%; }
+            75.001%, 81.25% { background-position: 0% 100%; }
+            81.251%, 87.5% { background-position: 33.333% 100%; }
+            87.501%, 93.75% { background-position: 66.666% 100%; }
+            93.751%, 100% { background-position: 100% 100%; }
         }
 
         @keyframes minibossWobble {
