@@ -1155,6 +1155,8 @@ function escapeHtmlAttr(str) {
             let boss20Phase3TransitionTimer = null;
             let boss20VoiceTimer = null;
             let boss20LaughLastAt = 0;
+            let boss20ComboCutoffUntil = 0;
+            let boss20ComboCutoffResumeTimer = null;
             let boss20FinalFormOverlayEl = null;
             let boss20FinalShotReticleEl = null;
             let technoGremlinPowerTimer = null;
@@ -1633,6 +1635,11 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_FINAL_WINDOW_MS = 2500;
             const EPIC_BOSS20_FINAL_DAMAGE_MULT = 2;
             const EPIC_BOSS20_PHASE3_SHIFT_MS = 1700;
+            const EPIC_BOSS20_COMBO_CUTOFF_ENABLED = true;
+            const EPIC_BOSS20_COMBO_CUTOFF_AT = 12;
+            const EPIC_BOSS20_COMBO_CUTOFF_LOCK_MS = 240;
+            const EPIC_BOSS20_COMBO_CUTOFF_FLASH_MS = 120;
+            const EPIC_BOSS20_COMBO_CUTOFF_SFX = 'techno_jammer';
             // Modular boss pacing profile:
             // - `minNonBossViruses`: keep at least this many non-boss viruses alive during boss combat.
             // - `fuelSpawnSizeWeights`: [S1,S2,S3,S4] mix used when replenishing board fuel.
@@ -2044,7 +2051,7 @@ function escapeHtmlAttr(str) {
                     id: 'final_viral_hostile_buyout',
                     source: 'broker',
                     title: 'Hostile Buyout',
-                    desc: '+15 clicks now, +1 Nano Storm charge now, boss HP -20%. Cost: keep 49% score and no future Double Deals from score.',
+                    desc: '+15 clicks, +1 Nano Storm charge, and boss HP -20%; lose 51% of your current points and all future Double Deals are disabled.',
                     cardFrontUrl: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_quickfix.png'
                 },
                 bossSlowMs: 20000,
@@ -6379,6 +6386,16 @@ function escapeHtmlAttr(str) {
                 clearBoss20FinalShotReticle();
                 boss20State = createDefaultBoss20State();
                 boss20LaughLastAt = 0;
+                boss20ComboCutoffUntil = 0;
+                if (boss20ComboCutoffResumeTimer) {
+                    clearTimeout(boss20ComboCutoffResumeTimer);
+                    boss20ComboCutoffResumeTimer = null;
+                }
+                try {
+                    if (boardEl && boardEl.classList) {
+                        boardEl.classList.remove('boss20-combo-cutoff-flash', 'boss20-combo-cutoff-shake');
+                    }
+                } catch (e) { }
                 boss20BlockerHidden = false;
                 boss20BlockerPaused = false;
                 return boss20State;
@@ -9862,6 +9879,9 @@ function escapeHtmlAttr(str) {
                         incrementAchievementStat('runPops', 1, 'run');
                         incrementAchievementStat('totalPopsLifetime', 1, 'lifetime');
                         updateStormChainProgress(tracker.pops);
+                        if ((tracker.pops || 0) >= Math.max(1, Number(EPIC_BOSS20_COMBO_CUTOFF_AT) || 12)) {
+                            triggerBoss20ComboCutoff(tracker);
+                        }
 
                         // Chain click rewards are profile-driven (start pop + cadence).
                         const difficulty = getCurrentDifficulty();
@@ -10308,6 +10328,84 @@ function escapeHtmlAttr(str) {
 
             function particlesActive() { try { if (PARTICLE_POOL.some(p => p && p._inUse)) return true; if (document.querySelectorAll && document.querySelectorAll('.particle.animate').length > 0) return true; } catch (e) { } return false; }
 
+            function canBoss20ComboCutoff() {
+                if (!EPIC_BOSS20_COMBO_CUTOFF_ENABLED) return false;
+                if (!isEpicBoss20Level()) return false;
+                if (!boss20State || !boss20State.active) return false;
+                if (boss20State.inCinematic) return false;
+                if (boss20State.inFinalWindow) return false;
+                if (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease) return false;
+                return true;
+            }
+
+            function clearActiveParticlesImmediate() {
+                try {
+                    for (let i = 0; i < PARTICLE_POOL.length; i++) {
+                        const p = PARTICLE_POOL[i];
+                        if (!p) continue;
+                        try { if (p._releaseTimeout) clearTimeout(p._releaseTimeout); } catch (e) { }
+                        try { p._releaseTimeout = null; } catch (e) { }
+                        try { p.classList.remove('animate'); } catch (e) { }
+                        try { releaseParticle(p); } catch (e) { }
+                    }
+                } catch (e) { }
+                try {
+                    const active = document.querySelectorAll('.particle.animate');
+                    active.forEach((p) => {
+                        try { p.classList.remove('animate'); } catch (e2) { }
+                    });
+                } catch (e) { }
+            }
+
+            function applyBoss20ComboCutoffFx() {
+                if (!boardEl) return;
+                try {
+                    boardEl.classList.remove('boss20-combo-cutoff-flash', 'boss20-combo-cutoff-shake');
+                    void boardEl.offsetWidth;
+                    boardEl.classList.add('boss20-combo-cutoff-flash');
+                    boardEl.classList.add('boss20-combo-cutoff-shake');
+                    setTimeout(() => {
+                        try { boardEl.classList.remove('boss20-combo-cutoff-flash'); } catch (e) { }
+                    }, Math.max(70, Math.floor(Number(EPIC_BOSS20_COMBO_CUTOFF_FLASH_MS) || 120)));
+                    setTimeout(() => {
+                        try { boardEl.classList.remove('boss20-combo-cutoff-shake'); } catch (e) { }
+                    }, Math.max(120, Math.floor(Number(EPIC_BOSS20_COMBO_CUTOFF_LOCK_MS) || 240)));
+                } catch (e) { }
+            }
+
+            function scheduleBoss20ComboCutoffResume() {
+                try {
+                    if (boss20ComboCutoffResumeTimer) clearTimeout(boss20ComboCutoffResumeTimer);
+                } catch (e) { }
+                const delay = Math.max(80, Math.floor(Number(EPIC_BOSS20_COMBO_CUTOFF_LOCK_MS) || 240));
+                boss20ComboCutoffResumeTimer = setTimeout(() => {
+                    boss20ComboCutoffResumeTimer = null;
+                    if (Date.now() < Number(boss20ComboCutoffUntil || 0)) return;
+                    if (isEpicBoss20Level() && boss20State && boss20State.inCinematic) {
+                        inputLocked = true;
+                        return;
+                    }
+                    if (!stormResolving) inputLocked = false;
+                    if (clicksLeft <= 0) checkOutOfClicks();
+                }, delay + 12);
+            }
+
+            function triggerBoss20ComboCutoff(tracker = null) {
+                if (!canBoss20ComboCutoff()) return false;
+                if (tracker && tracker.comboCutoffTriggered) return false;
+                const now = Date.now();
+                if (now < Number(boss20ComboCutoffUntil || 0)) return false;
+                boss20ComboCutoffUntil = now + Math.max(80, Math.floor(Number(EPIC_BOSS20_COMBO_CUTOFF_LOCK_MS) || 240));
+                if (tracker) tracker.comboCutoffTriggered = true;
+                clearActiveParticlesImmediate();
+                stormResolving = false;
+                inputLocked = true;
+                applyBoss20ComboCutoffFx();
+                try { playSfx(EPIC_BOSS20_COMBO_CUTOFF_SFX || 'techno_jammer'); } catch (e) { }
+                scheduleBoss20ComboCutoffResume();
+                return true;
+            }
+
             function waitForParticlesThenShow(tracker, cb) { const check = () => { if (!particlesActive()) { try { cb(); } catch (e) { } } else { requestAnimationFrame(check); } }; requestAnimationFrame(check); }
 
             /* ---------- Retro 8-bit SVG icons ---------- */
@@ -10729,6 +10827,11 @@ function escapeHtmlAttr(str) {
                     // Keep input locked while level-20 boss cinematics/transitions are active.
                     if (isEpicBoss20Level() && boss20State && boss20State.inCinematic) {
                         inputLocked = true;
+                        return;
+                    }
+                    if (Date.now() < Number(boss20ComboCutoffUntil || 0)) {
+                        inputLocked = true;
+                        scheduleBoss20ComboCutoffResume();
                         return;
                     }
                     inputLocked = false; // allow next click

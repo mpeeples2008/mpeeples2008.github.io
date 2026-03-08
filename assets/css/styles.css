@@ -719,6 +719,15 @@
             animation: stormPrechargeBoard 170ms ease-out both;
         }
 
+        #board.boss20-combo-cutoff-flash {
+            animation: boss20ComboCutoffFlash 120ms linear both;
+            box-shadow: 0 0 0 9999px rgba(255, 250, 240, 0.18) inset, 0 0 34px rgba(255, 88, 88, 0.52);
+        }
+
+        #board.boss20-combo-cutoff-shake {
+            animation: boss20ComboCutoffShake 240ms cubic-bezier(0.2, 0.78, 0.2, 1) both;
+        }
+
         .storm-precharge-ring {
             position: fixed;
             width: 20px;
@@ -1297,6 +1306,21 @@
             background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0 8px, rgba(255, 255, 255, 0.05) 8px 16px), linear-gradient(90deg, #f2bf38, #fff0a2);
             box-shadow: 0 0 14px rgba(255, 222, 120, 0.8);
             transition: transform 140ms ease-out;
+        }
+
+        @keyframes boss20ComboCutoffFlash {
+            0% { filter: brightness(1); }
+            35% { filter: brightness(1.32) saturate(1.15); }
+            100% { filter: brightness(1); }
+        }
+
+        @keyframes boss20ComboCutoffShake {
+            0% { transform: translate3d(0, 0, 0); }
+            20% { transform: translate3d(-5px, 2px, 0); }
+            40% { transform: translate3d(4px, -2px, 0); }
+            60% { transform: translate3d(-3px, -1px, 0); }
+            80% { transform: translate3d(3px, 1px, 0); }
+            100% { transform: translate3d(0, 0, 0); }
         }
 
         .boss20-final-shot-reticle {
