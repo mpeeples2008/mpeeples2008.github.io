@@ -2,7 +2,7 @@
         (function () {
             const intro = document.getElementById('aiIntro');
             const textBox = document.getElementById('aiIntroText');
-            const startBtn = document.getElementById('aiStartBtn');
+            const startButtons = Array.from(document.querySelectorAll('#aiStartBtn, #aiEnduranceBtn'));
 
             // Example boot-up lines (can be customized)
             const introLines = [
@@ -25,12 +25,14 @@
             window.addEventListener('load', () => setTimeout(nextLine, 600));
 
             // Legacy intro click handler should not start/own music.
-            if (startBtn) {
-                startBtn.addEventListener('click', () => {
-                    try {
-                        if (intro) intro.classList.add('fade-out');
-                        if (typeof startGame === 'function') startGame();
-                    } catch (e) { console.warn(e); }
+            if (startButtons.length) {
+                startButtons.forEach((startBtn) => {
+                    startBtn.addEventListener('click', () => {
+                        try {
+                            if (intro) intro.classList.add('fade-out');
+                            if (typeof startGame === 'function') startGame();
+                        } catch (e) { console.warn(e); }
+                    });
                 });
             }
         })();

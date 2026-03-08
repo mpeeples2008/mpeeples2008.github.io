@@ -325,6 +325,26 @@ function escapeHtmlAttr(str) {
             let musicIndex = 0;
             let musicAudio = null;
             let runStartedByPlayer = false;
+            const GAME_MODES = { adventure: 'adventure', endurance: 'endurance' };
+            let currentGameMode = GAME_MODES.adventure;
+            function setGameMode(nextMode) {
+                const normalized = String(nextMode || '').toLowerCase() === GAME_MODES.endurance
+                    ? GAME_MODES.endurance
+                    : GAME_MODES.adventure;
+                currentGameMode = normalized;
+                try {
+                    if (document.body) document.body.dataset.gameMode = normalized;
+                } catch (e) { }
+                try { window.currentGameMode = normalized; } catch (e) { }
+                return normalized;
+            }
+            function isEnduranceMode() {
+                return currentGameMode === GAME_MODES.endurance;
+            }
+            function isAdventureMode() {
+                return !isEnduranceMode();
+            }
+            setGameMode(GAME_MODES.adventure);
             let musicOverrideMode = '';
             let musicOverrideFadeTimer = null;
             let musicWatchdogTimer = null;
@@ -1363,6 +1383,13 @@ function escapeHtmlAttr(str) {
                 };
                 window.getLevel = function () {
                     return getCurrentLevelNumber();
+                };
+                window.setGameMode = function (mode) {
+                    const applied = setGameMode(mode);
+                    return { mode: applied };
+                };
+                window.getGameMode = function () {
+                    return currentGameMode;
                 };
                 window.addClicks = function (amount = 1, allowOverCap = false) {
                     const delta = Math.floor(Number(amount) || 0);
@@ -2840,10 +2867,20 @@ function escapeHtmlAttr(str) {
             const scoreEl = document.getElementById('score');
             const stormBtn = document.getElementById('stormBtn');
             const aiStartBtn = document.getElementById('aiStartBtn');
+            const aiEnduranceBtn = document.getElementById('aiEnduranceBtn');
             const startModalCloseBtn = document.getElementById('startModalClose');
             syncTutorialGateFromDom();
             if (aiStartBtn) {
                 aiStartBtn.addEventListener('click', () => {
+                    setGameMode(GAME_MODES.adventure);
+                    runStartedByPlayer = true;
+                    tutorialGateState.startPressed = true;
+                    markAudioUserInteracted();
+                });
+            }
+            if (aiEnduranceBtn) {
+                aiEnduranceBtn.addEventListener('click', () => {
+                    setGameMode(GAME_MODES.endurance);
                     runStartedByPlayer = true;
                     tutorialGateState.startPressed = true;
                     markAudioUserInteracted();
@@ -3886,6 +3923,7 @@ function escapeHtmlAttr(str) {
             }
 
             function shouldShowFinalOfferForLevel(levelNum) {
+                if (isEnduranceMode()) return false;
                 const lvl = Math.max(1, Math.floor(Number(levelNum) || getCurrentLevelNumber()));
                 if (!FINAL_OFFER_CONFIG || FINAL_OFFER_CONFIG.enabled === false) return false;
                 if (lvl !== Math.max(1, Math.floor(Number(FINAL_OFFER_CONFIG.level) || 20))) return false;
@@ -4113,6 +4151,7 @@ function escapeHtmlAttr(str) {
             }
 
             function canShowRunPerkPopup() {
+                if (isEnduranceMode()) return false;
                 if (!runPerkState || runPerkState.pendingOffers <= 0 || runPerkState.popupOpen) return false;
                 if (runPerkState.finalOfferPending) return false;
                 if (isFinalVictoryActive()) return false;
@@ -4274,6 +4313,7 @@ function escapeHtmlAttr(str) {
             }
 
             function queueRunPerkMilestonesFromScore() {
+                if (isEnduranceMode()) return;
                 if (!runPerkState || runPerkState.picksCount >= RUN_PERK_PROFILE.maxPicks) return;
                 if (runPerkState.disableScoreDeals) return;
                 const thresholds = Array.isArray(RUN_PERK_PROFILE.thresholds) ? RUN_PERK_PROFILE.thresholds : [];
@@ -5571,6 +5611,7 @@ function escapeHtmlAttr(str) {
             }
 
             function getLevelClearBonusClicks(levelNum) {
+                if (isEnduranceMode()) return 0;
                 const lvl = Math.max(1, Number(levelNum) || 1);
                 const phase = getVisualPhaseForLevel(lvl);
                 let base = 0;
@@ -5686,6 +5727,10 @@ function escapeHtmlAttr(str) {
             // Level 10 resets to level-5 spawn profile, then advances one profile step every 2 levels.
             function getSpawnProfileLevel(levelNum = getCurrentLevelNumber()) {
                 const lvl = Math.max(1, Number(levelNum) || 1);
+                if (isEnduranceMode()) {
+                    // Endless mode starts from level-1 profile and ramps gradually.
+                    return Math.max(1, Math.min(10, 1 + Math.floor((lvl - 1) / 3)));
+                }
                 if (lvl === 16 || lvl === 17) return 6;
                 if (lvl === 18) return 7;
                 if (lvl === 19) return 8;
@@ -5759,6 +5804,7 @@ function escapeHtmlAttr(str) {
             }
 
             function isRotatingBlockerActive(levelNum = getCurrentLevelNumber()) {
+                if (isEnduranceMode()) return false;
                 if (!FEATURE_FLAGS || FEATURE_FLAGS.rotatingBlocker === false) return false;
                 if (Date.now() < Number(blockerRetreatUntil || 0)) return false;
                 if (isEpicBoss20Level(levelNum)) return false;
@@ -6048,6 +6094,7 @@ function escapeHtmlAttr(str) {
             }
 
             function rollSpecialVirusType(levelNum = getCurrentLevelNumber()) {
+                if (isEnduranceMode()) return null;
                 const active = getActiveSpecialTypes(levelNum);
                 if (!active.length) return null;
                 const level = Math.max(1, Number(levelNum) || 1);
@@ -6580,6 +6627,7 @@ function escapeHtmlAttr(str) {
             }
 
             function isMiniBossLevel(levelNum = getCurrentLevelNumber()) {
+                if (isEnduranceMode()) return false;
                 const lvl = Math.max(1, Number(levelNum) || 1);
                 return !!(FEATURE_FLAGS && FEATURE_FLAGS.miniBoss !== false && lvl >= 5 && (lvl % 5) === 0);
             }
@@ -8274,6 +8322,7 @@ function escapeHtmlAttr(str) {
             }
 
             function isBiofilmEnabled(levelNum = getCurrentLevelNumber()) {
+                if (isEnduranceMode()) return false;
                 const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
                 return !!(BIOFILM_CONFIG && BIOFILM_CONFIG.enabled !== false && lvl >= Math.max(1, Math.floor(Number(BIOFILM_CONFIG.unlockLevel) || 10)));
             }
@@ -9592,7 +9641,7 @@ function escapeHtmlAttr(str) {
                     tutorialEvent('firstLevelClear');
 
                     const showFinalOfferNow = shouldShowFinalOfferForLevel(nextLevelNum);
-                    const isBossIntroLevel = (nextLevelNum === 5 || nextLevelNum === 10 || nextLevelNum === 15);
+                    const isBossIntroLevel = isMiniBossLevel(nextLevelNum) && (nextLevelNum === 5 || nextLevelNum === 10 || nextLevelNum === 15);
                     if (showFinalOfferNow) {
                         runPerkState.finalOfferPending = true;
                         const openPendingFinalOffer = () => {

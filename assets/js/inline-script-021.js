@@ -51,15 +51,17 @@
             // integrate with existing Start button behavior:
             window.addEventListener('load', function () {
                 try {
-                    const startBtn = document.getElementById('aiStartBtn') || document.getElementById('startBtn') || document.querySelector('button#aiStartBtn, button.start, #startBtn');
+                    const startButtons = Array.from(document.querySelectorAll('#aiStartBtn, #aiEnduranceBtn, #startBtn, button.start'));
                     const intro = document.getElementById('aiIntro') || document.getElementById('intro');
-                    if (startBtn) {
+                    if (startButtons.length) {
                         // add an additional listener to show the modal after the intro fades
-                        startBtn.addEventListener('click', function () {
-                            try {
-                                // show modal after intro fade completes (about 650ms)
-                                setTimeout(function () { showStartModal(); }, 650);
-                            } catch (e) { console.warn('startModal show failed', e); }
+                        startButtons.forEach((startBtn) => {
+                            startBtn.addEventListener('click', function () {
+                                try {
+                                    // show modal after intro fade completes (about 650ms)
+                                    setTimeout(function () { showStartModal(); }, 650);
+                                } catch (e) { console.warn('startModal show failed', e); }
+                            });
                         });
                     }
                 } catch (e) { console.warn('start modal wiring failed', e); }

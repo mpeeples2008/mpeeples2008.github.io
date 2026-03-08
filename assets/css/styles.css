@@ -6453,6 +6453,14 @@
                 transform: scale(1.05);
             }
 
+        .ai-start-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
         .ai-intro-overlay.fade-out {
             opacity: 0;
             pointer-events: none;
