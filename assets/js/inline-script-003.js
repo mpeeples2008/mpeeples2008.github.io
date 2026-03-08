@@ -5050,9 +5050,21 @@ function escapeHtmlAttr(str) {
                     clearFinalVictorySequence(true);
                     clearGameOverFeedback();
                     hideContinueOfferPopup(true);
+                    try { hideRunPerkPopup(true); } catch (e) { }
+                    try { hideFinalOfferPopup(true); } catch (e) { }
+                    try { stopBoss20PhaseTimer(); } catch (e) { }
+                    try { stopBossGooShieldTimer(); } catch (e) { }
+                    try { stopRotatingBlockerTicker(); } catch (e) { }
+                    try { clearTechnoGremlinPowers(true); } catch (e) { }
+                    try { clearActiveParticlesImmediate(); } catch (e) { }
+                    finalOfferPreludeActive = false;
+                    finalOfferModalOpen = false;
+                    levelAdvancePending = false;
                     screensPassed = 0;
                     totalScore = 0;
                     randomizeBoard(false);
+                    stormResolving = false;
+                    inputLocked = false;
                     updateHUD();
                     outOfClicksShown = false;
                     runContinueUses = 0;
@@ -5062,6 +5074,56 @@ function escapeHtmlAttr(str) {
                         try { if (fromGameOver && window.Assistant && Assistant.emit) Assistant.emit('postGameWelcome'); } catch (e) { }
                     }
                 } catch (e) { console.warn('performGameReset failed', e); }
+            }
+
+            function forcePostRestartInteractivity() {
+                try {
+                    const popupSelectors = [
+                        '.level-complete',
+                        '.game-over-popup',
+                        '.continue-offer-popup',
+                        '.run-perk-popup',
+                        '.final-offer-modal',
+                        '.final-offer-prelude',
+                        '.boss20-talk-modal'
+                    ];
+                    popupSelectors.forEach((sel) => {
+                        const nodes = document.querySelectorAll(sel);
+                        nodes.forEach((el) => {
+                            try { el.remove(); } catch (e) { }
+                        });
+                    });
+                } catch (e) { }
+                try {
+                    ['audioPopup', 'helpPopup', 'startModal', 'level5DynamicsModal', 'aiIntro'].forEach((id) => {
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        try { el.classList.remove('show', 'open'); } catch (e) { }
+                        try { el.style.display = 'none'; } catch (e) { }
+                        try { el.style.visibility = 'hidden'; } catch (e) { }
+                        try { el.style.pointerEvents = 'none'; } catch (e) { }
+                        try { el.setAttribute('aria-hidden', 'true'); } catch (e) { }
+                    });
+                } catch (e) { }
+                try { clearActiveParticlesImmediate(); } catch (e) { }
+                try { clearSpecialTelegraph(); } catch (e) { }
+                try { clearStormPreview(); } catch (e) { }
+                try { setBoss20BoardFreeze(false); } catch (e) { }
+                try {
+                    if (boss20State) {
+                        boss20State.inCinematic = false;
+                        boss20State.inFinalWindow = false;
+                    }
+                } catch (e) { }
+                finalOfferPreludeActive = false;
+                finalOfferModalOpen = false;
+                continueOfferOpen = false;
+                outOfClicksShown = false;
+                levelAdvancePending = false;
+                stormResolving = false;
+                inputLocked = false;
+                try { updateHUD(); } catch (e) { }
+                try { scheduleRender(); } catch (e) { }
             }
 
             function buildGameOverRecapHtml() {
@@ -11231,9 +11293,17 @@ function escapeHtmlAttr(str) {
                         if (audioPopup) {
                             audioPopup.classList.remove('show', 'open');
                             audioPopup.style.display = 'none';
+                            audioPopup.style.visibility = 'hidden';
+                            audioPopup.style.pointerEvents = 'none';
                             audioPopup.setAttribute('aria-hidden', 'true');
                         }
                     } catch (e) { }
+                    setTimeout(() => {
+                        try { forcePostRestartInteractivity(); } catch (e) { }
+                        requestAnimationFrame(() => {
+                            try { forcePostRestartInteractivity(); } catch (e2) { }
+                        });
+                    }, 0);
                 });
             }
             if (applyTestLevelBtn) {
