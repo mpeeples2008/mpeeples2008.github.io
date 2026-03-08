@@ -1154,6 +1154,7 @@ function escapeHtmlAttr(str) {
             let boss20FinalWindowTimer = null;
             let boss20Phase3TransitionTimer = null;
             let boss20VoiceTimer = null;
+            let boss20LaughLastAt = 0;
             let boss20FinalFormOverlayEl = null;
             let boss20FinalShotReticleEl = null;
             let technoGremlinPowerTimer = null;
@@ -1699,7 +1700,7 @@ function escapeHtmlAttr(str) {
                         fuelSpawnSizeWeights: [0.06, 0.20, 0.46, 0.28],
                         fuelArmoredChance: 0.24,
                         fuelCooldownMs: 920,
-                        spawnSizeWeights: [0.00, 0.14, 0.48, 0.38],
+                        spawnSizeWeights: [0.12, 0.22, 0.40, 0.26],
                         armoredChance: 1.0
                     }
                 }
@@ -1732,7 +1733,7 @@ function escapeHtmlAttr(str) {
                     },
                     phase3: {
                         counts: { b75: 1, b50: 2, b25: 2 },
-                        armorOpts: { anyBoardChance: 0.50, offAxisChance: 0.46, spawnSizeWeights: [0, 0.14, 0.48, 0.38] }
+                        armorOpts: { anyBoardChance: 0.50, offAxisChance: 0.46, spawnSizeWeights: [0.12, 0.22, 0.40, 0.26] }
                     }
                 }
             };
@@ -1975,13 +1976,22 @@ function escapeHtmlAttr(str) {
                 updateHUD();
                 try { playSfx('nanostorm'); } catch (e) { }
                 try { handleClick(target, false, null, true); } catch (e) { }
-                const scriptedWave = [31, 25, 19, 13, 27, 21, 15, 16, 22, 28, 34];
+                // Long, circuitous victory route to make the last hit feel epic.
+                const scriptedWave = [
+                    31, 25, 19, 13, 7, 1,
+                    2, 3, 4, 5, 11, 17,
+                    23, 29, 35, 34, 33, 32,
+                    26, 20, 14, 15, 21, 27,
+                    28, 22, 16, 10, 9, 8
+                ];
+                const waveStartMs = 420;
+                const stepMs = 320;
                 scriptedWave.forEach((cellIndex, step) => {
                     setTimeout(() => {
                         try {
                             if (state[cellIndex] !== null) handleClick(cellIndex, false, null, true);
                         } catch (e) { }
-                    }, 340 + (step * 250));
+                    }, waveStartMs + (step * stepMs));
                 });
                 setTimeout(() => {
                     try {
@@ -1999,7 +2009,7 @@ function escapeHtmlAttr(str) {
                     } catch (e) { }
                     boss20State.finalShotActive = false;
                     inputLocked = false;
-                }, 4300);
+                }, waveStartMs + (scriptedWave.length * stepMs) + 700);
                 return true;
             }
             let boss20State = createDefaultBoss20State();
@@ -4624,14 +4634,14 @@ function escapeHtmlAttr(str) {
                         key: 'broker',
                         label: 'VIRAL VENTURE',
                         imageUrl: FINAL_VICTORY_BROKER_IMAGE_URL,
-                        storyText: 'HOSTILE TAKEOVER: containment succeeded, but at a cost. The trench-coat broker now owns the cleanup rights and the future feels compromised.'
+                        storyText: 'HOSTILE TAKEOVER: You succeeded in restoring containment, but at a cost. By giving 51% of control to the shady Viral Ventures they now own the cleanup rights and all lab technology. The future feels compromised.'
                     };
                 }
                 return {
                     key: 'solo',
                     label: 'ON MY OWN',
                     imageUrl: FINAL_VICTORY_SOLO_IMAGE_URL || FINAL_VICTORY_DEFAULT_IMAGE_URL,
-                    storyText: 'INDEPENDENT VARIABLE: no deals, no shortcuts. You held the line alone and wrote your own ending.'
+                    storyText: 'INDEPENDENT VARIABLE: You took no deals, no shortcuts. You held the line alone and wrote your own ending. As you walk out the door of the lab and into the sunset, you finally feel free. Where will your journey take you next?'
                 };
             }
 
@@ -4771,12 +4781,16 @@ function escapeHtmlAttr(str) {
                     const host = ensureFinalVictoryOverlay();
                     if (!host) return;
                     const fx = document.createElement('div');
-                    fx.className = strong ? 'final-victory-explosion strong' : 'final-victory-explosion';
+                    fx.className = 'storm-electricity';
                     fx.style.left = Math.round(x) + 'px';
                     fx.style.top = Math.round(y) + 'px';
-                    fx.style.setProperty('--fv-size', `${Math.round((strong ? 120 : 84) + Math.random() * (strong ? 74 : 48))}px`);
+                    const fxSize = Math.round((strong ? 170 : 130) + Math.random() * (strong ? 90 : 56));
+                    fx.style.width = fxSize + 'px';
+                    fx.style.height = fxSize + 'px';
+                    fx.style.opacity = strong ? '0.72' : '0.6';
+                    fx.style.zIndex = '6';
                     host.appendChild(fx);
-                    setTimeout(() => { try { fx.remove(); } catch (e) { } }, strong ? 980 : 760);
+                    setTimeout(() => { try { fx.remove(); } catch (e) { } }, strong ? 760 : 620);
                 } catch (e) { }
             }
 
@@ -6364,6 +6378,7 @@ function escapeHtmlAttr(str) {
                 clearBoss20FinalFormOverlay();
                 clearBoss20FinalShotReticle();
                 boss20State = createDefaultBoss20State();
+                boss20LaughLastAt = 0;
                 boss20BlockerHidden = false;
                 boss20BlockerPaused = false;
                 return boss20State;
@@ -6790,6 +6805,19 @@ function escapeHtmlAttr(str) {
                 return hasActiveBossForLevel(20);
             }
 
+            function playBoss20LaughThrottled(minIntervalMs = 2600) {
+                if (!isEpicBoss20Level() || !boss20State) return false;
+                const phase = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
+                if (phase > 2) return false;
+                if (boss20State.rescueUsed) return false;
+                const now = Date.now();
+                const minMs = Math.max(300, Math.floor(Number(minIntervalMs) || 2600));
+                if ((now - Number(boss20LaughLastAt || 0)) < minMs) return false;
+                boss20LaughLastAt = now;
+                try { playSfx('miniboss_laugh'); } catch (e) { }
+                return true;
+            }
+
             function isBoss20WeakPointActive() {
                 if (!isEpicBoss20Level()) return false;
                 return Date.now() < Number(boss20State && boss20State.weakPointUntil);
@@ -6950,7 +6978,9 @@ function escapeHtmlAttr(str) {
                 playBossSummonPulse(originIndex);
                 const suppressSpawnVoice = (isEpicBoss20Level() && boss20State && boss20State.rescueUsed);
                 if (!suppressSpawnVoice) {
-                    try { playSfx('miniboss_laugh'); } catch (e) { }
+                    if (!playBoss20LaughThrottled(2800)) {
+                        try { playSfx('miniboss_laugh'); } catch (e) { }
+                    }
                 }
                 scheduleRender();
                 return n;
@@ -7971,6 +8001,16 @@ function escapeHtmlAttr(str) {
                 const idx = Math.floor(Number(bossIndex));
                 if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
                 if (state[idx] === null || specialState[idx] !== 'boss') return 0;
+                const openingMix = [0.16, 0.34, 0.34, 0.16];
+                const sampleOpeningSize = () => {
+                    const total = openingMix.reduce((a, b) => a + Math.max(0, Number(b) || 0), 0) || 1;
+                    let roll = Math.random() * total;
+                    for (let i = 0; i < 4; i++) {
+                        roll -= Math.max(0, Number(openingMix[i]) || 0);
+                        if (roll <= 0) return i;
+                    }
+                    return 2;
+                };
                 const total = ROWS * COLS;
                 const spawnProfileLevel = Math.max(1, getSpawnProfileLevel(15));
                 const spawnProfileCompleted = Math.max(0, Math.min(9, spawnProfileLevel - 1));
@@ -8000,7 +8040,7 @@ function escapeHtmlAttr(str) {
                 const addCount = Math.max(0, Math.min(empties.length, targetNonBoss - occupiedNonBoss));
                 for (let k = 0; k < addCount; k++) {
                     const cellIndex = empties[k];
-                    state[cellIndex] = sampleSizeRandom(spawnProfileLevel, spawnProfileCompleted);
+                    state[cellIndex] = sampleOpeningSize();
                     clearSpecialForCell(cellIndex);
                 }
                 return addCount;
@@ -8483,7 +8523,11 @@ function escapeHtmlAttr(str) {
                 if (spawned > 0) {
                     const suppressSpawnVoice = (bossLevel === 20 && isEpicBoss20Level() && boss20State && boss20State.rescueUsed);
                     if (!suppressSpawnVoice) {
-                        try { playSfx(bossLevel === 10 ? 'goop' : 'miniboss_laugh'); } catch (e) { }
+                        if (bossLevel === 10) {
+                            try { playSfx('goop'); } catch (e) { }
+                        } else if (!playBoss20LaughThrottled(2800)) {
+                            try { playSfx('miniboss_laugh'); } catch (e) { }
+                        }
                     }
                     scheduleRender();
                 }

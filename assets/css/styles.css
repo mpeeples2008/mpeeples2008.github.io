@@ -7496,8 +7496,8 @@ html.assistant-disabled .assistant-fallback-bubble {
             overflow: hidden;
             background: rgba(0, 0, 0, 0.28);
             border: 1px solid rgba(255, 214, 176, 0.28);
-            min-height: clamp(132px, 26vh, 260px);
-            max-height: 34vh;
+            min-height: clamp(176px, 38vh, 420px);
+            max-height: 52vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -7515,7 +7515,7 @@ html.assistant-disabled .assistant-fallback-bubble {
             border: 1px solid rgba(173, 205, 255, 0.26);
             background: rgba(8, 14, 28, 0.7);
             overflow: hidden;
-            height: clamp(80px, 14vh, 128px);
+            height: clamp(66px, 11vh, 96px);
             position: relative;
             padding: 0;
         }
@@ -7526,10 +7526,10 @@ html.assistant-disabled .assistant-fallback-bubble {
             text-align: center;
             font-family: 'Press Start 2P', monospace;
             color: #cbe2ff;
-            font-size: clamp(8px, 1.2vw, 12px);
-            line-height: 1.65;
+            font-size: clamp(7px, 0.95vw, 10px);
+            line-height: 1.5;
             letter-spacing: 0.04em;
-            padding: 8px 8px 6px;
+            padding: 6px 7px 5px;
             scrollbar-width: thin;
         }
 
@@ -7549,14 +7549,14 @@ html.assistant-disabled .assistant-fallback-bubble {
 
 .final-victory-modal .fv-roll-title {
             color: #ffe4bf;
-            font-size: clamp(8px, 1.1vw, 10px);
-            margin-bottom: 4px;
+            font-size: clamp(7px, 0.95vw, 9px);
+            margin-bottom: 3px;
         }
 
 .final-victory-modal .fv-roll-line {
             color: #d4e8ff;
-            font-size: clamp(8px, 1.1vw, 10px);
-            line-height: 1.65;
+            font-size: clamp(7px, 0.9vw, 9px);
+            line-height: 1.5;
         }
 
 .final-victory-modal .fv-roll-story-line {
@@ -7586,8 +7586,8 @@ html.assistant-disabled .assistant-fallback-bubble {
 .final-victory-modal .fv-summary-title {
             font-family: 'Press Start 2P', monospace;
             color: #ffdcb5;
-            font-size: clamp(9px, 1.2vw, 12px);
-            margin-bottom: 8px;
+            font-size: clamp(8px, 1vw, 10px);
+            margin-bottom: 6px;
             text-align: center;
         }
 
@@ -7596,7 +7596,7 @@ html.assistant-disabled .assistant-fallback-bubble {
             grid-template-columns: 1fr auto;
             gap: 6px 10px;
             font-family: 'Press Start 2P', monospace;
-            font-size: clamp(8px, 1.05vw, 10px);
+            font-size: clamp(7px, 0.9vw, 9px);
             color: #d7e8ff;
         }
 
@@ -7721,11 +7721,11 @@ html.assistant-disabled .assistant-fallback-bubble {
                 max-height: min(92vh, 760px);
             }
             .final-victory-modal .fv-image-wrap {
-                min-height: clamp(104px, 20vh, 180px);
-                max-height: 26vh;
+                min-height: clamp(144px, 31vh, 260px);
+                max-height: 42vh;
             }
             .final-victory-modal .fv-credits-wrap {
-                height: clamp(64px, 11vh, 96px);
+                height: clamp(52px, 9vh, 78px);
             }
             .final-victory-modal .fv-restart-btn {
                 font-size: 10px;
