@@ -284,10 +284,10 @@ function escapeHtmlAttr(str) {
                 blocker_move_1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nano_bot_move.mp3',
                 nanostorm: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanostorm.mp3',
                 blocker_move: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nano_bot_move.mp3',
-                evil1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil1.mp3',
-                evil2: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil2.mp3',
-                evil3: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil3.mp3',
-                evil4: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil4.mp3',
+                evil1: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_voice_1.mp3',
+                evil2: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_voice_2.mp3',
+                evil3: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_voice_3.mp3',
+                evil4: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_voice_4.mp3',
                 zap: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/zap.mp3',
                 boss_level: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.mp3',
                 miniboss_laugh: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_laugh.mp3',
@@ -1153,7 +1153,9 @@ function escapeHtmlAttr(str) {
             let boss20PhaseTimer = null;
             let boss20FinalWindowTimer = null;
             let boss20Phase3TransitionTimer = null;
+            let boss20VoiceTimer = null;
             let boss20FinalFormOverlayEl = null;
+            let boss20FinalShotReticleEl = null;
             let technoGremlinPowerTimer = null;
             let technoGremlinJamUntil = 0;
             let technoGremlinOverclockUntil = 0;
@@ -1761,6 +1763,10 @@ function escapeHtmlAttr(str) {
                     phase2LastRegenAt: 0,
                     phase2DrainInProgress: false,
                     phase2OmegaQueued: false,
+                    finalShotActive: false,
+                    finalShotTriggered: false,
+                    finalShotTarget: -1,
+                    finalShotRelease: false,
                     finalFormActive: false,
                     finalFormAnchor: -1,
                     finalFormCells: null
@@ -1870,6 +1876,131 @@ function escapeHtmlAttr(str) {
                 if (!Number.isFinite(anchor) || anchor < 0 || anchor >= state.length) return idx;
                 if (specialState[anchor] !== 'boss' || state[anchor] === null) return idx;
                 return anchor;
+            }
+
+            function clearBoss20FinalShotReticle() {
+                try {
+                    if (boss20FinalShotReticleEl && boss20FinalShotReticleEl.parentNode) {
+                        boss20FinalShotReticleEl.parentNode.removeChild(boss20FinalShotReticleEl);
+                    }
+                } catch (e) { }
+                boss20FinalShotReticleEl = null;
+            }
+
+            function syncBoss20FinalShotReticle() {
+                try {
+                    if (!isEpicBoss20Level() || !boss20State || !boss20State.finalShotActive) {
+                        clearBoss20FinalShotReticle();
+                        return;
+                    }
+                    const target = Math.floor(Number(boss20State.finalShotTarget));
+                    if (!Number.isFinite(target) || target < 0 || target >= state.length) {
+                        clearBoss20FinalShotReticle();
+                        return;
+                    }
+                    if (!boardEl) return;
+                    const cell = boardEl.querySelector(`[data-index='${target}']`);
+                    if (!cell) return;
+                    const r = cell.getBoundingClientRect();
+                    if (!r || r.width <= 0 || r.height <= 0) return;
+                    if (!boss20FinalShotReticleEl) {
+                        const el = document.createElement('div');
+                        el.className = 'boss20-final-shot-reticle';
+                        document.body.appendChild(el);
+                        boss20FinalShotReticleEl = el;
+                    }
+                    boss20FinalShotReticleEl.style.left = `${Math.round(r.left + (r.width * 0.5))}px`;
+                    boss20FinalShotReticleEl.style.top = `${Math.round(r.top + (r.height * 0.5))}px`;
+                    boss20FinalShotReticleEl.style.width = `${Math.max(22, Math.round(r.width * 0.72))}px`;
+                    boss20FinalShotReticleEl.style.height = `${Math.max(22, Math.round(r.height * 0.72))}px`;
+                } catch (e) { }
+            }
+
+            function setupBoss20FinalShotBoard(bossIndex) {
+                if (!isEpicBoss20Level()) return false;
+                const idx = Math.floor(Number(bossIndex));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return false;
+                if (state[idx] === null || specialState[idx] !== 'boss') return false;
+                const coreCells = getBoss20CoreCells();
+                const coreSet = new Set(coreCells);
+                const layout = [
+                    2, 3, 2, 3, 2, 3,
+                    3, 2, 3, 2, 3, 2,
+                    2, 3, null, null, 3, 2,
+                    3, 2, null, null, 2, 3,
+                    2, 3, 2, 3, 2, 3,
+                    3, 2, 3, 2, 3, 2
+                ];
+                for (let i = 0; i < state.length; i++) {
+                    if (i === idx) continue;
+                    if (coreSet.has(i)) {
+                        state[i] = null;
+                        clearSpecialForCell(i);
+                        clearBossGooShieldAt(i);
+                        clearBiofilmAt(i);
+                        continue;
+                    }
+                    const v = layout[i];
+                    if (v == null) {
+                        state[i] = null;
+                        clearSpecialForCell(i);
+                    } else {
+                        state[i] = Math.max(0, Math.min(MAX_SIZE, Math.floor(Number(v) || 0)));
+                        clearSpecialForCell(i);
+                    }
+                    clearBossGooShieldAt(i);
+                    clearBiofilmAt(i);
+                }
+                [4, 11, 24, 29].forEach((c) => {
+                    try { applyBiofilmAt(c, { hits: 2 }); } catch (e) { }
+                });
+                boss20State.finalShotTarget = 32;
+                boss20State.finalShotActive = true;
+                boss20State.finalShotTriggered = false;
+                boss20State.finalShotRelease = false;
+                syncBoss20FinalShotReticle();
+                return true;
+            }
+
+            function triggerBoss20FinalShot(userIndex) {
+                if (!isEpicBoss20Level() || !boss20State || !boss20State.finalShotActive) return false;
+                const target = Math.floor(Number(boss20State.finalShotTarget));
+                const idx = Math.floor(Number(userIndex));
+                if (!Number.isFinite(idx) || idx !== target || boss20State.finalShotTriggered) return false;
+                boss20State.finalShotTriggered = true;
+                boss20State.finalShotRelease = true;
+                clearBoss20FinalShotReticle();
+                inputLocked = true;
+                clicksLeft = Math.max(0, Number(clicksLeft) - 1);
+                updateHUD();
+                try { playSfx('nanostorm'); } catch (e) { }
+                try { handleClick(target, false, null, true); } catch (e) { }
+                const scriptedWave = [31, 25, 19, 13, 27, 21, 15, 16, 22, 28, 34];
+                scriptedWave.forEach((cellIndex, step) => {
+                    setTimeout(() => {
+                        try {
+                            if (state[cellIndex] !== null) handleClick(cellIndex, false, null, true);
+                        } catch (e) { }
+                    }, 340 + (step * 250));
+                });
+                setTimeout(() => {
+                    try {
+                        const bosses = getBossIndicesForLevel(20);
+                        if (bosses.length) {
+                            const bossIdx = bosses[0];
+                            const m = ensureSpecialMeta(bossIdx) || {};
+                            m.hp = 0;
+                            specialMetaState[bossIdx] = m;
+                            boss20State.finalShotActive = false;
+                            boss20State.finalShotRelease = true;
+                            resolveBossDefeat(bossIdx, m, null);
+                            return;
+                        }
+                    } catch (e) { }
+                    boss20State.finalShotActive = false;
+                    inputLocked = false;
+                }, 4300);
+                return true;
             }
             let boss20State = createDefaultBoss20State();
             const bossFuelLastAtByLevel = Object.create(null);
@@ -6201,6 +6332,7 @@ function escapeHtmlAttr(str) {
                     clearTimeout(boss20PhaseTimer);
                     boss20PhaseTimer = null;
                 }
+                stopBoss20VoiceTimer();
                 if (boss20FinalWindowTimer) {
                     clearTimeout(boss20FinalWindowTimer);
                     boss20FinalWindowTimer = null;
@@ -6230,6 +6362,7 @@ function escapeHtmlAttr(str) {
                     }
                 } catch (e) { }
                 clearBoss20FinalFormOverlay();
+                clearBoss20FinalShotReticle();
                 boss20State = createDefaultBoss20State();
                 boss20BlockerHidden = false;
                 boss20BlockerPaused = false;
@@ -6607,10 +6740,52 @@ function escapeHtmlAttr(str) {
                 boss20PhaseTimer = null;
             }
 
+            function stopBoss20VoiceTimer() {
+                if (!boss20VoiceTimer) return;
+                clearTimeout(boss20VoiceTimer);
+                boss20VoiceTimer = null;
+            }
+
+            function shouldRunBoss20VoiceTimer() {
+                if (!isEpicBoss20Level()) return false;
+                if (!boss20State || !boss20State.active) return false;
+                if (!boss20State.rescueUsed) return false;
+                if (!hasActiveBoss20Combat()) return false;
+                if (boss20State.inCinematic) return false;
+                if (isBlockingPopupOpen() || finalOfferModalOpen) return false;
+                return true;
+            }
+
+            function ensureBoss20VoiceTimer() {
+                if (!shouldRunBoss20VoiceTimer()) {
+                    stopBoss20VoiceTimer();
+                    return;
+                }
+                if (boss20VoiceTimer) return;
+                const minMs = 2400;
+                const maxMs = 4200;
+                const delay = minMs + Math.floor(Math.random() * (maxMs - minMs + 1));
+                const sourceBoardGeneration = boardGeneration;
+                boss20VoiceTimer = setTimeout(() => {
+                    boss20VoiceTimer = null;
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        ensureBoss20VoiceTimer();
+                        return;
+                    }
+                    if (shouldRunBoss20VoiceTimer()) {
+                        const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                        const pick = bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
+                        try { playSfx(pick); } catch (e) { }
+                    }
+                    ensureBoss20VoiceTimer();
+                }, delay);
+            }
+
             function hasActiveBoss20Combat() {
                 if (!isEpicBoss20Level()) return false;
                 if (!boss20State || !boss20State.active) return false;
                 if (Number(boss20State.phase) < 1) return false;
+                if (boss20State.finalShotActive) return false;
                 if (boss20State.inCinematic) return false;
                 return hasActiveBossForLevel(20);
             }
@@ -6773,7 +6948,10 @@ function escapeHtmlAttr(str) {
                     playBossSpawnStamp(pick);
                 }
                 playBossSummonPulse(originIndex);
-                try { playSfx('miniboss_laugh'); } catch (e) { }
+                const suppressSpawnVoice = (isEpicBoss20Level() && boss20State && boss20State.rescueUsed);
+                if (!suppressSpawnVoice) {
+                    try { playSfx('miniboss_laugh'); } catch (e) { }
+                }
                 scheduleRender();
                 return n;
             }
@@ -6854,8 +7032,10 @@ function escapeHtmlAttr(str) {
             function ensureBoss20PhaseTimer() {
                 if (!hasActiveBoss20Combat()) {
                     stopBoss20PhaseTimer();
+                    stopBoss20VoiceTimer();
                     return;
                 }
+                ensureBoss20VoiceTimer();
                 if (boss20PhaseTimer) return;
                 if (isBlockingPopupOpen() || finalOfferModalOpen) {
                     boss20PhaseTimer = setTimeout(() => {
@@ -7296,6 +7476,7 @@ function escapeHtmlAttr(str) {
                 if (!isEpicBoss20Level()) return false;
                 if (!meta || !meta.isBoss || meta.isProjection) return false;
                 if (Math.max(1, Math.floor(Number(meta.phase) || 1)) < 3) return false;
+                if (boss20State && (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease)) return false;
                 if (boss20State.inFinalWindow || boss20State.inCinematic) return false;
                 const idx = Math.floor(Number(index));
                 if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return false;
@@ -7323,35 +7504,24 @@ function escapeHtmlAttr(str) {
                         inputLocked = false;
                         return;
                     }
-                    const now = Date.now();
-                    const windowDuration = Math.max(1200, EPIC_BOSS20_FINAL_WINDOW_MS);
-                    boss20State.inFinalWindow = true;
-                    boss20State.finalChargeUntil = now;
-                    boss20State.finalWindowUntil = now + windowDuration;
+                    boss20State.inFinalWindow = false;
+                    boss20State.finalChargeUntil = 0;
+                    boss20State.finalWindowUntil = 0;
                     boss20State.inCinematic = false;
-                    boss20State.heroMarkCell = idx;
-                    boss20State.heroMarkUntil = Math.max(Number(boss20State.heroMarkUntil) || 0, Number(boss20State.finalWindowUntil) || 0);
-                    boss20State.weakPointUntil = Math.max(Number(boss20State.weakPointUntil) || 0, Number(boss20State.finalWindowUntil) || 0);
-                    showBoss20HeroMarkFx(idx);
                     if (boss20FinalWindowTimer) {
                         clearTimeout(boss20FinalWindowTimer);
                         boss20FinalWindowTimer = null;
                     }
-                    boss20FinalWindowTimer = setTimeout(() => {
-                        boss20FinalWindowTimer = null;
-                        if (!isEpicBoss20Level()) return;
-                        if (Date.now() < Number(boss20State.finalWindowUntil) - 20) return;
-                        boss20State.inFinalWindow = false;
-                        if (Date.now() >= Number(boss20State.heroMarkUntil) - 20) {
-                            boss20State.weakPointUntil = 0;
-                            boss20State.heroMarkUntil = 0;
-                            boss20State.heroMarkCell = -1;
-                        }
-                        scheduleRender();
-                    }, Math.max(120, windowDuration + 30));
+                    const setupOk = setupBoss20FinalShotBoard(idx);
+                    if (setupOk) {
+                        try {
+                            if (window.Assistant && Assistant.show) {
+                                Assistant.show('Target lock acquired. Hit the marked virus to trigger the final cascade.', { priority: 2 });
+                            }
+                        } catch (e) { }
+                    }
                     inputLocked = false;
                     scheduleRender();
-                    ensureBoss20PhaseTimer();
                 });
                 return true;
             }
@@ -8311,7 +8481,10 @@ function escapeHtmlAttr(str) {
                     fuelArmoredChance: pacingProfile.fuelArmoredChance
                 });
                 if (spawned > 0) {
-                    try { playSfx(bossLevel === 10 ? 'goop' : 'miniboss_laugh'); } catch (e) { }
+                    const suppressSpawnVoice = (bossLevel === 20 && isEpicBoss20Level() && boss20State && boss20State.rescueUsed);
+                    if (!suppressSpawnVoice) {
+                        try { playSfx(bossLevel === 10 ? 'goop' : 'miniboss_laugh'); } catch (e) { }
+                    }
                     scheduleRender();
                 }
                 return spawned + Math.max(0, Number(fueled) || 0);
@@ -8609,7 +8782,14 @@ function escapeHtmlAttr(str) {
                             return { cancelGrowth: true };
                         }
                     }
-                    if (boss20State.phase >= 3 && !boss20State.inFinalWindow && Number(meta.hp) <= Math.max(1, Number(EPIC_BOSS20_FINAL_WINDOW_HP) || 2)) {
+                    if (
+                        boss20State.phase >= 3
+                        && !boss20State.inFinalWindow
+                        && !boss20State.finalShotActive
+                        && !boss20State.finalShotTriggered
+                        && !boss20State.finalShotRelease
+                        && Number(meta.hp) <= Math.max(1, Number(EPIC_BOSS20_FINAL_WINDOW_HP) || 2)
+                    ) {
                         const triggerHp = Math.max(1, Number(EPIC_BOSS20_FINAL_WINDOW_HP) || 2);
                         const holdHp = Math.max(1, Math.min(triggerHp, Math.floor(Number(EPIC_BOSS20_PHASE3_PRE_FINAL_HP_FLOOR) || 1)));
                         meta.hp = holdHp;
@@ -9106,6 +9286,7 @@ function escapeHtmlAttr(str) {
                     boardEl.appendChild(gridCell);
                 }
                 syncBoss20FinalFormOverlay();
+                syncBoss20FinalShotReticle();
                 ensureBossGooShieldTimer();
                 ensureBiofilmTimer();
                 ensureTechnoGremlinPowerTimer();
@@ -10326,6 +10507,16 @@ function escapeHtmlAttr(str) {
             function handleClick(index, isUser = false, tracker = null, suppressFinalize = false) {
                 if (isUser) {
                     if (isBlockingPopupOpen()) return;
+                    if (isEpicBoss20Level() && boss20State && boss20State.finalShotActive) {
+                        if (triggerBoss20FinalShot(index)) return;
+                        try {
+                            if (window.Assistant && Assistant.show) {
+                                Assistant.show('PIXEL targeting lock: follow the reticle. One precise hit.', { priority: 2 });
+                            }
+                        } catch (e) { }
+                        syncBoss20FinalShotReticle();
+                        return;
+                    }
                     // block clicks if game is locked or already out of clicks
                     if (inputLocked || stormResolving || clicksLeft <= 0) return;
                     try {
@@ -10588,6 +10779,10 @@ function escapeHtmlAttr(str) {
                     try {
                         if (isBlockingPopupOpen() || inputLocked || stormResolving || (typeof particlesActive === 'function' && particlesActive())) return;
                     } catch (e) { }
+                    if (isEpicBoss20Level() && boss20State && boss20State.finalShotActive) {
+                        handleClick(i, true);
+                        return;
+                    }
                     if (IS_MOBILE_COARSE && stormArmed && stormCharges > 0) {
                         beginMobileStormInteraction(i, ev.pointerId);
                         return;

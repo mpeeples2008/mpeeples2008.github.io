@@ -1299,6 +1299,42 @@
             transition: transform 140ms ease-out;
         }
 
+        .boss20-final-shot-reticle {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 28px;
+            height: 28px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 95274;
+            border-radius: 999px;
+            border: 2px solid rgba(152, 236, 255, 0.95);
+            box-shadow: 0 0 14px rgba(114, 222, 255, 0.78), inset 0 0 8px rgba(142, 232, 255, 0.28);
+            animation: boss20FinalReticlePulse 700ms ease-in-out infinite;
+        }
+
+        .boss20-final-shot-reticle::before,
+        .boss20-final-shot-reticle::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            background: rgba(176, 244, 255, 0.95);
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 8px rgba(134, 228, 255, 0.84);
+        }
+
+        .boss20-final-shot-reticle::before {
+            width: 2px;
+            height: 130%;
+        }
+
+        .boss20-final-shot-reticle::after {
+            width: 130%;
+            height: 2px;
+        }
+
         .boss20-shatter-sprite {
             position: fixed;
             left: 0;
@@ -1729,6 +1765,11 @@
                 opacity: 0;
                 transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) rotate(var(--rot, 0deg)) scale(0.6);
             }
+        }
+
+        @keyframes boss20FinalReticlePulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.96); opacity: 0.9; }
+            50% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
         }
 
         @keyframes boss20DrainBotFly {
