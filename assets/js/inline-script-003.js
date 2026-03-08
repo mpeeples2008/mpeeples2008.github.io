@@ -2207,6 +2207,8 @@ function escapeHtmlAttr(str) {
             let finalVictoryFinalCardTimer = null;
             let finalVictorySummaryTimer = null;
             let finalCreditsMusicAudio = null;
+            let finalCreditsMusicRetryArmed = false;
+            let finalCreditsMusicRetryHandler = null;
             let finalVictoryState = { inProgress: false, shown: false };
             function createDefaultRunPerkState() {
                 return {
@@ -4594,6 +4596,7 @@ function escapeHtmlAttr(str) {
             function stopFinalCreditsMusic(fadeOutMs = 500) {
                 const a = finalCreditsMusicAudio;
                 finalCreditsMusicAudio = null;
+                clearFinalCreditsMusicRetry();
                 if (!a) return;
                 const ms = Math.max(0, Math.floor(Number(fadeOutMs) || 0));
                 if (ms <= 0) {
@@ -4619,6 +4622,31 @@ function escapeHtmlAttr(str) {
                 }, 40);
             }
 
+            function clearFinalCreditsMusicRetry() {
+                if (!finalCreditsMusicRetryArmed || !finalCreditsMusicRetryHandler) return;
+                try { document.removeEventListener('pointerdown', finalCreditsMusicRetryHandler, true); } catch (e) { }
+                try { document.removeEventListener('touchend', finalCreditsMusicRetryHandler, true); } catch (e) { }
+                try { document.removeEventListener('keydown', finalCreditsMusicRetryHandler, true); } catch (e) { }
+                finalCreditsMusicRetryArmed = false;
+                finalCreditsMusicRetryHandler = null;
+            }
+
+            function armFinalCreditsMusicRetry() {
+                if (finalCreditsMusicRetryArmed) return;
+                finalCreditsMusicRetryArmed = true;
+                finalCreditsMusicRetryHandler = function () {
+                    clearFinalCreditsMusicRetry();
+                    try { markAudioUserInteracted(); } catch (e) { }
+                    if (!isFinalVictoryActive()) return;
+                    setTimeout(() => {
+                        try { startFinalCreditsMusic(); } catch (e2) { }
+                    }, 0);
+                };
+                try { document.addEventListener('pointerdown', finalCreditsMusicRetryHandler, { capture: true, passive: true }); } catch (e) { }
+                try { document.addEventListener('touchend', finalCreditsMusicRetryHandler, { capture: true, passive: true }); } catch (e) { }
+                try { document.addEventListener('keydown', finalCreditsMusicRetryHandler, { capture: true }); } catch (e) { }
+            }
+
             function startFinalCreditsMusic() {
                 try {
                     if (!musicEnabled || !audioUserInteracted || !!window.allMuted) return false;
@@ -4631,8 +4659,21 @@ function escapeHtmlAttr(str) {
                     const targetVol = Math.max(0.02, Math.min(1, Number(window.musicVolume) || 0.20));
                     a.volume = 0.001;
                     finalCreditsMusicAudio = a;
+                    clearFinalCreditsMusicRetry();
                     const p = a.play();
-                    if (p && typeof p.catch === 'function') p.catch(() => { });
+                    if (p && typeof p.then === 'function' && typeof p.catch === 'function') {
+                        p.then(() => {
+                            clearFinalCreditsMusicRetry();
+                        }).catch(() => {
+                            if (finalCreditsMusicAudio === a) armFinalCreditsMusicRetry();
+                        });
+                    } else {
+                        setTimeout(() => {
+                            try {
+                                if (finalCreditsMusicAudio === a && a.paused) armFinalCreditsMusicRetry();
+                            } catch (e) { }
+                        }, 140);
+                    }
                     const startedAt = Date.now();
                     const ms = 1800;
                     const timer = setInterval(() => {
