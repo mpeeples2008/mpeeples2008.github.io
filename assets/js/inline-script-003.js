@@ -288,8 +288,12 @@ function escapeHtmlAttr(str) {
                 evil2: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_voice_2.mp3',
                 evil3: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_voice_3.mp3',
                 evil4: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/evil_voice_4.mp3',
+                evil5: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_voice_5.mp3',
+                evil6: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_voice_6.mp3',
                 zap: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/zap.mp3',
                 boss_level: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.mp3',
+                level5_boss_hit: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/level5_boss_hit.mp3',
+                level5_boss_dies: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/level5_boss_dies.mp3',
                 miniboss_laugh: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_laugh.mp3',
                 miniboss_dies: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss_dies.mp3',
                 goop: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/goop.mp3',
@@ -348,8 +352,12 @@ function escapeHtmlAttr(str) {
                 evil2: 140,
                 evil3: 140,
                 evil4: 140,
+                evil5: 140,
+                evil6: 140,
                 zap: 120,
                 boss_level: 350,
+                level5_boss_hit: 320,
+                level5_boss_dies: 420,
                 miniboss_laugh: 300,
                 miniboss_dies: 300,
                 goop: 320,
@@ -372,10 +380,12 @@ function escapeHtmlAttr(str) {
                 evil2: 0.62,
                 evil3: 0.62,
                 evil4: 0.62,
+                evil5: 0.62,
+                evil6: 0.62,
                 glass_crack: 1.6
             };
             const SFX_CRITICAL_KEYS = ['pop', 'grow', 'fill'];
-            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'evil1', 'evil2', 'evil3', 'evil4', 'zap', 'boss_level', 'miniboss_laugh', 'miniboss_dies', 'goop', 'goop_be_dead', 'techno_dead', 'techno_jammer', 'techno_duplicator', 'glass_crack', 'final_entrance', 'double_deal', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
+            const SFX_LAZY_KEYS = ['nanostorm', 'blocker_move', 'blocker_move_1', 'evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6', 'zap', 'boss_level', 'level5_boss_hit', 'level5_boss_dies', 'miniboss_laugh', 'miniboss_dies', 'goop', 'goop_be_dead', 'techno_dead', 'techno_jammer', 'techno_duplicator', 'glass_crack', 'final_entrance', 'double_deal', 'win', 'lose', 'achievement', 'assistant_ai_0', 'assistant_ai_1', 'assistant_ai_2', 'assistant_ai_3', 'assistant_ai_4', 'assistant_ai_5', 'assistant_ai_6'];
             const IMAGE_PREFETCH_MAX = 10;
             let audioUserInteracted = false;
             let audioWarmupStarted = false;
@@ -581,7 +591,7 @@ function escapeHtmlAttr(str) {
                 if (level >= 2) sfx.push('assistant_ai_' + (level % 7));
                 if (level >= 4) sfx.push('nanostorm');
                 if (level === 5 || level === 10 || level === 15) sfx.push('boss_level');
-                if (level >= 5) sfx.push('miniboss_laugh', 'miniboss_dies');
+                if (level >= 5) sfx.push('miniboss_laugh', 'miniboss_dies', 'level5_boss_hit', 'level5_boss_dies');
                 if (level >= 10) sfx.push('goop', 'goop_be_dead');
                 if (level >= 15) sfx.push('techno_dead', 'techno_jammer', 'techno_duplicator');
                 if (level >= 10) sfx.push('blocker_move', 'blocker_move_1', 'zap');
@@ -694,7 +704,7 @@ function escapeHtmlAttr(str) {
                 if (level20TalkSfxOnly) {
                     const k = String(key || '');
                     const isPixelTalk = k.indexOf('assistant_ai_') === 0;
-                    const isBossTalk = (k === 'evil1' || k === 'evil2' || k === 'evil3' || k === 'evil4');
+                    const isBossTalk = (k === 'evil1' || k === 'evil2' || k === 'evil3' || k === 'evil4' || k === 'evil5' || k === 'evil6');
                     if (!isPixelTalk && !isBossTalk) return;
                 }
                 if (!canPlaySfxNow(key)) return;
@@ -1514,6 +1524,7 @@ function escapeHtmlAttr(str) {
                         boss20State.phase2DesperationStartedAt = 0;
                         boss20State.phase2RescueQueued = false;
                         boss20State.phase2LastRegenAt = 0;
+                        boss20State.phase3LastRegenAt = 0;
                         boss20State.phase2OmegaQueued = false;
                         setMiniBossStateFromMeta(idx, meta);
                         scheduleRender();
@@ -1536,6 +1547,15 @@ function escapeHtmlAttr(str) {
                         specialMetaState[idx] = meta;
                         boss20State.phase = meta.phase;
                         return triggerBoss20FinalWindow(idx, meta);
+                    },
+                    forceRegen: function () {
+                        const bosses = getBossIndicesForLevel(20);
+                        if (!bosses.length) return 0;
+                        const idx = bosses[0];
+                        boss20State.phase3LastRegenAt = 0;
+                        const healed = maybeApplyBoss20Phase3Regen(idx);
+                        scheduleRender();
+                        return healed;
                     },
                     setEnabled: function (enabled) {
                         FEATURE_FLAGS.epicBoss20 = !!enabled;
@@ -1626,6 +1646,10 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_PHASE3_ACTION_MS = 1800;
             const EPIC_BOSS20_PHASE3_ENTRY_BURSTS = 4;
             const EPIC_BOSS20_PHASE3_ENTRY_BURST_INTERVAL_MS = 260;
+            const EPIC_BOSS20_PHASE3_REGEN_ENABLED = true;
+            const EPIC_BOSS20_PHASE3_REGEN_AMOUNT = 2;
+            const EPIC_BOSS20_PHASE3_REGEN_MIN_MS = 3000;
+            const EPIC_BOSS20_PHASE3_REGEN_CHANCE = 0.35;
             const EPIC_BOSS20_HERO_MARK_EVERY_MS = 7000;
             const EPIC_BOSS20_HERO_MARK_DURATION_MS = 3000;
             const EPIC_BOSS20_HERO_MARK_DAMAGE_MULT = 1.6;
@@ -1769,6 +1793,7 @@ function escapeHtmlAttr(str) {
                     phase2DesperationStartedAt: 0,
                     phase2RescueQueued: false,
                     phase2LastRegenAt: 0,
+                    phase3LastRegenAt: 0,
                     phase2DrainInProgress: false,
                     phase2OmegaQueued: false,
                     finalShotActive: false,
@@ -1929,6 +1954,9 @@ function escapeHtmlAttr(str) {
                 const idx = Math.floor(Number(bossIndex));
                 if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return false;
                 if (state[idx] === null || specialState[idx] !== 'boss') return false;
+                // Ensure no residual cascade particles can accidentally resolve the finale.
+                try { clearActiveParticlesImmediate(); } catch (e) { }
+                stormResolving = false;
                 const coreCells = getBoss20CoreCells();
                 const coreSet = new Set(coreCells);
                 const layout = [
@@ -3243,7 +3271,7 @@ function escapeHtmlAttr(str) {
                         { who: 'boss', text: 'Then choose carefully. Your next decision decides everything.' }
                     ];
                     let i = 0;
-                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
                     const pickBossSfx = () => bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
                     const pickPixelSfx = () => `assistant_ai_${Math.floor(Math.random() * 7)}`;
                     const priorBoss20Cinematic = !!(boss20State && boss20State.inCinematic);
@@ -3341,7 +3369,7 @@ function escapeHtmlAttr(str) {
                         { who: 'pixel', text: 'Operator, distract him a little longer. I have an idea.' }
                     ];
                     let i = 0;
-                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
                     const pickBossSfx = () => bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
                     const pickPixelSfx = () => `assistant_ai_${Math.floor(Math.random() * 7)}`;
                     const priorBoss20Cinematic = !!(boss20State && boss20State.inCinematic);
@@ -3442,7 +3470,7 @@ function escapeHtmlAttr(str) {
                         { who: 'pixel', text: "Operator, now is our chance. I hacked the mainframe and super-charged your nanobots. Shields won't be a problem now." }
                     ];
                     let i = 0;
-                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
                     const pickBossSfx = () => bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
                     const pickPixelSfx = () => `assistant_ai_${Math.floor(Math.random() * 7)}`;
                     const priorBoss20Cinematic = !!(boss20State && boss20State.inCinematic);
@@ -3541,7 +3569,7 @@ function escapeHtmlAttr(str) {
                         { who: 'pixel', text: "He's setting up for one final attack. Don't worry, I'll help you target his weakspot. Just one more good hit should do it." }
                     ];
                     let i = 0;
-                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                    const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
                     const pickBossSfx = () => bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
                     const pickPixelSfx = () => `assistant_ai_${Math.floor(Math.random() * 7)}`;
                     const priorBoss20Cinematic = !!(boss20State && boss20State.inCinematic);
@@ -6805,7 +6833,7 @@ function escapeHtmlAttr(str) {
                         return;
                     }
                     if (shouldRunBoss20VoiceTimer()) {
-                        const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                        const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
                         const pick = bossSfxKeys[Math.floor(Math.random() * bossSfxKeys.length)] || 'evil1';
                         try { playSfx(pick); } catch (e) { }
                     }
@@ -6833,6 +6861,66 @@ function escapeHtmlAttr(str) {
                 boss20LaughLastAt = now;
                 try { playSfx('miniboss_laugh'); } catch (e) { }
                 return true;
+            }
+
+            function maybeApplyBoss20Phase3Regen(originIndex) {
+                if (!EPIC_BOSS20_PHASE3_REGEN_ENABLED) return 0;
+                if (!isEpicBoss20Level() || !boss20State || !boss20State.active) return 0;
+                const phaseNow = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
+                const inBigForm = !!boss20State.finalFormActive;
+                if (phaseNow < 3 && !inBigForm) return 0;
+                if (boss20State.inCinematic || boss20State.inFinalWindow) return 0;
+                if (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease) return 0;
+                const idx = Math.floor(Number(originIndex));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
+                if (state[idx] === null || specialState[idx] !== 'boss') return 0;
+
+                const now = Date.now();
+                const minMs = Math.max(400, Math.floor(Number(EPIC_BOSS20_PHASE3_REGEN_MIN_MS) || 2600));
+                if ((now - Number(boss20State.phase3LastRegenAt || 0)) < minMs) return 0;
+                if (Math.random() >= Math.max(0, Math.min(1, Number(EPIC_BOSS20_PHASE3_REGEN_CHANCE) || 0.55))) return 0;
+
+                const meta = ensureSpecialMeta(idx) || {};
+                const hpNow = Math.max(0, Number(meta.hp) || Number(boss20State.hp) || 0);
+                const maxHp = Math.max(1, Number(meta.maxHp) || Number(boss20State.maxHp) || 1);
+                if (hpNow >= maxHp) return 0;
+
+                const amt = Math.max(1, Math.floor(Number(EPIC_BOSS20_PHASE3_REGEN_AMOUNT) || 1));
+                const nextHp = Math.max(0, Math.min(maxHp, hpNow + amt));
+                if (nextHp <= hpNow) return 0;
+
+                meta.hp = nextHp;
+                meta.maxHp = maxHp;
+                specialMetaState[idx] = meta;
+                boss20State.hp = nextHp;
+                boss20State.maxHp = maxHp;
+                boss20State.phase3LastRegenAt = now;
+                setMiniBossStateFromMeta(idx, meta);
+                try { showBoss20HpGainFx(idx, nextHp - hpNow); } catch (e) { }
+                try { console.log('[Boss20] Regen applied', { idx, amount: (nextHp - hpNow), hp: nextHp, maxHp, phase: phaseNow, finalForm: inBigForm }); } catch (e) { }
+                try { playSfx('fill'); } catch (e) { }
+                try { playBossSummonPulse(idx, 'blue'); } catch (e) { }
+                scheduleRender();
+                return (nextHp - hpNow);
+            }
+
+            function showBoss20HpGainFx(index, amount = 0) {
+                const idx = Math.floor(Number(index));
+                const gain = Math.max(1, Math.floor(Number(amount) || 0));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length || gain <= 0) return;
+                if (!boardEl || !boardEl.querySelector) return;
+                const cell = boardEl.querySelector(`[data-index='${idx}']`);
+                if (!cell) return;
+                const r = cell.getBoundingClientRect();
+                const fx = document.createElement('div');
+                fx.className = 'boss20-hp-gain-fx';
+                fx.textContent = `+${gain} HP`;
+                fx.style.left = Math.round(r.left + (r.width * 0.5)) + 'px';
+                fx.style.top = Math.round(r.top + (r.height * 0.34)) + 'px';
+                document.body.appendChild(fx);
+                setTimeout(() => {
+                    try { fx.remove(); } catch (e) { }
+                }, 760);
             }
 
             function isBoss20WeakPointActive() {
@@ -6963,7 +7051,7 @@ function escapeHtmlAttr(str) {
                 } catch (e) { }
                 try {
                     if (window.Assistant && Assistant.show) {
-                        Assistant.show('Critical warning: Omega core destabilizing. Hold on until low charges or full-board saturation.', { priority: 2 });
+                        Assistant.show('Hold on, I am going to try something.', { priority: 2 });
                     }
                 } catch (e) { }
                 stopBoss20PhaseTimer();
@@ -7070,6 +7158,10 @@ function escapeHtmlAttr(str) {
                     phaseContext: { phase, desperation: (phase === 2) && isBoss20Phase2DesperationActive() }
                 });
                 if (fueled > 0) acted += fueled;
+                if (phase >= 3 || (boss20State && boss20State.finalFormActive)) {
+                    const healed = maybeApplyBoss20Phase3Regen(origin);
+                    if (healed > 0) acted += 1;
+                }
                 if (acted > 0) {
                     boss20State.actionCounter = Math.max(0, Number(boss20State.actionCounter) || 0) + 1;
                 }
@@ -7636,7 +7728,7 @@ function escapeHtmlAttr(str) {
                             try { playSfx('final_entrance'); } catch (e) { }
                             setTimeout(() => {
                                 try {
-                                    const bossTalkKeys = ['evil1', 'evil2', 'evil3', 'evil4'];
+                                    const bossTalkKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
                                     const pick = bossTalkKeys[Math.floor(Math.random() * bossTalkKeys.length)] || 'evil1';
                                     playSfx(pick);
                                 } catch (e) { }
@@ -7716,7 +7808,7 @@ function escapeHtmlAttr(str) {
                     inputLocked = false;
                     try {
                         if (window.Assistant && Assistant.show) {
-                            Assistant.show('Hero unit online. Containment resources restored. Armor breaker protocol now active for the rest of this run.', { priority: 2 });
+                            Assistant.show('Armor breaker protocol now active! Go get him!', { priority: 2 });
                         }
                     } catch (e) { }
                     scheduleRender();
@@ -7771,6 +7863,7 @@ function escapeHtmlAttr(str) {
                     boss20State.phase2DesperationStartedAt = 0;
                     boss20State.phase2RescueQueued = false;
                     boss20State.phase2LastRegenAt = 0;
+                    boss20State.phase3LastRegenAt = 0;
                     boss20State.phase2OmegaQueued = false;
                     phase3Spawned = populateBoss20Phase3Board(idx);
                     setMiniBossStateFromMeta(idx, meta);
@@ -7791,12 +7884,8 @@ function escapeHtmlAttr(str) {
                     }
                     boss20State.inCinematic = false;
                     inputLocked = false;
-                    try {
-                        if (window.Assistant && Assistant.show) {
-                            const surgeMsg = phase3Spawned > 0 ? ` Viral surge detected: ${phase3Spawned} new host cells.` : '';
-                            Assistant.show('Omega phase detected. Strike the marked weak-point windows.' + surgeMsg, { priority: 2 });
-                        }
-                    } catch (e) { }
+                    const surgeMsg = phase3Spawned > 0 ? ` Surge detected: ${phase3Spawned} hostiles restored.` : '';
+                    Assistant.show('Strike the weak-points.' + surgeMsg, { priority: 2 });
                     queueBoss20Phase3EntryPressure(idx);
                     scheduleRender();
                     ensureBoss20PhaseTimer();
@@ -7895,12 +7984,8 @@ function escapeHtmlAttr(str) {
                             }
                             boss20State.inCinematic = false;
                             inputLocked = false;
-                            try {
-                                if (window.Assistant && Assistant.show) {
-                                    const filledMsg = phase2Spawned > 0 ? ` Swarm surge detected: ${phase2Spawned} host cells re-seeded.` : '';
-                                    Assistant.show('Containment failure. Host entity has reconstituted into a stronger form. Emergency nanobot refill granted.' + filledMsg, { priority: 2 });
-                                }
-                            } catch (e) { }
+                            const filledMsg = phase2Spawned > 0 ? ` System surge: ${phase2Spawned} hostiles re-seeded.` : '';
+                            Assistant.show('Viraxis PRime has reconstituted into a stronger form. Emergency nanobot refill requested.' + filledMsg, { priority: 2 });
                             scheduleRender();
                             updateHUD();
                             ensureBoss20PhaseTimer();
@@ -8540,7 +8625,9 @@ function escapeHtmlAttr(str) {
                 if (spawned > 0) {
                     const suppressSpawnVoice = (bossLevel === 20 && isEpicBoss20Level() && boss20State && boss20State.rescueUsed);
                     if (!suppressSpawnVoice) {
-                        if (bossLevel === 10) {
+                        if (bossLevel === 5) {
+                            try { playSfx('level5_boss_hit'); } catch (e) { }
+                        } else if (bossLevel === 10) {
                             try { playSfx('goop'); } catch (e) { }
                         } else if (!playBoss20LaughThrottled(2800)) {
                             try { playSfx('miniboss_laugh'); } catch (e) { }
@@ -8696,6 +8783,7 @@ function escapeHtmlAttr(str) {
                 try {
                     if (bossLevel === 15) playSfx('techno_dead');
                     else if (bossLevel === 10) playSfx('goop_be_dead');
+                    else if (bossLevel === 5) playSfx('level5_boss_dies');
                     else if (isEpic20) playSfx('boss_level');
                     else playSfx('miniboss_dies');
                 } catch (e) { }
@@ -8842,6 +8930,18 @@ function escapeHtmlAttr(str) {
                             }
                             return { cancelGrowth: true };
                         }
+                    }
+                    if (boss20State.phase >= 3 || boss20State.finalFormActive) {
+                        try {
+                            const healed = maybeApplyBoss20Phase3Regen(idx);
+                            if (healed > 0) {
+                                const refreshedMeta = specialMetaState[idx] || meta;
+                                meta.hp = Math.max(0, Number(refreshedMeta.hp) || Number(meta.hp) || 0);
+                                meta.maxHp = Math.max(1, Number(refreshedMeta.maxHp) || Number(meta.maxHp) || 1);
+                                boss20State.hp = Math.max(0, Number(meta.hp) || 0);
+                                boss20State.maxHp = Math.max(1, Number(meta.maxHp) || 1);
+                            }
+                        } catch (e) { }
                     }
                     if (
                         boss20State.phase >= 3
@@ -10651,11 +10751,7 @@ function escapeHtmlAttr(str) {
                     if (isBlockingPopupOpen()) return;
                     if (isEpicBoss20Level() && boss20State && boss20State.finalShotActive) {
                         if (triggerBoss20FinalShot(index)) return;
-                        try {
-                            if (window.Assistant && Assistant.show) {
-                                Assistant.show('PIXEL targeting lock: follow the reticle. One precise hit.', { priority: 2 });
-                            }
-                        } catch (e) { }
+                        Assistant.show('PIXEL targeting lock: follow the reticle. One precise hit should do.', { priority: 2 });
                         syncBoss20FinalShotReticle();
                         return;
                     }

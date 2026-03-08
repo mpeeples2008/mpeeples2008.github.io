@@ -7732,9 +7732,29 @@ html.assistant-disabled .assistant-fallback-bubble {
             }
         }
 
-@keyframes boss20ClickHintPulse {
+        @keyframes boss20ClickHintPulse {
             0%, 100% { opacity: 0.58; }
             50% { opacity: 0.96; }
+        }
+
+        .boss20-hp-gain-fx {
+            position: fixed;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 95290;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            color: #a7ffd2;
+            text-shadow: 0 0 10px rgba(97, 255, 186, 0.72), 1px 1px 0 rgba(0, 0, 0, 0.8);
+            animation: boss20HpGainPop 760ms ease-out forwards;
+        }
+
+        @keyframes boss20HpGainPop {
+            0% { opacity: 0; transform: translate(-50%, -42%) scale(0.88); }
+            14% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+            70% { opacity: 1; transform: translate(-50%, -66%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -84%) scale(0.98); }
         }
 
 @media (max-width: 700px) {
