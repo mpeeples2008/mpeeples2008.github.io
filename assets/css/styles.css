@@ -5362,7 +5362,7 @@
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.14);
                 border-radius: 6px;
-                padding: 10px 6px;
+                padding: 12px 8px;
             }
 
             .audio-popup .howto-step img {
@@ -5373,8 +5373,8 @@
             }
 
             .audio-popup .howto-sprite {
-                width: 56px;
-                height: 56px;
+                width: 82px;
+                height: 82px;
                 background-repeat: no-repeat;
                 background-position: 0% 0%;
                 image-rendering: pixelated;
@@ -5447,8 +5447,8 @@
             }
 
             .audio-popup .howto-size-grid .howto-sprite {
-                width: 50px;
-                height: 50px;
+                width: 74px;
+                height: 74px;
             }
 
             .audio-popup .howto-size-grid span {
@@ -5457,7 +5457,7 @@
             }
 
             .audio-popup .howto-inline-note {
-                font-size: 10px;
+                font-size: 11px;
                 color: #67e8f9;
             }
 
@@ -5532,8 +5532,8 @@
             }
 
             .audio-popup .howto-nanobot-preview {
-                width: 74px;
-                height: 74px;
+                width: 96px;
+                height: 96px;
                 border-radius: 50%;
                 background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nanobot_hover.png');
                 background-repeat: no-repeat;
@@ -5562,8 +5562,8 @@
 
             .audio-popup .howto-armored-preview {
                 position: relative;
-                width: 82px;
-                height: 82px;
+                width: 108px;
+                height: 108px;
                 border-radius: 999px;
                 display: flex;
                 align-items: center;
@@ -5602,10 +5602,28 @@
             }
 
             .audio-popup .howto-armored-preview .howto-sprite {
-                width: 70px;
-                height: 70px;
+                width: 90px;
+                height: 90px;
                 z-index: 1;
                 transform: scale(1.05) translate(2px, -12px);
+            }
+
+            .audio-popup .howto-biofilm-visual {
+                display: flex;
+                justify-content: center;
+                margin: 8px 0;
+            }
+
+            .audio-popup .howto-biofilm-preview {
+                width: 112px;
+                height: 78px;
+                border-radius: 22px 26px 18px 24px / 20px 26px 18px 22px;
+                background:
+                    radial-gradient(circle at 26% 30%, rgba(255, 243, 163, 0.84) 0 24%, rgba(255, 233, 122, 0.38) 38%, rgba(255, 222, 104, 0.15) 56%, rgba(255, 222, 104, 0) 72%),
+                    radial-gradient(circle at 68% 64%, rgba(255, 236, 132, 0.72) 0 20%, rgba(255, 215, 95, 0.2) 52%, rgba(255, 215, 95, 0) 74%),
+                    radial-gradient(circle at 52% 42%, rgba(255, 209, 80, 0.62) 0 62%, rgba(220, 141, 38, 0.22) 86%, rgba(220, 141, 38, 0) 100%);
+                box-shadow: 0 0 10px rgba(255, 186, 84, 0.42), inset 0 0 10px rgba(255, 248, 178, 0.24);
+                animation: biofilmWobble 1450ms ease-in-out infinite;
             }
 
             .audio-popup .howto-storm-meter-row {
@@ -5628,14 +5646,13 @@
 
             .audio-popup .howto-storm-btn-preview {
                 position: relative;
-                width: 54px;
-                height: 54px;
-                border-radius: 0;
-                background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/meter_back.png');
-                background-repeat: no-repeat;
-                background-size: 100% 100%;
-                background-position: center center;
-                filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+                width: 64px;
+                height: 38px;
+                border: 2px solid #1e2630;
+                border-radius: 7px;
+                background: linear-gradient(180deg, #454c56, #2a313a);
+                box-shadow: 0 2px 0 rgba(0, 0, 0, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+                filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.28));
             }
 
             .audio-popup .howto-storm-btn-preview::before {
@@ -5643,20 +5660,19 @@
                 position: absolute;
                 left: 4px;
                 right: 4px;
-                bottom: 3px;
-                height: 6px;
-                border-radius: 2px;
-                background: rgba(8, 14, 20, 0.72);
-                border: 1px solid rgba(180, 230, 255, 0.2);
-                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+                top: 4px;
+                bottom: 4px;
+                border-radius: 3px;
+                border: 2px solid rgba(176, 190, 202, 0.52);
+                box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
             }
 
-            .audio-popup .howto-storm-btn-preview > span {
+            .audio-popup .howto-storm-btn-preview .storm-fill {
                 position: absolute;
-                left: 5px;
-                right: 5px;
-                bottom: 4px;
-                height: 4px;
+                left: 6px;
+                right: 6px;
+                top: 6px;
+                bottom: 6px;
                 border-radius: 2px;
                 transform-origin: left center;
                 transform: scaleX(var(--fill, 0));
@@ -5664,22 +5680,114 @@
                 box-shadow: 0 0 8px rgba(94, 216, 255, 0.34);
             }
 
-            .audio-popup .howto-storm-btn-preview-full {
-                background-image:
-                    radial-gradient(circle at 50% 50%, rgba(134, 225, 255, 0.85) 0 16%, rgba(87, 196, 255, 0.34) 23%, rgba(87, 196, 255, 0) 45%),
-                    url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/meter_filling.png');
-                background-size: 100% 100%, 200% 200%;
-                background-position: center center, 0% 0%;
-                animation: howtoStormMeterFramesCharged 640ms steps(4, end) infinite;
+            .audio-popup .howto-storm-btn-preview .storm-bolt {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 14px;
+                line-height: 1;
+                color: #ffe992;
+                text-shadow: 0 0 6px rgba(255, 218, 108, 0.5);
+                z-index: 4;
             }
 
-            .audio-popup .howto-storm-btn-preview-charging > span {
+            .audio-popup .howto-storm-btn-preview .storm-batt-cap {
+                position: absolute;
+                right: -7px;
+                top: 50%;
+                width: 8px;
+                height: 12px;
+                transform: translateY(-50%);
+                border-radius: 2px;
+                background: linear-gradient(180deg, #7b8794, #566371);
+                border: 1px solid rgba(28, 34, 42, 0.86);
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+                z-index: 4;
+            }
+
+            .audio-popup .howto-storm-btn-preview .storm-armed-label {
+                position: absolute;
+                left: 50%;
+                top: 4px;
+                transform: translateX(-50%);
+                font-family: 'Press Start 2P', monospace;
+                font-size: 6px;
+                line-height: 1;
+                letter-spacing: 0.06em;
+                color: #ffe799;
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55), 0 0 4px rgba(255, 220, 120, 0.32);
+                z-index: 4;
+                opacity: 0;
+            }
+
+            .audio-popup .howto-cascade-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                max-width: 250px;
+                margin: 8px auto;
+            }
+
+            .audio-popup .howto-cascade-grid span {
+                height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.14);
+                background: rgba(255, 255, 255, 0.05);
+                font-size: 24px;
+                color: #b5e8ff;
+            }
+
+            .audio-popup .howto-cascade-grid .core {
+                color: #ffe08a;
+                border-color: rgba(255, 224, 138, 0.7);
+                box-shadow: 0 0 0 1px rgba(255, 224, 138, 0.18) inset;
+            }
+
+            .audio-popup .howto-cascade-grid .hit {
+                color: #8fe2ff;
+                border-color: rgba(143, 226, 255, 0.42);
+                background: rgba(72, 196, 255, 0.12);
+                animation: howtoCascadePulse 980ms ease-in-out infinite;
+            }
+
+            .audio-popup .howto-cascade-grid .hit:nth-child(2) { animation-delay: 0ms; }
+            .audio-popup .howto-cascade-grid .hit:nth-child(4) { animation-delay: 160ms; }
+            .audio-popup .howto-cascade-grid .hit:nth-child(6) { animation-delay: 320ms; }
+            .audio-popup .howto-cascade-grid .hit:nth-child(8) { animation-delay: 480ms; }
+
+            @keyframes howtoCascadePulse {
+                0%, 100% {
+                    transform: scale(1);
+                    box-shadow: inset 0 0 0 0 rgba(143, 226, 255, 0);
+                    filter: brightness(1);
+                }
+                50% {
+                    transform: scale(1.06);
+                    box-shadow: inset 0 0 0 2px rgba(143, 226, 255, 0.28), 0 0 10px rgba(143, 226, 255, 0.22);
+                    filter: brightness(1.18);
+                }
+            }
+
+            .audio-popup .howto-storm-btn-preview-full .storm-armed-label {
+                opacity: 1;
+            }
+
+            .audio-popup .howto-storm-btn-preview-full {
+                box-shadow: 0 2px 0 rgba(0, 0, 0, 0.28), 0 0 0 2px rgba(130, 172, 220, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+            }
+
+            .audio-popup .howto-storm-btn-preview-charging .storm-fill {
                 background: linear-gradient(90deg, #4f8fff, #7dc8ff);
             }
 
-            .audio-popup .howto-storm-btn-preview-full > span {
+            .audio-popup .howto-storm-btn-preview-full .storm-fill {
                 background: linear-gradient(90deg, #a7bcff, #f2ea92);
                 box-shadow: 0 0 10px rgba(198, 201, 126, 0.62);
+                animation: stormFillSweep 520ms linear infinite, stormComboHotPulse 520ms ease-in-out infinite;
             }
 
             .audio-popup .howto-storm-meter-label {
@@ -5692,6 +5800,41 @@
                 25%, 49.999% { background-position: center center, 100% 0%; }
                 50%, 74.999% { background-position: center center, 0% 100%; }
                 75%, 100% { background-position: center center, 100% 100%; }
+            }
+
+            .audio-popup .howto-perk-visual {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin: 8px 0 10px 0;
+            }
+
+            .audio-popup .howto-perk-pill {
+                border-radius: 8px;
+                border: 2px solid rgba(255, 255, 255, 0.24);
+                padding: 10px 8px;
+                text-align: center;
+                font-size: 9px;
+                line-height: 1.45;
+                color: #fff4cf;
+                background: rgba(16, 29, 56, 0.7);
+            }
+
+            .audio-popup .howto-perk-pill b {
+                display: inline-block;
+                margin-top: 4px;
+                font-size: 10px;
+                color: #ffffff;
+            }
+
+            .audio-popup .howto-perk-pill-good {
+                border-color: rgba(117, 255, 202, 0.55);
+                box-shadow: inset 0 0 0 1px rgba(66, 235, 177, 0.24), 0 0 10px rgba(66, 235, 177, 0.22);
+            }
+
+            .audio-popup .howto-perk-pill-risk {
+                border-color: rgba(255, 184, 124, 0.62);
+                box-shadow: inset 0 0 0 1px rgba(255, 158, 88, 0.25), 0 0 10px rgba(255, 158, 88, 0.24);
             }
 
             .audio-popup .howto-storm-grid {
@@ -5738,6 +5881,16 @@
             }
 
             @media (max-width: 560px) {
+                .audio-popup .howto-sprite {
+                    width: 64px;
+                    height: 64px;
+                }
+
+                .audio-popup .howto-size-grid .howto-sprite {
+                    width: 58px;
+                    height: 58px;
+                }
+
                 .audio-popup .howto-carousel {
                     grid-template-columns: 1fr;
                 }
@@ -5751,6 +5904,10 @@
                 }
 
                 .audio-popup .howto-storm-meter-row {
+                    grid-template-columns: 1fr;
+                }
+
+                .audio-popup .howto-perk-visual {
                     grid-template-columns: 1fr;
                 }
 

@@ -432,17 +432,16 @@
             <div class="howto-v2" id="howtoSlides">
                 <section class="howto-card active">
                     <h3>Core Loop</h3>
-                    <p>Each tap spends 1 nano-bot. Grow viruses until they pop, trigger chain reactions, and clear the
-                        board to reach the next level.</p>
+                    <p>Each tap spends 1 nano-bot. Grow viruses, trigger pops, and chain into nearby cells. Clear the board to advance.</p>
                     <div class="howto-step-row">
                         <div class="howto-step">
                             <div class="howto-sprite howto-sprite-s1" role="img" aria-label="Small virus"></div>
-                            <span>Tap to Grow</span>
+                            <span>Tap Virus</span>
                         </div>
                         <div class="howto-arrow">→</div>
                         <div class="howto-step">
-                            <div class="howto-sprite howto-sprite-s3" role="img" aria-label="Larger virus"></div>
-                            <span>Reach Critical</span>
+                            <div class="howto-sprite howto-sprite-s3" role="img" aria-label="Growing virus"></div>
+                            <span>Grow It</span>
                         </div>
                         <div class="howto-arrow">→</div>
                         <div class="howto-step">
@@ -450,11 +449,12 @@
                             <span>Pop + Chain</span>
                         </div>
                     </div>
+                    <div class="howto-inline-note">You can only tap cells that already contain a virus.</div>
                 </section>
 
                 <section class="howto-card">
                     <h3>Virus Sizes</h3>
-                    <p>Viruses increase one size per tap. At max size, the next growth causes a pop.</p>
+                    <p>Viruses progress S1 → S4. At max size, the next growth hit pops that virus.</p>
                     <div class="howto-size-grid">
                         <div><div class="howto-sprite howto-sprite-s1" role="img" aria-label="Size 1"></div><span>S1</span></div>
                         <div><div class="howto-sprite howto-sprite-s2" role="img" aria-label="Size 2"></div><span>S2</span></div>
@@ -464,52 +464,51 @@
                 </section>
 
                 <section class="howto-card">
-                    <h3>Special Viruses</h3>
-                    <p><strong>Armored:</strong> First growth hit breaks the shell. The next growth behaves normally.
-                    </p>
-                    <div class="howto-armored-visual" aria-hidden="true">
-                        <div class="howto-armored-preview">
-                            <div class="howto-sprite howto-sprite-s4"></div>
-                        </div>
+                    <h3>Cascades</h3>
+                    <p>When a virus pops, it sends particles only in 4 directions: <strong>up, down, left, right</strong>. No diagonal particle travel.</p>
+                    <div class="howto-cascade-grid" aria-hidden="true">
+                        <span></span><span class="hit">↑</span><span></span>
+                        <span class="hit">←</span><span class="core">◎</span><span class="hit">→</span>
+                        <span></span><span class="hit">↓</span><span></span>
                     </div>
-                    <p><strong>Rogue Nanobots:</strong> From later levels, hostile bots project a laser barrier that can block cascade particles.</p>
-                    <div class="howto-nanobot-visual" aria-hidden="true">
-                        <div class="howto-nanobot-preview"></div>
-                    </div>
-                    <div class="howto-inline-note">Tip: clear armored viruses early when they block chains.</div>
+                    <p class="howto-caption">Chain planning tip: align likely pops in rows and columns.</p>
                 </section>
 
                 <section class="howto-card">
                     <h3>Nano Storm</h3>
-                    <p>Build a long chain (20+) to charge Nano Storm. Tap the storm button, then tap a target virus.
-                    </p>
+                    <p>Build one chain of <strong>21+ pops</strong> in a single cascade to arm Nano Storm.</p>
                     <div class="howto-storm-meter-row" aria-hidden="true">
                         <div class="howto-storm-meter-card">
                             <div class="howto-storm-btn-preview howto-storm-btn-preview-charging">
-                                <span style="--fill:0.6;"></span>
+                                <span class="storm-bolt" aria-hidden="true">⚡</span>
+                                <span class="storm-batt-cap" aria-hidden="true"></span>
+                                <span class="storm-armed-label" aria-hidden="true">ARMED</span>
+                                <span class="storm-fill" style="--fill:0.62;"></span>
                             </div>
                             <div class="howto-storm-meter-label">Charging</div>
                         </div>
                         <div class="howto-storm-meter-card">
                             <div class="howto-storm-btn-preview howto-storm-btn-preview-full">
-                                <span style="--fill:1;"></span>
+                                <span class="storm-bolt" aria-hidden="true">⚡</span>
+                                <span class="storm-batt-cap" aria-hidden="true"></span>
+                                <span class="storm-armed-label" aria-hidden="true">ARMED</span>
+                                <span class="storm-fill" style="--fill:1;"></span>
                             </div>
-                            <div class="howto-storm-meter-label">Full / Ready</div>
+                            <div class="howto-storm-meter-label">ARMED</div>
                         </div>
                     </div>
-                    <p class="howto-caption">Refill rule: complete one chain of 20+ pops in a single cascade.</p>
+                    <p class="howto-caption">Tap storm button, then tap a target virus.</p>
                     <div class="howto-storm-grid" aria-hidden="true">
                         <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
                         <span class="n">◍</span><span class="c">◎</span><span class="n">◍</span>
                         <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
                     </div>
-                    <p class="howto-caption">Center gets 2 hits. Orthogonal + diagonal neighbors get 1 hit.</p>
+                    <p class="howto-caption">Center takes 2 hits. Orthogonal + diagonal neighbors take 1 hit.</p>
                 </section>
 
                 <section class="howto-card">
-                    <h3>Nano-Bot Counter + Scoring</h3>
-                    <p><strong>Nano-Bot Counter:</strong> This is your move fuel. Each tap uses 1 nano-bot, and level
-                        clears restore clicks.</p>
+                    <h3>Nano-Bots, Score, and MODS</h3>
+                    <p><strong>Nano-Bot Counter:</strong> your move fuel. Level clears restore clicks. If it reaches 0, run ends.</p>
                     <div class="meter howto-live-meter" aria-hidden="true">
                         <div class="meter-icon meter-icon--nanobot"></div>
                         <div class="meter-segments">
@@ -519,11 +518,11 @@
                         <div class="meter-count"><span>7</span></div>
                     </div>
                     <div class="howto-counter-labels">
-                        <span>10 max</span>
-                        <span>Tap = -1</span>
+                        <span>Click = -1</span>
+                        <span>Level clear = refill</span>
                         <span>0 = Game Over</span>
                     </div>
-                    <p><strong>Scoring:</strong> Bigger chains are worth more points and can award bonus clicks.</p>
+                    <p><strong>Score + MODS:</strong> Bigger chains score more. Offers grant temporary run modifiers shown in the MODS bar.</p>
                     <div class="howto-score-visual" aria-hidden="true">
                         <div class="howto-score-pill"><span>Chain</span><b>x14</b></div>
                         <div class="howto-score-arrow">→</div>
@@ -532,19 +531,35 @@
                             src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/antibody.png"
                             alt="">
                     </div>
+                </section>
+
+                <section class="howto-card">
+                    <h3>PIXEL PERKS + VIRAL VENTURES</h3>
+                    <p>At milestone moments you get a choice card. <strong>PIXEL PERKS</strong> are safer boosts. <strong>VIRAL VENTURES</strong> are bigger power with trade-offs.</p>
+                    <div class="howto-perk-visual" aria-hidden="true">
+                        <div class="howto-perk-pill howto-perk-pill-good">PIXEL PERK<br><b>Safe Utility Boost</b></div>
+                        <div class="howto-perk-pill howto-perk-pill-risk">VIRAL VENTURE<br><b>Big Power + Cost</b></div>
+                    </div>
                     <ul>
-                        <li>Longer chains increase score and improve click recovery.</li>
-                        <li>High combo badges grant bonus score and can award extra clicks.</li>
+                        <li>Perks and ventures apply for the current run.</li>
+                        <li>Some modify clicks, Nano Storm behavior, or boss pressure.</li>
+                        <li>Watch the MODS bar to see active effects.</li>
                     </ul>
+                </section>
+
+                <section class="howto-card">
+                    <h3>SPECIAL ENEMIES + ABILITIES</h3>
+                    <p>As levels increase, you will encounter bosses and special enemies with unique abilities.</p>
+                    <p>Watch for on-screen messages from your AI assistant <strong>PIXEL</strong> for warnings and quick strategy hints.</p>
                 </section>
 
                 <section class="howto-card">
                     <h3>Survival Tips</h3>
                     <ul>
-                        <li>Use Nano Storm on crowded clusters or armored pressure zones.</li>
-                        <li>Break armored shells early so they do not stall chain routes.</li>
-                        <li>Plan around blocker lanes at higher levels before tapping.</li>
-                        <li>Do not chase tiny pops if your click counter is low.</li>
+                        <li>Tap into dense clusters to trigger longer cascades.</li>
+                        <li>Break armored viruses early so chain routes stay open.</li>
+                        <li>Use Nano Storm on crowded pressure zones, not isolated cells.</li>
+                        <li>When clicks are low, prioritize guaranteed clears over risky setups.</li>
                     </ul>
                 </section>
             </div>
