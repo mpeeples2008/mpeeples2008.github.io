@@ -186,15 +186,13 @@ function escapeHtmlAttr(str) {
         };
         const ENDURANCE_SIZE_MIX_PROFILE = {
             // Endurance-only: keep density from base profile, but shift size mix slowly.
-            // Progression advances once every 3 levels via getSpawnProfileLevel().
+            // sampleSizeRandom() blends using screensPassed (levels completed).
             sizeMixStart: [0.04, 0.17, 0.35, 0.44],
             sizeMixEven: [0.11, 0.24, 0.33, 0.32],
             sizeMixEnd: [0.24, 0.32, 0.28, 0.16],
-            // Because spawn-profile progress is 1 step per 3 levels:
-            // 6  -> about 18 levels to reach "even"
-            // 13 -> about 39-40 levels to reach "end"
-            sizeMixLevelsToEven: 6,
-            sizeMixLevelsToEnd: 13
+            // Reach "even" by level 10 (9 levels completed), then reach "end" by level 20.
+            sizeMixLevelsToEven: 9,
+            sizeMixLevelsToEnd: 10
         };
 
         // Wrap everything that queries DOM in DOMContentLoaded so elements exist before we attach listeners
@@ -2518,8 +2516,8 @@ function escapeHtmlAttr(str) {
                         lines: [
                             'NEW THREATS DETECTED',
                             'Mutations introducing advanced pathogen behaviors.',
-                            'MINI-BOSS: takes multiple hits to eliminate and can generate new viruses while active.',
-                            'ARMORED SHELLS: stolen lab shielding tech now protects some viruses; break the shell first before normal growth damage applies.'
+                            'BOSS: This nasty character (he\'s now calling himself the Crimson Nightmare) takes multiple hits to eliminate and can generate new viruses while active.',
+                            'ARMORED VIRUSES: Oh, no! The viruses have accessed our shielding technology. Some viruses are shielded; break the shield first before normal growth damage applies.'
                         ]
                     };
                 }
@@ -2527,8 +2525,9 @@ function escapeHtmlAttr(str) {
                     return {
                         lines: [
                             'SLUDGE SOVEREIGN ONLINE',
-                            'A corrosive mutant now coats nearby pathogens in reactive goo.',
-                            'GOO SHIELDS: coated viruses take an extra hit before normal growth damage applies.',
+                            'This corrosive mutant coats nearby pathogens in reactive yellow goo. Yuck!',
+                            'GOO SHIELDS: Goo coated viruses take an extra hit before normal growth damage applies.',
+                            'BIOFILM: Some of the Petri dishes have been covered in a thin layer of biofilm. These cells cannot be tapped until the biofilm is removed.',
                             'WEAK-POINT RULE: direct taps on this boss are only half effective; chain particles hit at full strength.'
                         ]
                     };
@@ -2536,12 +2535,13 @@ function escapeHtmlAttr(str) {
                 if (level === 15) {
                     return {
                         lines: [
-                            'TECHNO GREMLIN BREACH DETECTED',
-                            'A hacker-gremlin has hijacked your nanobots and turned them against containment.',
+                            'NANO-GREMLIN BREACH DETECTED',
+                            'A hacker virus has hijacked your nano bots and turned them against containment.',
                             'JAM ATTACK: Nano Storm charging and firing can be temporarily disabled.',
                             'HOLOGRAM DUPLICATES: projection decoys appear on the boss row/column and pop in one hit.',
                             'FEEDBACK LOOP: each decoy pop deals 0.5 damage to the real boss.',
-                            'PURGE EVENT: when the real boss is destroyed, all remaining holograms collapse instantly.'
+                            'PURGE EVENT: when the real boss is destroyed, all remaining holograms collapse instantly.',
+                            'HACKED NANOBOTS: These drones project a laser barrier that intercepts cascade particles and cuts off cascades. Watch their movement pattern and time your taps around the beam.'
                         ]
                     };
                 }
