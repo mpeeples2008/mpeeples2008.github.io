@@ -4922,7 +4922,20 @@ function escapeHtmlAttr(str) {
                 stepDone: false,
                 targetIndex: -1,
                 overlayEl: null,
-                noteEl: null
+                noteEl: null,
+                introEl: null,
+                introOpen: false,
+                stormArrowEl: null,
+                stormArrowRaf: 0,
+                meterArrowEl: null,
+                meterArrowRaf: 0,
+                assistantArrowEl: null,
+                assistantArrowRaf: 0,
+                assistantCueTimers: [],
+                modsArrowEl: null,
+                modsArrowRaf: 0,
+                modsPreviewActive: false,
+                modsPreviewBackup: { stormCapacitorCharges: null }
             };
 
             function clearTutorialTarget() {
@@ -4962,6 +4975,9 @@ function escapeHtmlAttr(str) {
                     if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) continue;
                     state[idx] = size;
                     if (entry.special) setSpecialForCell(idx, String(entry.special));
+                    if (entry.meta && typeof entry.meta === 'object') {
+                        try { specialMetaState[idx] = Object.assign({}, entry.meta); } catch (e) { }
+                    }
                 }
                 clicksLeft = Math.max(1, Math.floor(Number(opts.clicks) || 10));
                 stormCharges = Math.max(0, Math.floor(Number(opts.stormCharges) || 0));
@@ -4977,51 +4993,61 @@ function escapeHtmlAttr(str) {
 
             function getTutorialSteps() {
                 const center = 14;
+                const step1Target = center + (COLS * 2);
                 const rowLeft = 13;
                 const rowRight = 15;
                 const up = 8;
                 const down = 20;
                 return [
                     {
-                        title: 'Tutorial 1/5',
-                        body: 'Welcome to Tutorial. You can only tap cells that already contain a virus. Each tap spends 1 nano-bot, so use taps carefully.',
-                        actionLabel: 'Begin',
+                        title: 'Tutorial 1/9',
+                        bodyHtml: 'Your primary job is to manually deploy nano-bots to destroy rogue viruses before they escape the testing lab. You deploy a nanobot by tapping on any petri dish in the lab area that already includes a virus. <br><br> With each tap the virus will grow until it finally bursts. Each tap consumes one nano-bot which is tracked on your nano-bot meter. Exceeding your nano-bot allotment may result in corrective action (and a Game Over screen).',
+                        actionLabel: 'Continue',
+                        focusNanoMeter: true,
                         setup: () => {
                             applyTutorialBoard([
-                                { index: center, size: 0 }
+                                { index: step1Target, size: 0 }
                             ], { clicks: 10, stormCharges: 0 });
-                            setTutorialTarget(center);
+                            setTutorialTarget(step1Target);
                         },
                         onBoardTap: (idx, done) => {
-                            if (idx !== center) {
-                                showTutorialNote('Tap the highlighted virus to grow it.');
+                            if (idx !== step1Target) {
+                                showTutorialNote('Tap the highlighted virus to grow it until it bursts.');
                                 return true;
                             }
                             handleClick(idx, true);
                             setTimeout(() => {
-                                if (Number(state[center]) >= 1) done();
-                            }, 180);
+                                if (state[step1Target] === null) done();
+                                else showTutorialNote('Keep tapping this virus until it bursts.');
+                            }, 260);
                             return true;
                         }
                     },
                     {
-                        title: 'Tutorial 2/5',
-                        body: 'Popping causes cascades. Pop the highlighted S4 virus and watch hits travel only up/down/left/right. Longer cascades build bigger combos, more score, and can award bonus nano-bots.',
+                        title: 'Tutorial 2/9',
+                        bodyHtml: 'Popping viruses may trigger secondary containment cascades. Pop the highlighted virus and observe as antibody particles deploy up, down, left, and right. Any virus struck will either grow… or pop.<br><br>Extended cascades increase combo multipliers, boost performance scores, and may qualify you for replacement nano-bots.<br><br>Cascading responsibly is encouraged.',
                         actionLabel: 'Continue',
                         setup: () => {
+                            const step2Offset = COLS * 2;
+                            const step2Center = center + step2Offset;
+                            const step2Left = rowLeft + step2Offset;
+                            const step2Right = rowRight + step2Offset;
+                            const step2Up = up + step2Offset;
+                            const step2Down = down + step2Offset;
                             applyTutorialBoard([
-                                { index: center, size: MAX_SIZE },
-                                { index: rowLeft, size: 2 },
-                                { index: rowRight, size: 2 },
-                                { index: up, size: 2 },
-                                { index: down, size: 2 },
-                                { index: 1, size: 1 }
+                                { index: step2Center, size: MAX_SIZE },
+                                { index: step2Left, size: MAX_SIZE },
+                                { index: step2Right, size: 2 },
+                                { index: step2Up, size: 2 },
+                                { index: step2Down, size: 2 },
+                                { index: 1 + step2Offset, size: 1 }
                             ], { clicks: 10, stormCharges: 0 });
-                            setTutorialTarget(center);
+                            setTutorialTarget(step2Center);
                         },
                         onBoardTap: (idx, done) => {
-                            if (idx !== center) {
-                                showTutorialNote('Tap the highlighted S4 virus to trigger a cascade.');
+                            const step2Center = center + (COLS * 2);
+                            if (idx !== step2Center) {
+                                showTutorialNote('Tap the highlighted virus to trigger a cascade.');
                                 return true;
                             }
                             handleClick(idx, true);
@@ -5030,31 +5056,38 @@ function escapeHtmlAttr(str) {
                         }
                     },
                     {
-                        title: 'Tutorial 3/5',
-                        body: 'Nano Storm: press the highlighted storm button, then tap a target virus. The center gets 2 hits and nearby cells get 1 hit.',
+                        title: 'Tutorial 3/9',
+                        bodyHtml: 'You have been granted access to (1) standard issue Nano Storm charge.<br><br>To use, press the highlighted button on your HUD to arm the weapon and then designate a target virus by tapping. The central speciman will receive 2 impacts, each adjacent cell will receive 1 impact. You can gain additional uses by causing long cascades to recharge the battery.<br><br>I recommend standing back... Figuratively.',
                         actionLabel: 'Continue',
                         focusStormButton: true,
                         setup: () => {
+                            const step3Offset = COLS * 2;
+                            const step3Center = center + step3Offset;
+                            const step3Left = rowLeft + step3Offset;
+                            const step3Right = rowRight + step3Offset;
+                            const step3Up = up + step3Offset;
+                            const step3Down = down + step3Offset;
                             applyTutorialBoard([
-                                { index: center, size: MAX_SIZE },
-                                { index: rowLeft, size: 2 },
-                                { index: rowRight, size: 2 },
-                                { index: up, size: 2 },
-                                { index: down, size: 2 },
-                                { index: 7, size: 1 }
+                                { index: step3Center, size: MAX_SIZE },
+                                { index: step3Left, size: 2 },
+                                { index: step3Right, size: 2 },
+                                { index: step3Up, size: 2 },
+                                { index: step3Down, size: 2 },
+                                { index: 7 + step3Offset, size: 1 }
                             ], { clicks: 10, stormCharges: 1, stormArmed: false });
-                            setTutorialTarget(center);
+                            setTutorialTarget(step3Center);
                         },
                         onBoardTap: (idx, done) => {
+                            const step3Center = center + (COLS * 2);
                             if (!stormArmed) {
                                 showTutorialNote('First press the Nano Storm button, then tap the target.');
                                 return true;
                             }
-                            if (idx !== center) {
+                            if (idx !== step3Center) {
                                 showTutorialNote('Storm target is the highlighted center cell.');
                                 return true;
                             }
-                            if (useNanoStorm(center)) {
+                            if (useNanoStorm(step3Center)) {
                                 setTimeout(() => done(), 900);
                                 return true;
                             }
@@ -5062,37 +5095,163 @@ function escapeHtmlAttr(str) {
                         }
                     },
                     {
-                        title: 'Tutorial 4/5',
-                        body: 'Board clear rewards: when you clear a level, you gain nano-bots back (extra clicks) for the next board. Survive by balancing safe clears and big cascades.',
+                        title: 'Tutorial 4/9',
+                        body: 'Cascade planning drill: focus on the highlighted virus. Tap it until it bursts, then watch how a well-placed pop can trigger a longer chain reaction through nearby lanes.',
                         actionLabel: 'Continue',
                         setup: () => {
+                            const step4Target = 21;
                             applyTutorialBoard([
-                                { index: 14, size: 3 },
-                                { index: 15, size: 3 },
-                                { index: 20, size: 2 },
-                                { index: 21, size: 2 }
+                                { index: step4Target, size: 2 },
+                                { index: 20, size: MAX_SIZE },
+                                { index: 22, size: MAX_SIZE },
+                                { index: 15, size: MAX_SIZE },
+                                { index: 27, size: MAX_SIZE },
+                                { index: 14, size: MAX_SIZE },
+                                { index: 16, size: MAX_SIZE },
+                                { index: 26, size: MAX_SIZE },
+                                { index: 28, size: MAX_SIZE },
+                                { index: 9, size: 2 },
+                                { index: 33, size: 2 }
                             ], { clicks: 8, stormCharges: 0 });
-                            clearTutorialTarget();
+                            setTutorialTarget(step4Target);
+                        },
+                        onBoardTap: (idx, done) => {
+                            const step4Target = 21;
+                            if (idx !== step4Target) {
+                                showTutorialNote('For this drill, tap the highlighted setup virus only.');
+                                return true;
+                            }
+                            handleClick(idx, true);
+                            setTimeout(() => {
+                                const remaining = state.filter((x) => x !== null).length;
+                                if (state[step4Target] === null && remaining <= 5) {
+                                    done();
+                                } else if (state[step4Target] !== null) {
+                                    showTutorialNote('Keep tapping the highlighted virus until it bursts.');
+                                } else {
+                                    showTutorialNote('Nice chain. Tap Continue when ready.');
+                                    done();
+                                }
+                            }, 700);
+                            return true;
                         }
                     },
                     {
-                        title: 'Tutorial 5/5',
-                        body: 'Advanced threats appear later: armored viruses, bosses, and more. Watch PIXEL prompts and MODS to adapt your strategy.',
+                        title: 'Tutorial 5/9',
+                        bodyHtml: 'Not all specimens behave according to standard containment expectations. Certain viruses may exhibit enhanced durability, adaptive defenses, or inconvenient structural reinforcements. These are classified as Special Containment Targets.<br><br>Special targets require modified engagement strategies. Repeated impact may be necessary. Panic is not.<br><br>Armored virus drill: tap the highlighted virus once to trigger a cascade into the armored target. First impact removes the shell, second impact damages the virus.',
                         actionLabel: 'Continue',
                         setup: () => {
+                            const target = 26;
+                            const armored = 32;
                             applyTutorialBoard([
-                                { index: 14, size: 2 },
-                                { index: 15, size: 2, special: 'armored' },
-                                { index: 20, size: 3 },
-                                { index: 27, size: 1 }
+                                { index: target, size: MAX_SIZE },
+                                { index: 27, size: MAX_SIZE },
+                                { index: 33, size: MAX_SIZE },
+                                { index: armored, size: 1, special: 'armored' }
                             ], { clicks: 10, stormCharges: 0 });
+                            setTutorialTarget(target);
+                        },
+                        onBoardTap: (idx, done) => {
+                            const target = 26;
+                            const armored = 32;
+                            if (idx !== target) {
+                                showTutorialNote('Tap the highlighted setup virus to run the armor drill.');
+                                return true;
+                            }
+                            handleClick(idx, true);
+                            const startedAt = Date.now();
+                            const evaluateArmoredDrill = () => {
+                                const shellGone = specialState[armored] !== 'armored';
+                                const damaged = Number(state[armored]) >= 2;
+                                if (shellGone && damaged) {
+                                    showTutorialNote('Armor removed, then damage applied. Exactly right.');
+                                    done();
+                                    return;
+                                }
+                                const elapsed = Date.now() - startedAt;
+                                let busy = false;
+                                try { busy = typeof particlesActive === 'function' ? !!particlesActive() : false; } catch (e) { }
+                                if (busy && elapsed < 2600) {
+                                    setTimeout(evaluateArmoredDrill, 120);
+                                    return;
+                                }
+                                showTutorialNote('If needed, retry: first hit breaks shell, second hit damages virus.');
+                            };
+                            setTimeout(evaluateArmoredDrill, 120);
+                            return true;
+                        }
+                    },
+                    {
+                        title: 'Tutorial 6/9',
+                        bodyHtml: 'Containment bosses are large, persistent threats that require sustained pressure. They do not collapse from a single clean hit.<br><br>Tap the highlighted setup virus once and observe the cascade striking the boss multiple times. Note that bosses may develop additional behaviors in the field (like multiplying or creating new obstacles).<br><br>We will brief you on those details as they arise. For now, focus on pressure, positioning, and chain discipline.',
+                        actionLabel: 'Continue',
+                        setup: () => {
+                            const target = 21;
+                            const boss = 28;
+                            applyTutorialBoard([
+                                { index: target, size: MAX_SIZE },
+                                { index: 22, size: MAX_SIZE },
+                                { index: 27, size: MAX_SIZE },
+                                { index: boss, size: 2, special: 'boss', meta: { isBoss: true, hp: 4, maxHp: 4, bossLevel: 5, phase: 0 } },
+                                { index: 16, size: 2 },
+                                { index: 33, size: 2 }
+                            ], { clicks: 10, stormCharges: 0 });
+                            setTutorialTarget(target);
+                        },
+                        onBoardTap: (idx, done) => {
+                            const target = 21;
+                            const boss = 28;
+                            if (idx !== target) {
+                                showTutorialNote('Tap the highlighted setup virus to begin the boss cascade drill.');
+                                return true;
+                            }
+                            handleClick(idx, true);
+                            const startedAt = Date.now();
+                            const evaluateBossDrill = () => {
+                                const meta = specialMetaState[boss] || null;
+                                const hp = Number(meta && meta.hp);
+                                const maxHp = Number(meta && meta.maxHp);
+                                if (Number.isFinite(hp) && Number.isFinite(maxHp) && hp <= Math.max(1, maxHp - 2)) {
+                                    showTutorialNote('Confirmed: boss took multiple hits and remains active.');
+                                    done();
+                                    return;
+                                }
+                                const elapsed = Date.now() - startedAt;
+                                let busy = false;
+                                try { busy = typeof particlesActive === 'function' ? !!particlesActive() : false; } catch (e) { }
+                                if (busy && elapsed < 2800) {
+                                    setTimeout(evaluateBossDrill, 120);
+                                    return;
+                                }
+                                showTutorialNote('If needed, retry this step to watch multi-hit boss damage.');
+                            };
+                            setTimeout(evaluateBossDrill, 140);
+                            return true;
+                        }
+                    },
+                    {
+                        title: 'Tutorial 7/9',
+                        bodyHtml: 'To assist you in your duties as a new S.P.A.R.E. recruit, we have given you remote access to PIXEL—the lab\'s deeply overqualified AI assistant—through your HUD. PIXEL’s training data includes advanced containment theory, nano-scale combat modeling, and an extensive archive of mid-century “cinematic science fiction.”<br><br>Watch PIXEL for hints, warnings, and updates when containment conditions change. The sarcasm is optional. The information is not.',
+                        actionLabel: 'Continue',
+                        focusAssistant: true,
+                        setup: () => {
+                            clearTutorialTarget();
+                            playTutorialAssistantIntroCue();
+                        }
+                    },
+                    {
+                        title: 'Tutorial 8/9',
+                        bodyHtml: 'As you progress, you will receive temporary run modifiers called <b>PIXEL PERKS</b>. These are usually practical boosts and are tracked in the <b>MODS</b> bar.<br><br>The MODS bar will show what is active and, when relevant, remaining uses or charges.<br><img class="tutorial-inline-card" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_capacitor.png" alt="Example Storm Capacitor card"><br>Operational warning: We have seen attempts at infiltration from our competitors. If you are offered a MOD chip from <b>VIRAL VENTURES</b>, assume there is a catch.',
+                        actionLabel: 'Continue',
+                        focusModsBar: true,
+                        setup: () => {
                             clearTutorialTarget();
                         }
                     },
                     {
-                        title: 'Tutorial Complete',
-                        body: 'You are ready. Start Adventure for story progression, or Endurance for endless score pushing.',
-                        actionLabel: 'Back To Main Menu',
+                        title: 'Tutorial 9/9',
+                        bodyHtml: 'Final route briefing:<br><br><b>Adventure Mode</b> is the full campaign operation: story progression, special enemies, bosses, perks, ventures, and end states.<br><br><b>Endurance Mode</b> is a controlled danger-room simulation: no campaign story beats, no bosses, and no final objective. The system keeps escalating pressure while you chase higher level and score records.<br><br>Choose Adventure for narrative containment duty. Choose Endurance for pure stress testing.',
+                        actionLabel: 'Finish Tutorial',
                         setup: () => {
                             clearTutorialTarget();
                         },
@@ -5101,11 +5260,265 @@ function escapeHtmlAttr(str) {
                 ];
             }
 
+            function removeTutorialStormArrow() {
+                if (tutorialModeState.stormArrowRaf) {
+                    try { cancelAnimationFrame(tutorialModeState.stormArrowRaf); } catch (e) { }
+                    tutorialModeState.stormArrowRaf = 0;
+                }
+                const arrow = tutorialModeState.stormArrowEl;
+                tutorialModeState.stormArrowEl = null;
+                if (arrow && arrow.parentNode) {
+                    try { arrow.parentNode.removeChild(arrow); } catch (e) { }
+                }
+            }
+
+            function updateTutorialStormArrowPosition() {
+                if (!tutorialModeState.active || !tutorialModeState.stormArrowEl || !stormBtn) return;
+                let r = null;
+                try { r = stormBtn.getBoundingClientRect(); } catch (e) { }
+                if (!r || !Number.isFinite(r.left)) return;
+                const arrow = tutorialModeState.stormArrowEl;
+                arrow.style.left = `${Math.round(r.left + (r.width / 2))}px`;
+                arrow.style.top = `${Math.round(r.top - 14)}px`;
+                tutorialModeState.stormArrowRaf = requestAnimationFrame(updateTutorialStormArrowPosition);
+            }
+
+            function ensureTutorialStormArrow() {
+                if (!tutorialModeState.active || !stormBtn) return;
+                if (tutorialModeState.stormArrowEl && tutorialModeState.stormArrowEl.isConnected) {
+                    if (!tutorialModeState.stormArrowRaf) {
+                        tutorialModeState.stormArrowRaf = requestAnimationFrame(updateTutorialStormArrowPosition);
+                    }
+                    return;
+                }
+                const arrow = document.createElement('div');
+                arrow.className = 'tutorial-storm-arrow';
+                arrow.textContent = '▼';
+                arrow.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(arrow);
+                tutorialModeState.stormArrowEl = arrow;
+                tutorialModeState.stormArrowRaf = requestAnimationFrame(updateTutorialStormArrowPosition);
+            }
+
             function setTutorialStormFocus(active) {
                 try {
                     if (!stormBtn) return;
                     stormBtn.classList.toggle('tutorial-focus', !!active);
+                    if (active) ensureTutorialStormArrow();
+                    else removeTutorialStormArrow();
                 } catch (e) { }
+            }
+
+            function removeTutorialMeterArrow() {
+                if (tutorialModeState.meterArrowRaf) {
+                    try { cancelAnimationFrame(tutorialModeState.meterArrowRaf); } catch (e) { }
+                    tutorialModeState.meterArrowRaf = 0;
+                }
+                const arrow = tutorialModeState.meterArrowEl;
+                tutorialModeState.meterArrowEl = null;
+                if (arrow && arrow.parentNode) {
+                    try { arrow.parentNode.removeChild(arrow); } catch (e) { }
+                }
+            }
+
+            function updateTutorialMeterArrowPosition() {
+                if (!tutorialModeState.active || !tutorialModeState.meterArrowEl) return;
+                const meter = document.getElementById('clicksMeter');
+                if (!meter) return;
+                let r = null;
+                try { r = meter.getBoundingClientRect(); } catch (e) { }
+                if (!r || !Number.isFinite(r.left)) return;
+                const arrow = tutorialModeState.meterArrowEl;
+                arrow.style.left = `${Math.round(r.left + (r.width / 2))}px`;
+                arrow.style.top = `${Math.round(r.top - 18)}px`;
+                tutorialModeState.meterArrowRaf = requestAnimationFrame(updateTutorialMeterArrowPosition);
+            }
+
+            function ensureTutorialMeterArrow() {
+                if (!tutorialModeState.active) return;
+                const meter = document.getElementById('clicksMeter');
+                if (!meter) return;
+                if (tutorialModeState.meterArrowEl && tutorialModeState.meterArrowEl.isConnected) {
+                    if (!tutorialModeState.meterArrowRaf) {
+                        tutorialModeState.meterArrowRaf = requestAnimationFrame(updateTutorialMeterArrowPosition);
+                    }
+                    return;
+                }
+                const arrow = document.createElement('div');
+                arrow.className = 'tutorial-meter-arrow';
+                arrow.textContent = '▼';
+                arrow.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(arrow);
+                tutorialModeState.meterArrowEl = arrow;
+                tutorialModeState.meterArrowRaf = requestAnimationFrame(updateTutorialMeterArrowPosition);
+            }
+
+            function setTutorialMeterFocus(active) {
+                if (active) ensureTutorialMeterArrow();
+                else removeTutorialMeterArrow();
+            }
+
+            function getVisibleAssistantBadge() {
+                try {
+                    const all = Array.from(document.querySelectorAll('#assist-badge'));
+                    for (let i = 0; i < all.length; i++) {
+                        const el = all[i];
+                        if (!el || !el.getBoundingClientRect) continue;
+                        const inIntro = !!(el.closest && el.closest('#aiIntro'));
+                        if (inIntro) continue;
+                        const r = el.getBoundingClientRect();
+                        if (r && r.width > 0 && r.height > 0) return el;
+                    }
+                    return all.length ? all[0] : null;
+                } catch (e) {
+                    return document.getElementById('assist-badge');
+                }
+            }
+
+            function removeTutorialAssistantArrow() {
+                if (tutorialModeState.assistantArrowRaf) {
+                    try { cancelAnimationFrame(tutorialModeState.assistantArrowRaf); } catch (e) { }
+                    tutorialModeState.assistantArrowRaf = 0;
+                }
+                const arrow = tutorialModeState.assistantArrowEl;
+                tutorialModeState.assistantArrowEl = null;
+                if (arrow && arrow.parentNode) {
+                    try { arrow.parentNode.removeChild(arrow); } catch (e) { }
+                }
+            }
+
+            function updateTutorialAssistantArrowPosition() {
+                if (!tutorialModeState.active || !tutorialModeState.assistantArrowEl) return;
+                const badge = getVisibleAssistantBadge();
+                if (!badge) return;
+                let r = null;
+                try { r = badge.getBoundingClientRect(); } catch (e) { }
+                if (!r || !Number.isFinite(r.left)) return;
+                const arrow = tutorialModeState.assistantArrowEl;
+                arrow.style.left = `${Math.round(r.left + (r.width / 2))}px`;
+                arrow.style.top = `${Math.round(r.top - 18)}px`;
+                tutorialModeState.assistantArrowRaf = requestAnimationFrame(updateTutorialAssistantArrowPosition);
+            }
+
+            function ensureTutorialAssistantArrow() {
+                if (!tutorialModeState.active) return;
+                const badge = getVisibleAssistantBadge();
+                if (!badge) return;
+                if (tutorialModeState.assistantArrowEl && tutorialModeState.assistantArrowEl.isConnected) {
+                    if (!tutorialModeState.assistantArrowRaf) {
+                        tutorialModeState.assistantArrowRaf = requestAnimationFrame(updateTutorialAssistantArrowPosition);
+                    }
+                    return;
+                }
+                const arrow = document.createElement('div');
+                arrow.className = 'tutorial-assistant-arrow';
+                arrow.textContent = '▼';
+                arrow.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(arrow);
+                tutorialModeState.assistantArrowEl = arrow;
+                tutorialModeState.assistantArrowRaf = requestAnimationFrame(updateTutorialAssistantArrowPosition);
+            }
+
+            function setTutorialAssistantFocus(active) {
+                if (active) ensureTutorialAssistantArrow();
+                else removeTutorialAssistantArrow();
+            }
+
+            function removeTutorialModsArrow() {
+                if (tutorialModeState.modsArrowRaf) {
+                    try { cancelAnimationFrame(tutorialModeState.modsArrowRaf); } catch (e) { }
+                    tutorialModeState.modsArrowRaf = 0;
+                }
+                const arrow = tutorialModeState.modsArrowEl;
+                tutorialModeState.modsArrowEl = null;
+                if (arrow && arrow.parentNode) {
+                    try { arrow.parentNode.removeChild(arrow); } catch (e) { }
+                }
+            }
+
+            function updateTutorialModsArrowPosition() {
+                if (!tutorialModeState.active || !tutorialModeState.modsArrowEl) return;
+                const mods = document.getElementById('perkHud');
+                if (!mods) return;
+                let r = null;
+                try { r = mods.getBoundingClientRect(); } catch (e) { }
+                if (!r || !Number.isFinite(r.left)) return;
+                const arrow = tutorialModeState.modsArrowEl;
+                arrow.style.left = `${Math.round(r.left + (r.width / 2))}px`;
+                arrow.style.top = `${Math.round(r.top - 18)}px`;
+                tutorialModeState.modsArrowRaf = requestAnimationFrame(updateTutorialModsArrowPosition);
+            }
+
+            function ensureTutorialModsArrow() {
+                if (!tutorialModeState.active) return;
+                const mods = document.getElementById('perkHud');
+                if (!mods) return;
+                if (tutorialModeState.modsArrowEl && tutorialModeState.modsArrowEl.isConnected) {
+                    if (!tutorialModeState.modsArrowRaf) {
+                        tutorialModeState.modsArrowRaf = requestAnimationFrame(updateTutorialModsArrowPosition);
+                    }
+                    return;
+                }
+                const arrow = document.createElement('div');
+                arrow.className = 'tutorial-mods-arrow';
+                arrow.textContent = '▼';
+                arrow.setAttribute('aria-hidden', 'true');
+                document.body.appendChild(arrow);
+                tutorialModeState.modsArrowEl = arrow;
+                tutorialModeState.modsArrowRaf = requestAnimationFrame(updateTutorialModsArrowPosition);
+            }
+
+            function setTutorialModsFocus(active) {
+                if (active) ensureTutorialModsArrow();
+                else removeTutorialModsArrow();
+            }
+
+            function applyTutorialModsPreview(active) {
+                try {
+                    if (!runPerkState) return;
+                    if (active) {
+                        if (!tutorialModeState.modsPreviewActive) {
+                            tutorialModeState.modsPreviewBackup.stormCapacitorCharges = Number(runPerkState.stormCapacitorCharges) || 0;
+                            tutorialModeState.modsPreviewActive = true;
+                        }
+                        runPerkState.stormCapacitorCharges = Math.max(1, Number(runPerkState.stormCapacitorCharges) || 0);
+                    } else if (tutorialModeState.modsPreviewActive) {
+                        runPerkState.stormCapacitorCharges = Math.max(0, Number(tutorialModeState.modsPreviewBackup.stormCapacitorCharges) || 0);
+                        tutorialModeState.modsPreviewActive = false;
+                        tutorialModeState.modsPreviewBackup.stormCapacitorCharges = null;
+                    }
+                    try { updatePerkHudIndicators(); } catch (e2) { }
+                } catch (e) { }
+            }
+
+            function clearTutorialAssistantCueTimers() {
+                try {
+                    const timers = Array.isArray(tutorialModeState.assistantCueTimers) ? tutorialModeState.assistantCueTimers : [];
+                    while (timers.length) {
+                        const t = timers.pop();
+                        try { clearTimeout(t); } catch (e) { }
+                    }
+                } catch (e) { }
+            }
+
+            function playTutorialAssistantIntroCue() {
+                clearTutorialAssistantCueTimers();
+                const lines = [
+                    "Hey. He is talking about me.",
+                    "I am PIXEL. I do alerts, tactical hints, and occasional emotional support sarcasm.",
+                    "If something weird appears, read my messages before you panic-click."
+                ];
+                for (let i = 0; i < lines.length; i++) {
+                    const t = setTimeout(() => {
+                        try {
+                            if (!tutorialModeState.active) return;
+                            if (window.Assistant && Assistant.show) {
+                                Assistant.show(lines[i], { priority: 2 });
+                            }
+                        } catch (e) { }
+                    }, i * 1600);
+                    tutorialModeState.assistantCueTimers.push(t);
+                }
             }
 
             function ensureTutorialOverlay() {
@@ -5121,18 +5534,25 @@ function escapeHtmlAttr(str) {
                     <div id="tutorialNote" class="tutorial-body" style="margin-top:-2px; min-height:18px; color:#ffd38e;"></div>
                     <div class="tutorial-actions">
                         <button id="tutorialExitBtn" type="button" class="tutorial-btn secondary">Exit</button>
-                        <button id="tutorialNextBtn" type="button" class="tutorial-btn">Continue</button>
+                        <button id="tutorialPrevBtn" type="button" class="tutorial-btn secondary">Prev</button>
+                        <button id="tutorialNextBtn" type="button" class="tutorial-btn">Next</button>
                     </div>
                 `;
                 document.body.appendChild(wrap);
                 tutorialModeState.overlayEl = wrap;
                 tutorialModeState.noteEl = wrap.querySelector('#tutorialNote');
                 const exitBtn = wrap.querySelector('#tutorialExitBtn');
+                const prevBtn = wrap.querySelector('#tutorialPrevBtn');
                 const nextBtn = wrap.querySelector('#tutorialNextBtn');
                 if (exitBtn) {
                     exitBtn.addEventListener('click', () => {
                         stopTutorialMode(true);
                         restartToIntroScreen();
+                    });
+                }
+                if (prevBtn) {
+                    prevBtn.addEventListener('click', () => {
+                        retreatTutorialStep();
                     });
                 }
                 if (nextBtn) {
@@ -5141,6 +5561,57 @@ function escapeHtmlAttr(str) {
                     });
                 }
                 return wrap;
+            }
+
+            function closeTutorialPrelude() {
+                tutorialModeState.introOpen = false;
+                const el = tutorialModeState.introEl;
+                tutorialModeState.introEl = null;
+                if (el && el.parentNode) {
+                    try { el.parentNode.removeChild(el); } catch (e) { }
+                }
+            }
+
+            function showTutorialPrelude() {
+                closeTutorialPrelude();
+                tutorialModeState.introOpen = true;
+                const wrap = document.createElement('div');
+                wrap.className = 'tutorial-prelude-overlay';
+                wrap.innerHTML = `
+                    <div class="tutorial-prelude-card" role="dialog" aria-modal="true" aria-label="Tutorial Introduction">
+                        <h3 class="tutorial-prelude-title">TRAINING BRIEFING</h3>
+                        <div class="tutorial-prelude-layout">
+                            <div class="tutorial-prelude-body">
+                                <p>Welcome, new recruit, to Pathodyne Industries — a leading innovator in experimental viral research and automated lab intelligence.</p>
+                                <p>You have been entrusted with the containment of several highly volatile, mildly sentient bio-experiments.</p>
+                                <p>While these organisms may exhibit aggressive behavior, glowing eyes, or signs of strategic thinking, you are reminded that they remain company property.</p>
+                                <p>In this tutorial, you will learn the basics of your new position as a trainee in the Speciman Processing and Active Response Execution team. We value your contributions and look forward to inducting you as a full member of the S.P.A.R.E. unit.</p>
+                            </div>
+                            <img class="tutorial-prelude-assistant" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/PC_assistant_sm.png" alt="PIXEL Assistant">
+                        </div>
+                        <div class="tutorial-prelude-actions">
+                            <button id="tutorialPreludeExit" type="button" class="tutorial-btn secondary">Exit</button>
+                            <button id="tutorialPreludeNext" type="button" class="tutorial-btn">Next</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(wrap);
+                tutorialModeState.introEl = wrap;
+                const exitBtn = wrap.querySelector('#tutorialPreludeExit');
+                const nextBtn = wrap.querySelector('#tutorialPreludeNext');
+                if (exitBtn) {
+                    exitBtn.addEventListener('click', () => {
+                        closeTutorialPrelude();
+                        stopTutorialMode(true);
+                        restartToIntroScreen();
+                    });
+                }
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        closeTutorialPrelude();
+                        renderTutorialStep();
+                    });
+                }
             }
 
             function showTutorialNote(message) {
@@ -5163,15 +5634,29 @@ function escapeHtmlAttr(str) {
                 const title = overlay.querySelector('#tutorialTitle');
                 const progress = overlay.querySelector('#tutorialProgress');
                 const body = overlay.querySelector('#tutorialBody');
+                const prevBtn = overlay.querySelector('#tutorialPrevBtn');
                 const nextBtn = overlay.querySelector('#tutorialNextBtn');
                 if (title) title.textContent = step.title || 'Tutorial';
                 if (progress) progress.textContent = `${stepIndex + 1}/${steps.length}`;
-                if (body) body.textContent = step.body || '';
+                if (body) {
+                    if (typeof step.bodyHtml === 'string' && step.bodyHtml) body.innerHTML = step.bodyHtml;
+                    else body.textContent = step.body || '';
+                }
                 if (tutorialModeState.noteEl) tutorialModeState.noteEl.textContent = '';
+                clearTutorialAssistantCueTimers();
                 tutorialModeState.stepDone = false;
                 setTutorialStormFocus(!!step.focusStormButton);
+                setTutorialMeterFocus(!!step.focusNanoMeter);
+                setTutorialAssistantFocus(!!step.focusAssistant);
+                setTutorialModsFocus(!!step.focusModsBar);
+                applyTutorialModsPreview(!!step.focusModsBar);
+                if (prevBtn) {
+                    prevBtn.disabled = false;
+                    prevBtn.style.display = '';
+                }
                 if (nextBtn) {
-                    nextBtn.textContent = step.actionLabel || 'Continue';
+                    const isLast = stepIndex >= (steps.length - 1);
+                    nextBtn.textContent = isLast ? 'Finish' : 'Next';
                     nextBtn.disabled = !!step.onBoardTap;
                 }
                 if (typeof step.setup === 'function') {
@@ -5201,8 +5686,21 @@ function escapeHtmlAttr(str) {
                 renderTutorialStep();
             }
 
+            function retreatTutorialStep() {
+                if (!tutorialModeState.active) return;
+                if (tutorialModeState.introOpen) return;
+                if (tutorialModeState.stepIndex <= 0) {
+                    showTutorialPrelude();
+                    return;
+                }
+                const steps = getTutorialSteps();
+                tutorialModeState.stepIndex = Math.max(0, Math.min(steps.length - 1, tutorialModeState.stepIndex - 1));
+                renderTutorialStep();
+            }
+
             function handleTutorialBoardTap(index) {
                 if (!tutorialModeState.active) return false;
+                if (tutorialModeState.introOpen) return true;
                 const steps = getTutorialSteps();
                 const step = steps[tutorialModeState.stepIndex] || null;
                 if (!step) return true;
@@ -5242,8 +5740,9 @@ function escapeHtmlAttr(str) {
                 tutorialModeState.active = true;
                 tutorialModeState.stepIndex = 0;
                 tutorialModeState.stepDone = false;
+                tutorialModeState.introOpen = false;
                 ensureTutorialOverlay();
-                renderTutorialStep();
+                showTutorialPrelude();
                 inputLocked = false;
                 updateHUD();
             }
@@ -5253,6 +5752,16 @@ function escapeHtmlAttr(str) {
                 tutorialModeState.stepDone = false;
                 clearTutorialTarget();
                 setTutorialStormFocus(false);
+                removeTutorialStormArrow();
+                setTutorialMeterFocus(false);
+                removeTutorialMeterArrow();
+                setTutorialAssistantFocus(false);
+                removeTutorialAssistantArrow();
+                clearTutorialAssistantCueTimers();
+                setTutorialModsFocus(false);
+                removeTutorialModsArrow();
+                applyTutorialModsPreview(false);
+                closeTutorialPrelude();
                 const overlay = tutorialModeState.overlayEl;
                 tutorialModeState.overlayEl = null;
                 tutorialModeState.noteEl = null;

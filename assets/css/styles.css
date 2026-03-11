@@ -6555,6 +6555,160 @@
             50% { transform: translateY(-1px) scale(1.04); }
         }
 
+        .tutorial-storm-arrow {
+            position: fixed;
+            z-index: 2147483646;
+            pointer-events: none;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 26px;
+            line-height: 1;
+            color: #ffd166;
+            text-shadow:
+                0 0 4px rgba(255, 209, 102, 0.95),
+                0 0 10px rgba(95, 171, 255, 0.75);
+            transform: translate(-50%, -50%);
+            animation: tutorialArrowPulse 650ms ease-in-out infinite;
+        }
+
+        @keyframes tutorialArrowPulse {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) translateY(0); }
+            50% { opacity: 0.52; transform: translate(-50%, -50%) translateY(-4px); }
+        }
+
+        .tutorial-meter-arrow {
+            position: fixed;
+            z-index: 2147483646;
+            pointer-events: none;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 42px;
+            line-height: 1;
+            color: #ffd400;
+            text-shadow:
+                0 0 6px rgba(255, 221, 77, 0.98),
+                0 0 14px rgba(255, 179, 0, 0.85),
+                0 0 24px rgba(255, 145, 0, 0.65);
+            transform: translate(-50%, -50%);
+            animation: tutorialArrowPulse 650ms ease-in-out infinite;
+        }
+
+        .tutorial-assistant-arrow {
+            position: fixed;
+            z-index: 2147483646;
+            pointer-events: none;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 40px;
+            line-height: 1;
+            color: #ffd400;
+            text-shadow:
+                0 0 6px rgba(255, 221, 77, 0.98),
+                0 0 14px rgba(255, 179, 0, 0.85),
+                0 0 24px rgba(255, 145, 0, 0.65);
+            transform: translate(-50%, -50%);
+            animation: tutorialArrowPulse 650ms ease-in-out infinite;
+        }
+
+        .tutorial-mods-arrow {
+            position: fixed;
+            z-index: 2147483646;
+            pointer-events: none;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 40px;
+            line-height: 1;
+            color: #ffd400;
+            text-shadow:
+                0 0 6px rgba(255, 221, 77, 0.98),
+                0 0 14px rgba(255, 179, 0, 0.85),
+                0 0 24px rgba(255, 145, 0, 0.65);
+            transform: translate(-50%, -50%);
+            animation: tutorialArrowPulse 650ms ease-in-out infinite;
+        }
+
+        .tutorial-inline-card {
+            display: block;
+            width: min(170px, 42vw);
+            height: auto;
+            margin: 10px 0 0;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
+            border-radius: 8px;
+        }
+
+        .tutorial-prelude-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483645;
+            background: rgba(2, 9, 24, 0.88);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+        }
+
+        .tutorial-prelude-card {
+            width: min(900px, calc(100vw - 24px));
+            max-height: min(86vh, 760px);
+            overflow: auto;
+            background: linear-gradient(180deg, rgba(8, 24, 52, 0.96), rgba(4, 12, 30, 0.97));
+            border: 2px solid rgba(255, 209, 102, 0.72);
+            border-radius: 12px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.52);
+            padding: 18px 18px 14px;
+            color: #dcecff;
+            font-family: "Lucida Console", "Courier New", monospace;
+        }
+
+        .tutorial-prelude-title {
+            font-family: 'Press Start 2P', monospace;
+            color: #ffd166;
+            font-size: 13px;
+            margin: 0 0 12px 0;
+        }
+
+        .tutorial-prelude-body {
+            font-size: 13px;
+            line-height: 1.62;
+            color: #d6e7ff;
+            white-space: normal;
+        }
+
+        .tutorial-prelude-body p {
+            margin: 0 0 12px 0;
+        }
+
+        .tutorial-prelude-layout {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 14px;
+            align-items: end;
+        }
+
+        .tutorial-prelude-assistant {
+            width: 140px;
+            max-width: 30vw;
+            height: auto;
+            image-rendering: pixelated;
+            filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+            align-self: end;
+        }
+
+        @media (max-width: 700px) {
+            .tutorial-prelude-layout {
+                grid-template-columns: 1fr;
+            }
+            .tutorial-prelude-assistant {
+                width: 100px;
+                max-width: 38vw;
+                justify-self: end;
+            }
+        }
+
+        .tutorial-prelude-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
         .cell.tutorial-target {
             outline: 2px dashed #ffd166;
             outline-offset: -4px;
