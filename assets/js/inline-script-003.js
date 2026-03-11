@@ -5211,7 +5211,7 @@ function escapeHtmlAttr(str) {
                     },
                     {
                         title: 'Tutorial 6/9',
-                        bodyHtml: 'Containment bosses are large, persistent threats that require sustained pressure. They do not collapse from a single clean hit.<br><br>Tap the highlighted setup virus once and observe the cascade striking the boss multiple times. Note that bosses may develop additional behaviors in the field (like multiplying or creating new obstacles).<br><br>We will brief you on those details as they arise. For now, focus on pressure, positioning, and chain discipline.',
+                        bodyHtml: 'Containment bosses are large, persistent threats that require sustained pressure. They do not collapse from a single clean hit. Tap the highlighted setup virus once and observe the cascade striking the boss multiple times. Note that bosses may develop additional behaviors and we will brief you on those details as they arise. For now, focus on pressure, positioning, and chain discipline.',
                         actionLabel: 'Continue',
                         setup: () => {
                             const target = 21;
@@ -5269,7 +5269,7 @@ function escapeHtmlAttr(str) {
                     },
                     {
                         title: 'Tutorial 8/9',
-                        bodyHtml: 'As you progress, you will receive temporary run modifiers called <b>PIXEL PERKS</b>. These are usually practical boosts and are tracked in the <b>MODS</b> bar.<br><br>The MODS bar will show what is active and, when relevant, remaining uses or charges.<div class="tutorial-card-warning-row"><img class="tutorial-inline-card" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_capacitor.png" alt="Example Storm Capacitor card"><div class="tutorial-card-warning-text">Operational warning: We have seen attempts at infiltration from our competitors. If you are offered a MOD chip from <b>VIRAL VENTURES</b>, assume there is a catch.</div></div>',
+                        bodyHtml: '<img class="tutorial-inline-card tutorial-inline-card-float" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_capacitor.png" alt="Example Storm Capacitor card">As you progress, you will receive temporary run modifiers called <b>PIXEL PERKS</b>. These are usually practical boosts and are tracked in the <b>MODS</b> bar.<br><br>The MODS bar will show what is active and, when relevant, remaining uses or charges.<br><br>Operational warning: We have seen attempts at infiltration from our competitors. If you are offered a MOD chip from <b>VIRAL VENTURES</b>, assume there is a catch.',
                         actionLabel: 'Continue',
                         focusModsBar: true,
                         setup: () => {

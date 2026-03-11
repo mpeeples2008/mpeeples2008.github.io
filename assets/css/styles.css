@@ -6533,6 +6533,16 @@
             margin-bottom: 6px;
         }
 
+        .lore-logo {
+            display: block;
+            width: min(380px, 74%);
+            max-width: 100%;
+            height: auto;
+            margin: 0 auto 10px auto;
+            image-rendering: auto;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
+        }
+
         .lore-title {
             font-family: 'Press Start 2P', monospace;
             color: #ffd166;
@@ -6557,6 +6567,18 @@
             margin: 0 0 10px 0;
         }
 
+        .lore-portrait {
+            float: right;
+            width: min(220px, 30vw);
+            max-width: 42%;
+            height: auto;
+            margin: 2px 0 10px 14px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 209, 102, 0.55);
+            box-shadow: 0 8px 14px rgba(0, 0, 0, 0.35);
+            image-rendering: auto;
+        }
+
         .lore-quote {
             color: #ffe9b0;
             font-style: italic;
@@ -6565,6 +6587,16 @@
         .lore-subhead {
             color: #ffd166;
             font-weight: 700;
+        }
+
+        @media (max-width: 760px) {
+            .lore-portrait {
+                float: none;
+                display: block;
+                width: min(260px, 68vw);
+                max-width: 100%;
+                margin: 4px auto 10px auto;
+            }
         }
 
         .ai-intro-overlay.fade-out {
@@ -6728,6 +6760,13 @@
             border-radius: 8px;
         }
 
+        .tutorial-inline-card.tutorial-inline-card-float {
+            float: right;
+            margin: 2px 0 8px 12px;
+            width: min(180px, 34vw);
+            max-width: 46%;
+        }
+
         .tutorial-card-warning-row {
             display: grid;
             grid-template-columns: auto 1fr;
@@ -6744,6 +6783,16 @@
             font-size: 12px;
             line-height: 1.5;
             color: #d8ebff;
+        }
+
+        @media (max-width: 700px) {
+            .tutorial-inline-card.tutorial-inline-card-float {
+                float: none;
+                display: block;
+                margin: 6px auto 10px auto;
+                width: min(200px, 62vw);
+                max-width: 100%;
+            }
         }
 
         .tutorial-prelude-overlay {
