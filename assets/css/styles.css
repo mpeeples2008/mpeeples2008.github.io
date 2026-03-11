@@ -4954,6 +4954,18 @@
                 display: block;
             }
 
+            /* Settings tab-specific sizing: keep body text consistently readable */
+            .audio-popup #settingsTabPane,
+            .audio-popup #settingsTabPane label,
+            .audio-popup #settingsTabPane p,
+            .audio-popup #settingsTabPane li,
+            .audio-popup #settingsTabPane .settings-reset-note,
+            .audio-popup #settingsTabPane #musicVolVal,
+            .audio-popup #settingsTabPane #sfxVolVal,
+            .audio-popup #settingsTabPane .assistant-control div {
+                font-size: 13px !important;
+            }
+
             /* Readability pass for Settings/Achievements/About body text.
                Keep headers/buttons in existing display font. */
             .audio-popup .settings-tab-pane,
@@ -5589,6 +5601,82 @@
                 filter: drop-shadow(0 0 6px rgba(144, 230, 255, 0.35));
             }
 
+            .audio-popup .howto-score-tier-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                margin: 8px 0 10px;
+            }
+
+            .audio-popup .howto-score-tier {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 40px;
+                padding: 6px 8px;
+                border-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                background: rgba(0, 0, 0, 0.22);
+                color: #ffe9b0;
+                text-align: center;
+            }
+
+            .audio-popup .howto-score-tier span {
+                font-size: 8px;
+                opacity: 0.9;
+            }
+
+            .audio-popup .howto-score-tier b {
+                font-size: 12px;
+                line-height: 1.15;
+                color: #fff8d2;
+            }
+
+            .audio-popup .howto-mods-demo {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                margin: 6px 0 10px;
+                padding: 6px 8px;
+                border-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                background: rgba(14, 32, 62, 0.66);
+                flex-wrap: wrap;
+            }
+
+            .audio-popup .howto-mods-demo-label {
+                font-family: 'Press Start 2P', monospace;
+                font-size: 8px;
+                color: #ffd671;
+                letter-spacing: 0.05em;
+                margin-right: 2px;
+            }
+
+            .audio-popup .howto-mod-chip {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                padding: 3px 6px;
+                border-radius: 999px;
+                border: 1px solid rgba(66, 235, 177, 0.42);
+                background: rgba(30, 61, 73, 0.82);
+                color: #dbfff3;
+                font-family: 'Press Start 2P', monospace;
+                font-size: 7px;
+                line-height: 1;
+            }
+
+            .audio-popup .howto-mod-chip-count {
+                color: #fff3ce;
+            }
+
+            .audio-popup .howto-mod-chip-risk {
+                border-color: rgba(255, 162, 96, 0.66);
+                background: rgba(81, 35, 26, 0.84);
+                color: #ffd7bf;
+            }
+
             .audio-popup .howto-nanobot-visual {
                 display: flex;
                 justify-content: center;
@@ -5632,7 +5720,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02));
+                background: radial-gradient(circle at 35% 30%, rgba(192, 234, 255, 0.18), rgba(168, 220, 255, 0.04));
             }
 
             .audio-popup .howto-armored-preview::before {
@@ -5641,9 +5729,10 @@
                 inset: 3px;
                 border-radius: 999px;
                 background:
-                    repeating-linear-gradient(60deg, rgba(255, 241, 176, 0.2) 0 2px, transparent 2px 7px),
-                    repeating-linear-gradient(-60deg, rgba(255, 241, 176, 0.18) 0 2px, transparent 2px 7px);
-                opacity: 0.85;
+                    repeating-linear-gradient(62deg, rgba(168, 226, 255, 0.28) 0 2px, transparent 2px 8px),
+                    repeating-linear-gradient(-62deg, rgba(116, 198, 255, 0.24) 0 2px, transparent 2px 8px);
+                opacity: 0.9;
+                z-index: 2;
                 pointer-events: none;
             }
 
@@ -5652,24 +5741,22 @@
                 position: absolute;
                 inset: 2px;
                 border-radius: 999px;
-                border: 2px solid rgba(255, 238, 176, 0.92);
-                box-shadow: 0 0 10px rgba(255, 222, 140, 0.62), inset 0 0 8px rgba(255, 238, 176, 0.2);
+                border: 2px solid rgba(138, 213, 255, 0.96);
+                box-shadow: 0 0 12px rgba(112, 198, 255, 0.62), inset 0 0 10px rgba(174, 230, 255, 0.22);
+                z-index: 3;
                 pointer-events: none;
             }
 
-            .audio-popup .howto-armored-preview img {
-                width: 62px;
-                height: 62px;
-                object-fit: contain;
+            .audio-popup .howto-armored-virus-frame {
+                width: 84px;
+                height: 84px;
+                background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus_3_animation.png');
+                background-repeat: no-repeat;
+                background-size: 100% 200%;
+                background-position: 0% 0%;
                 image-rendering: pixelated;
                 z-index: 1;
-            }
-
-            .audio-popup .howto-armored-preview .howto-sprite {
-                width: 90px;
-                height: 90px;
-                z-index: 1;
-                transform: scale(1.05) translate(2px, -12px);
+                transform: translateY(4px) scale(0.9);
             }
 
             .audio-popup .howto-biofilm-visual {
@@ -5688,6 +5775,56 @@
                     radial-gradient(circle at 52% 42%, rgba(255, 209, 80, 0.62) 0 62%, rgba(220, 141, 38, 0.22) 86%, rgba(220, 141, 38, 0) 100%);
                 box-shadow: 0 0 10px rgba(255, 186, 84, 0.42), inset 0 0 10px rgba(255, 248, 178, 0.24);
                 animation: biofilmWobble 1450ms ease-in-out infinite;
+            }
+
+            .audio-popup .howto-threat-visual {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin: 8px 0 10px;
+            }
+
+            .audio-popup .howto-threat-card {
+                border-radius: 10px;
+                border: 1px solid rgba(255, 255, 255, 0.16);
+                background: rgba(255, 255, 255, 0.04);
+                padding: 8px 6px 10px;
+                text-align: center;
+            }
+
+            .audio-popup .howto-threat-title {
+                font-family: 'Press Start 2P', monospace;
+                font-size: 8px;
+                color: #ffe8b8;
+                margin-bottom: 6px;
+                letter-spacing: 0.04em;
+            }
+
+            .audio-popup .howto-boss-visual {
+                display: flex;
+                justify-content: center;
+            }
+
+            .audio-popup .howto-boss-preview {
+                width: 108px;
+                height: 108px;
+                border-radius: 999px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: radial-gradient(circle at 50% 40%, rgba(198, 228, 255, 0.16), rgba(20, 35, 62, 0.22));
+                box-shadow: inset 0 0 0 1px rgba(120, 190, 255, 0.25), 0 0 12px rgba(112, 188, 255, 0.24);
+            }
+
+            .audio-popup .howto-boss-sheet-frame {
+                width: 96px;
+                height: 96px;
+                background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss.png');
+                background-repeat: no-repeat;
+                background-size: 100% 200%;
+                background-position: 0% 0%;
+                image-rendering: pixelated;
+                filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35));
             }
 
             .audio-popup .howto-storm-meter-row {
@@ -5793,6 +5930,16 @@
                 margin: 8px auto;
             }
 
+            .audio-popup .howto-cascade-illustration {
+                display: block;
+                width: min(273px, 60%);
+                max-width: 100%;
+                height: auto;
+                margin: 8px auto 6px;
+                image-rendering: pixelated;
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
+            }
+
             .audio-popup .howto-cascade-grid span {
                 height: 48px;
                 display: flex;
@@ -5873,30 +6020,39 @@
                 margin: 8px 0 10px 0;
             }
 
-            .audio-popup .howto-perk-pill {
-                border-radius: 8px;
+            .audio-popup .howto-perk-card-box {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 6px;
+                border-radius: 10px;
                 border: 2px solid rgba(255, 255, 255, 0.24);
-                padding: 10px 8px;
-                text-align: center;
-                font-size: 9px;
-                line-height: 1.45;
-                color: #fff4cf;
+                padding: 8px 6px 10px;
                 background: rgba(16, 29, 56, 0.7);
             }
 
-            .audio-popup .howto-perk-pill b {
-                display: inline-block;
-                margin-top: 4px;
-                font-size: 10px;
-                color: #ffffff;
+            .audio-popup .howto-perk-card-label {
+                font-family: 'Press Start 2P', monospace;
+                font-size: 8px;
+                color: #fff4cf;
+                text-align: center;
+                letter-spacing: 0.03em;
             }
 
-            .audio-popup .howto-perk-pill-good {
+            .audio-popup .howto-perk-card-image {
+                width: min(170px, 100%);
+                height: auto;
+                image-rendering: pixelated;
+                filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.28));
+            }
+
+            .audio-popup .howto-perk-card-box-good {
                 border-color: rgba(117, 255, 202, 0.55);
                 box-shadow: inset 0 0 0 1px rgba(66, 235, 177, 0.24), 0 0 10px rgba(66, 235, 177, 0.22);
             }
 
-            .audio-popup .howto-perk-pill-risk {
+            .audio-popup .howto-perk-card-box-risk {
                 border-color: rgba(255, 184, 124, 0.62);
                 box-shadow: inset 0 0 0 1px rgba(255, 158, 88, 0.25), 0 0 10px rgba(255, 158, 88, 0.24);
             }
@@ -5908,6 +6064,16 @@
                 max-width: 240px;
                 margin: 6px auto;
                 text-align: center;
+            }
+
+            .audio-popup .howto-storm-illustration {
+                display: block;
+                width: min(273px, 60%);
+                max-width: 100%;
+                height: auto;
+                margin: 8px auto 6px;
+                image-rendering: pixelated;
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
             }
 
             .audio-popup .howto-storm-grid span {
@@ -5982,6 +6148,10 @@
                 }
 
                 .audio-popup .howto-perk-visual {
+                    grid-template-columns: 1fr;
+                }
+
+                .audio-popup .howto-threat-visual {
                     grid-template-columns: 1fr;
                 }
 

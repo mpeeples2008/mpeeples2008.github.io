@@ -326,13 +326,13 @@
         <div class="row">
             <label for="musicVol">Music Volume</label>
             <input id="musicVol" type="range" min="0" max="1" step="0.01" value="0.20" />
-            <div id="musicVolVal" style="width:40px;text-align:right;font-size:11px;color:#ffe9b0;">20%</div>
+            <div id="musicVolVal" style="width:40px;text-align:right;font-size:13px;color:#ffe9b0;">20%</div>
         </div>
 
         <div class="row">
             <label for="sfxVol">SFX Volume</label>
             <input id="sfxVol" type="range" min="0" max="1" step="0.01" value="0.50" />
-            <div id="sfxVolVal" style="width:40px;text-align:right;font-size:11px;color:#ffe9b0;">50%</div>
+            <div id="sfxVolVal" style="width:40px;text-align:right;font-size:13px;color:#ffe9b0;">50%</div>
         </div>
 
         <div class="settings-audio-toggle-row">
@@ -436,26 +436,26 @@
             <button id="helpPrev" class="btn howto-nav" type="button" aria-label="Previous section">◀</button>
             <div class="howto-v2" id="howtoSlides">
                 <section class="howto-card howto-card-core-loop active">
-                    <h3>Tap it, Grow it, Pop it!</h3>
-                    <p>Tap viruses to inject nano-bots. Each hit grows a virus through stages until it pops, then chains can spread into nearby cells.</p>
+                    <h3>Tap'em, Grow'em, Pop'em!</h3>
+                    <p>Your primary goal is to get rid of all of the viruses on each level. Tap viruses to inject nano-bots. Each tap grows a virus through stages until it pops. 
+                        Some viruses start small, and others start almost ready to burst. Use that to your advantage to clear the board efficiently.
+                    </p>
                     <img class="howto-burst-illustration" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus_burst.png" alt="Virus burst progression illustration">
-                    <div class="howto-inline-note">Clear the board to advance.</div>
+                    <div class="howto-inline-note">Clear the board of all viruses to advance.</div>
                 </section>
 
                 <section class="howto-card">
-                    <h3>Cascades</h3>
-                    <p>When a virus pops, it sends particles only in 4 directions: <strong>up, down, left, right</strong>. No diagonal particle travel.</p>
-                    <div class="howto-cascade-grid" aria-hidden="true">
-                        <span></span><span class="hit">↑</span><span></span>
-                        <span class="hit">←</span><span class="core">◎</span><span class="hit">→</span>
-                        <span></span><span class="hit">↓</span><span></span>
-                    </div>
-                    <p class="howto-caption">Chain planning tip: align likely pops in rows and columns.</p>
+                    <h3>Cascade Responsibly</h3>
+                    <p>When a virus pops, it sends antibody particles in 4 directions: <strong>up, down, left, right</strong>. When these particles hit other viruses, it will cause them to grow or pop. This can lead to cascades to help you clear the board.</p>
+                    <img class="howto-cascade-illustration" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/explode_how_to.png" alt="Cascade direction illustration">
+                    <p class="howto-caption">Tip: Set up cascades by lining up soon-to-pop viruses in rows and columns. Longer chains will earn you additional nano-bots.</p>
                 </section>
 
                 <section class="howto-card">
                     <h3>Nano Storm</h3>
-                    <p>Build one chain of <strong>21+ pops</strong> in a single cascade to arm Nano Storm. Long chains that miss the mark still retain a partial charge.</p>
+                    <p>You have one additional secret weapon. The Nano Storm is a powerful burst that will impact several viruses all at once.</p>
+                      <p>After you use your Nano Storm charge, you can recharge it by building a chain of <strong>21+ pops</strong> in a single cascade. Long chains that miss the mark 
+                        still retain a partial charge.</p>
                     <div class="howto-storm-meter-row" aria-hidden="true">
                         <div class="howto-storm-meter-card">
                             <div class="howto-storm-btn-preview howto-storm-btn-preview-charging">
@@ -476,18 +476,15 @@
                             <div class="howto-storm-meter-label">ARMED</div>
                         </div>
                     </div>
-                    <p class="howto-caption">Tap storm button, then tap a target virus.</p>
-                    <div class="howto-storm-grid" aria-hidden="true">
-                        <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
-                        <span class="n">◍</span><span class="c">◎</span><span class="n">◍</span>
-                        <span class="d">◌</span><span class="n">◍</span><span class="d">◌</span>
-                    </div>
-                    <p class="howto-caption">Center takes 2 hits. Orthogonal + diagonal neighbors take 1 hit.</p>
+                    <p class="howto-caption">Tap the icon to ARM Nano Storm, then tap a target virus to deploy.</p>
+                    <img class="howto-storm-illustration" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/nano_storm_how_to.png" alt="Nano Storm target illustration">
+                    <p class="howto-caption">When you use the Nano Storm, the target virus takes 2 hits. Orthogonal + diagonal neighbors take 1 hit each.</p>
                 </section>
 
                 <section class="howto-card">
-                    <h3>Nano-Bots, Score, and MODS</h3>
-                    <p><strong>Nano-Bot Counter:</strong> your move fuel. Level clears restore clicks. If it reaches 0, run ends.</p>
+                    <h3>Nano-Bots and MODS</h3>
+                    <p><strong>Nano-Bot Counter:</strong> Nano-Bots are your primary weapons. Keep an eye on this meter to know how many you have available. 
+                        You can earn additional Nano-Bots by clearing levels or with long cascades. If your Nano-Bot meter ever reaches 0, it's game over.</p>
                     <div class="meter howto-live-meter" aria-hidden="true">
                         <div class="meter-icon meter-icon--nanobot"></div>
                         <div class="meter-segments">
@@ -496,55 +493,97 @@
                         </div>
                         <div class="meter-count"><span>7</span></div>
                     </div>
-                    <div class="howto-counter-labels">
-                        <span>Click = -1</span>
-                        <span>Level clear = refill</span>
-                        <span>0 = Game Over</span>
-                    </div>
-                    <p><strong>Score + MODS:</strong> Bigger chains score more. Offers grant temporary run modifiers shown in the MODS bar.</p>
-                    <div class="howto-score-visual" aria-hidden="true">
-                        <div class="howto-score-pill"><span>Chain</span><b>x14</b></div>
-                        <div class="howto-score-arrow">→</div>
-                        <div class="howto-score-pill"><span>Score</span><b>+70</b></div>
-                        <img class="howto-score-sprite"
-                            src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/antibody.png"
-                            alt="">
+                    
+                    <p><strong>MODS Bar:</strong> This area shows any MOD chips you've earned alogn the way. Active run effects appear here so you can quickly track bonuses and trade-offs.</p>
+                    <div class="howto-mods-demo" aria-hidden="true">
+                        <span class="howto-mods-demo-label">MODS</span>
+                        <span class="howto-mod-chip">ST</span>
+                        <span class="howto-mod-chip">RE<span class="howto-mod-chip-count">+2</span></span>
+                        <span class="howto-mod-chip">BB<span class="howto-mod-chip-count">1</span></span>
                     </div>
                 </section>
 
                 <section class="howto-card">
-                    <h3>PIXEL PERKS + VIRAL VENTURES</h3>
-                    <p>At milestone moments you get a choice card. <strong>PIXEL PERKS</strong> are safer boosts. <strong>VIRAL VENTURES</strong> are bigger power with trade-offs.</p>
-                    <div class="howto-perk-visual" aria-hidden="true">
-                        <div class="howto-perk-pill howto-perk-pill-good">PIXEL PERK<br><b>Safe Utility Boost</b></div>
-                        <div class="howto-perk-pill howto-perk-pill-risk">VIRAL VENTURE<br><b>Big Power + Cost</b></div>
+                    <h3>Scoring</h3>
+                    <p>Youg gain points by popping viruses and clearing levels.
+                         Longer cascades increase your chain multiplier, which boosts the points you gain from each pop in that sequence. 
+                        You also earn higher point multipliers as you advance to higher levels.</p>
+                    <div class="howto-score-tier-grid" aria-hidden="true">
+                        <div class="howto-score-tier"><span>10+ pops</span><b>+30</b></div>
+                        <div class="howto-score-tier"><span>14+ pops</span><b>+70</b></div>
+                        <div class="howto-score-tier"><span>18+ pops</span><b>+120</b></div>
+                        <div class="howto-score-tier"><span>22+ pops</span><b>+200</b></div>
                     </div>
                     <ul>
-                        <li>Perks and ventures apply for the current run.</li>
+                        <li>Short pops score less; long cascades score significantly more. This is the key to maximizing your score.</li>
+                        <li>Planning cascades by setting up rows and columns is the fastest way to raise score.</li>
+                        <li>Higher scores unlocks more perk opportunities in Adventure Mode.</li>
+                    </ul>
+                </section>
+
+                <section class="howto-card">
+                    <h3>PIXEL PERKS + VIRAL VENTURES: Adventure Mode Only</h3>
+                    <p>At score milestones you get a new MOD chip. <strong>PIXEL PERKS</strong> are safer boosts. <strong>VIRAL VENTURES</strong> are bigger power with trade-offs.</p>
+                    <div class="howto-perk-visual" aria-hidden="true">
+                        <div class="howto-perk-card-box howto-perk-card-box-good">
+                            <div class="howto-perk-card-label">PIXEL PERK</div>
+                            <img class="howto-perk-card-image"
+                                 src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_emergency_cells.png"
+                                 alt="Emergency Cells card">
+                        </div>
+                        <div class="howto-perk-card-box howto-perk-card-box-risk">
+                            <div class="howto-perk-card-label">VIRAL VENTURE</div>
+                            <img class="howto-perk-card-image"
+                                 src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_razor_payload.png"
+                                 alt="Razor Payload card">
+                        </div>
+                    </div>
+                    <ul>
+                        <li>Perks and ventures apply only to the current run.</li>
                         <li>Some modify clicks, Nano Storm behavior, or boss pressure.</li>
                         <li>Watch the MODS bar to see active effects.</li>
                     </ul>
                 </section>
 
                 <section class="howto-card">
-                    <h3>SPECIAL ENEMIES + ABILITIES</h3>
-                    <p>As levels increase, you will encounter bosses and special enemies with unique abilities.</p>
+                    <h3>SPECIAL ENEMIES: Adventure Mode Only</h3>
+                    <p>As levels increase, you will encounter bosses and special enemies with unique abilities and defenses.</p>
+                    <div class="howto-threat-visual" aria-hidden="true">
+                        <div class="howto-threat-card">
+                            <div class="howto-threat-title">Armored Virus</div>
+                            <div class="howto-armored-visual">
+                                <div class="howto-armored-preview">
+                                    <span class="howto-armored-virus-frame" aria-hidden="true"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="howto-threat-card">
+                            <div class="howto-threat-title">Boss</div>
+                            <div class="howto-boss-visual">
+                                <div class="howto-boss-preview">
+                                    <span class="howto-boss-sheet-frame" aria-hidden="true"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <p>Watch for on-screen messages from your AI assistant <strong>PIXEL</strong> for warnings and quick strategy hints.</p>
                 </section>
 
                 <section class="howto-card">
                     <h3>Survival Tips</h3>
                     <ul>
-                        <li>Tap into dense clusters to trigger longer cascades.</li>
-                        <li>Break armored viruses early so chain routes stay open.</li>
-                        <li>Use Nano Storm on crowded pressure zones, not isolated cells.</li>
-                        <li>When clicks are low, prioritize guaranteed clears over risky setups.</li>
+                        <li>Prioritize cascades over single big pops. Keep lanes open for up/down/left/right chains.</li>
+                        <li>Break shields early so they do not block future cascade routes.</li>
+                        <li>Conserve your Nano Storm for when it can make a big impact.</li>
+                        <li>During boss levels, treat regular viruses as resources for cascades ang gaining Nano-Bots, not just threats.</li>
+                        <li>Chose your MODS carefully and adapt.</li>
+                        <li>Use PIXEL hints as timing cues; many warnings will help you prepare your next move.</li>
                     </ul>
                 </section>
             </div>
             <button id="helpNext" class="btn howto-nav" type="button" aria-label="Next section">▶</button>
         </div>
-        <div class="howto-carousel-meta"><span id="helpPage">1 / 6</span></div>
+        <div class="howto-carousel-meta"><span id="helpPage">1 / 8</span></div>
     </div>
     <!-- END HOW TO PLAY POPUP -->
 
