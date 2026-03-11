@@ -2,7 +2,7 @@
         (function () {
             const intro = document.getElementById('aiIntro');
             const textBox = document.getElementById('aiIntroText');
-            const startButtons = Array.from(document.querySelectorAll('#aiStartBtn, #aiEnduranceBtn'));
+            const startButtons = Array.from(document.querySelectorAll('#aiStartBtn, #aiEnduranceBtn, #aiTutorialBtn'));
 
             // Example boot-up lines (can be customized)
             const introLines = [
@@ -29,8 +29,21 @@
                 startButtons.forEach((startBtn) => {
                     startBtn.addEventListener('click', () => {
                         try {
-                            if (intro) intro.classList.add('fade-out');
-                            if (typeof startGame === 'function') startGame();
+                            if (intro) {
+                                // Ensure CSS fade class can win even after inline styles
+                                intro.style.removeProperty('opacity');
+                                intro.style.removeProperty('pointer-events');
+                                intro.classList.add('fade-out');
+                                // Fully hide after fade so the board is guaranteed visible
+                                setTimeout(() => {
+                                    if (!intro) return;
+                                    intro.style.display = 'none';
+                                    intro.style.visibility = 'hidden';
+                                    intro.setAttribute('aria-hidden', 'true');
+                                }, 650);
+                            }
+                            const isTutorialBtn = !!(startBtn && startBtn.id === 'aiTutorialBtn');
+                            if (!isTutorialBtn && typeof startGame === 'function') startGame();
                         } catch (e) { console.warn(e); }
                     });
                 });

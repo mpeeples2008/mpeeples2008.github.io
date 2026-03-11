@@ -184,6 +184,18 @@ function escapeHtmlAttr(str) {
                 }
             ]
         };
+        const ENDURANCE_SIZE_MIX_PROFILE = {
+            // Endurance-only: keep density from base profile, but shift size mix slowly.
+            // Progression advances once every 3 levels via getSpawnProfileLevel().
+            sizeMixStart: [0.04, 0.17, 0.35, 0.44],
+            sizeMixEven: [0.11, 0.24, 0.33, 0.32],
+            sizeMixEnd: [0.24, 0.32, 0.28, 0.16],
+            // Because spawn-profile progress is 1 step per 3 levels:
+            // 6  -> about 18 levels to reach "even"
+            // 13 -> about 39-40 levels to reach "end"
+            sizeMixLevelsToEven: 6,
+            sizeMixLevelsToEnd: 13
+        };
 
         // Wrap everything that queries DOM in DOMContentLoaded so elements exist before we attach listeners
         document.addEventListener('DOMContentLoaded', () => {
@@ -325,12 +337,13 @@ function escapeHtmlAttr(str) {
             let musicIndex = 0;
             let musicAudio = null;
             let runStartedByPlayer = false;
-            const GAME_MODES = { adventure: 'adventure', endurance: 'endurance' };
+            const GAME_MODES = { adventure: 'adventure', endurance: 'endurance', tutorial: 'tutorial' };
             let currentGameMode = GAME_MODES.adventure;
             function setGameMode(nextMode) {
-                const normalized = String(nextMode || '').toLowerCase() === GAME_MODES.endurance
+                const raw = String(nextMode || '').toLowerCase();
+                const normalized = raw === GAME_MODES.endurance
                     ? GAME_MODES.endurance
-                    : GAME_MODES.adventure;
+                    : (raw === GAME_MODES.tutorial ? GAME_MODES.tutorial : GAME_MODES.adventure);
                 currentGameMode = normalized;
                 try {
                     if (document.body) document.body.dataset.gameMode = normalized;
@@ -341,8 +354,11 @@ function escapeHtmlAttr(str) {
             function isEnduranceMode() {
                 return currentGameMode === GAME_MODES.endurance;
             }
+            function isTutorialMode() {
+                return currentGameMode === GAME_MODES.tutorial;
+            }
             function isAdventureMode() {
-                return !isEnduranceMode();
+                return !isEnduranceMode() && !isTutorialMode();
             }
             setGameMode(GAME_MODES.adventure);
             let musicOverrideMode = '';
@@ -1390,6 +1406,14 @@ function escapeHtmlAttr(str) {
                 };
                 window.getGameMode = function () {
                     return currentGameMode;
+                };
+                window.startTutorial = function () {
+                    try { startTutorialMode(); } catch (e) { }
+                    return { mode: currentGameMode, active: !!tutorialModeState.active, step: Number(tutorialModeState.stepIndex) + 1 };
+                };
+                window.stopTutorial = function () {
+                    try { stopTutorialMode(); } catch (e) { }
+                    return { mode: currentGameMode, active: !!tutorialModeState.active };
                 };
                 window.addClicks = function (amount = 1, allowOverCap = false) {
                     const delta = Math.floor(Number(amount) || 0);
@@ -2868,6 +2892,7 @@ function escapeHtmlAttr(str) {
             const stormBtn = document.getElementById('stormBtn');
             const aiStartBtn = document.getElementById('aiStartBtn');
             const aiEnduranceBtn = document.getElementById('aiEnduranceBtn');
+            const aiTutorialBtn = document.getElementById('aiTutorialBtn');
             const startModalCloseBtn = document.getElementById('startModalClose');
             syncTutorialGateFromDom();
             if (aiStartBtn) {
@@ -2884,6 +2909,16 @@ function escapeHtmlAttr(str) {
                     runStartedByPlayer = true;
                     tutorialGateState.startPressed = true;
                     markAudioUserInteracted();
+                });
+            }
+            if (aiTutorialBtn) {
+                aiTutorialBtn.addEventListener('click', () => {
+                    runStartedByPlayer = true;
+                    tutorialGateState.startPressed = true;
+                    markAudioUserInteracted();
+                    setTimeout(() => {
+                        try { startTutorialMode(); } catch (e) { }
+                    }, 700);
                 });
             }
             if (startModalCloseBtn) {
@@ -4796,6 +4831,9 @@ function escapeHtmlAttr(str) {
                     if (intro) {
                         intro.classList.remove('fade-out');
                         intro.style.display = 'flex';
+                        intro.style.visibility = 'visible';
+                        intro.style.removeProperty('pointer-events');
+                        intro.style.removeProperty('opacity');
                         intro.setAttribute('aria-hidden', 'false');
                     }
                     if (introText) {
@@ -4841,9 +4879,23 @@ function escapeHtmlAttr(str) {
             }
 
             function restartToIntroScreen() {
+                try {
+                    const kids = Array.from(document.body && document.body.children ? document.body.children : []);
+                    kids.forEach((el) => {
+                        if (!el || el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') return;
+                        try { el.removeAttribute('inert'); } catch (e) { }
+                        try { el.removeAttribute('aria-hidden'); } catch (e) { }
+                    });
+                } catch (e) { }
                 try { clearFinalVictorySequence(true); } catch (e) { }
                 try { clearGameOverFeedback(); } catch (e) { }
                 try { hideContinueOfferPopup(true); } catch (e) { }
+                try { hideRunPerkPopup(true); } catch (e) { }
+                try { hideFinalOfferPopup(true); } catch (e) { }
+                try {
+                    const blockers = document.querySelectorAll('.boss20-talk-modal, .boss20-global-blackout, .final-offer-prelude, .level-complete, .continue-offer-popup, .run-perk-popup, .final-offer-modal');
+                    blockers.forEach((el) => { try { el.remove(); } catch (e2) { } });
+                } catch (e) { }
                 try {
                     if (musicOverrideMode === 'final-boss') stopFinalBossTheme({ fadeOutMs: 250, resumeNormal: false });
                 } catch (e) { }
@@ -4860,6 +4912,354 @@ function escapeHtmlAttr(str) {
                 } catch (e) { }
                 showInitialStartScreen();
                 inputLocked = false;
+                try { setGameMode(GAME_MODES.adventure); } catch (e) { }
+                try { stopTutorialMode(true); } catch (e) { }
+            }
+
+            const tutorialModeState = {
+                active: false,
+                stepIndex: 0,
+                stepDone: false,
+                targetIndex: -1,
+                overlayEl: null,
+                noteEl: null
+            };
+
+            function clearTutorialTarget() {
+                tutorialModeState.targetIndex = -1;
+                try {
+                    if (!boardEl) return;
+                    const cells = boardEl.querySelectorAll('.cell.tutorial-target');
+                    cells.forEach((el) => { try { el.classList.remove('tutorial-target'); } catch (e) { } });
+                } catch (e) { }
+            }
+
+            function setTutorialTarget(index) {
+                clearTutorialTarget();
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= (ROWS * COLS)) return;
+                tutorialModeState.targetIndex = idx;
+                try {
+                    if (!boardEl) return;
+                    const cell = boardEl.querySelector(`[data-index='${idx}']`);
+                    if (cell) cell.classList.add('tutorial-target');
+                } catch (e) { }
+            }
+
+            function applyTutorialBoard(cells, opts = {}) {
+                state.fill(null);
+                specialState.fill(null);
+                specialMetaState.fill(null);
+                resetBoss20State();
+                resetBossGooShieldState(true);
+                resetBiofilmState(true);
+                clearTechnoGremlinPowers(true);
+                const list = Array.isArray(cells) ? cells : [];
+                for (let i = 0; i < list.length; i++) {
+                    const entry = list[i] || {};
+                    const idx = Math.floor(Number(entry.index));
+                    const size = Math.max(0, Math.min(MAX_SIZE, Math.floor(Number(entry.size) || 0)));
+                    if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) continue;
+                    state[idx] = size;
+                    if (entry.special) setSpecialForCell(idx, String(entry.special));
+                }
+                clicksLeft = Math.max(1, Math.floor(Number(opts.clicks) || 10));
+                stormCharges = Math.max(0, Math.floor(Number(opts.stormCharges) || 0));
+                comboInsurance = 0;
+                stormResolving = false;
+                setStormArmed(!!opts.stormArmed);
+                levelAdvancePending = false;
+                inputLocked = false;
+                boardGeneration += 1;
+                scheduleRender();
+                updateHUD();
+            }
+
+            function getTutorialSteps() {
+                const center = 14;
+                const rowLeft = 13;
+                const rowRight = 15;
+                const up = 8;
+                const down = 20;
+                return [
+                    {
+                        title: 'Tutorial 1/5',
+                        body: 'Welcome to Tutorial. You can only tap cells that already contain a virus. Each tap spends 1 nano-bot, so use taps carefully.',
+                        actionLabel: 'Begin',
+                        setup: () => {
+                            applyTutorialBoard([
+                                { index: center, size: 0 }
+                            ], { clicks: 10, stormCharges: 0 });
+                            setTutorialTarget(center);
+                        },
+                        onBoardTap: (idx, done) => {
+                            if (idx !== center) {
+                                showTutorialNote('Tap the highlighted virus to grow it.');
+                                return true;
+                            }
+                            handleClick(idx, true);
+                            setTimeout(() => {
+                                if (Number(state[center]) >= 1) done();
+                            }, 180);
+                            return true;
+                        }
+                    },
+                    {
+                        title: 'Tutorial 2/5',
+                        body: 'Popping causes cascades. Pop the highlighted S4 virus and watch hits travel only up/down/left/right. Longer cascades build bigger combos, more score, and can award bonus nano-bots.',
+                        actionLabel: 'Continue',
+                        setup: () => {
+                            applyTutorialBoard([
+                                { index: center, size: MAX_SIZE },
+                                { index: rowLeft, size: 2 },
+                                { index: rowRight, size: 2 },
+                                { index: up, size: 2 },
+                                { index: down, size: 2 },
+                                { index: 1, size: 1 }
+                            ], { clicks: 10, stormCharges: 0 });
+                            setTutorialTarget(center);
+                        },
+                        onBoardTap: (idx, done) => {
+                            if (idx !== center) {
+                                showTutorialNote('Tap the highlighted S4 virus to trigger a cascade.');
+                                return true;
+                            }
+                            handleClick(idx, true);
+                            setTimeout(() => done(), 700);
+                            return true;
+                        }
+                    },
+                    {
+                        title: 'Tutorial 3/5',
+                        body: 'Nano Storm: press the highlighted storm button, then tap a target virus. The center gets 2 hits and nearby cells get 1 hit.',
+                        actionLabel: 'Continue',
+                        focusStormButton: true,
+                        setup: () => {
+                            applyTutorialBoard([
+                                { index: center, size: MAX_SIZE },
+                                { index: rowLeft, size: 2 },
+                                { index: rowRight, size: 2 },
+                                { index: up, size: 2 },
+                                { index: down, size: 2 },
+                                { index: 7, size: 1 }
+                            ], { clicks: 10, stormCharges: 1, stormArmed: false });
+                            setTutorialTarget(center);
+                        },
+                        onBoardTap: (idx, done) => {
+                            if (!stormArmed) {
+                                showTutorialNote('First press the Nano Storm button, then tap the target.');
+                                return true;
+                            }
+                            if (idx !== center) {
+                                showTutorialNote('Storm target is the highlighted center cell.');
+                                return true;
+                            }
+                            if (useNanoStorm(center)) {
+                                setTimeout(() => done(), 900);
+                                return true;
+                            }
+                            return true;
+                        }
+                    },
+                    {
+                        title: 'Tutorial 4/5',
+                        body: 'Board clear rewards: when you clear a level, you gain nano-bots back (extra clicks) for the next board. Survive by balancing safe clears and big cascades.',
+                        actionLabel: 'Continue',
+                        setup: () => {
+                            applyTutorialBoard([
+                                { index: 14, size: 3 },
+                                { index: 15, size: 3 },
+                                { index: 20, size: 2 },
+                                { index: 21, size: 2 }
+                            ], { clicks: 8, stormCharges: 0 });
+                            clearTutorialTarget();
+                        }
+                    },
+                    {
+                        title: 'Tutorial 5/5',
+                        body: 'Advanced threats appear later: armored viruses, bosses, and more. Watch PIXEL prompts and MODS to adapt your strategy.',
+                        actionLabel: 'Continue',
+                        setup: () => {
+                            applyTutorialBoard([
+                                { index: 14, size: 2 },
+                                { index: 15, size: 2, special: 'armored' },
+                                { index: 20, size: 3 },
+                                { index: 27, size: 1 }
+                            ], { clicks: 10, stormCharges: 0 });
+                            clearTutorialTarget();
+                        }
+                    },
+                    {
+                        title: 'Tutorial Complete',
+                        body: 'You are ready. Start Adventure for story progression, or Endurance for endless score pushing.',
+                        actionLabel: 'Back To Main Menu',
+                        setup: () => {
+                            clearTutorialTarget();
+                        },
+                        completeEndsTutorial: true
+                    }
+                ];
+            }
+
+            function setTutorialStormFocus(active) {
+                try {
+                    if (!stormBtn) return;
+                    stormBtn.classList.toggle('tutorial-focus', !!active);
+                } catch (e) { }
+            }
+
+            function ensureTutorialOverlay() {
+                if (tutorialModeState.overlayEl && tutorialModeState.overlayEl.isConnected) return tutorialModeState.overlayEl;
+                const wrap = document.createElement('div');
+                wrap.className = 'tutorial-overlay';
+                wrap.innerHTML = `
+                    <div class="tutorial-head">
+                        <span id="tutorialTitle">Tutorial</span>
+                        <span id="tutorialProgress">1/1</span>
+                    </div>
+                    <div id="tutorialBody" class="tutorial-body"></div>
+                    <div id="tutorialNote" class="tutorial-body" style="margin-top:-2px; min-height:18px; color:#ffd38e;"></div>
+                    <div class="tutorial-actions">
+                        <button id="tutorialExitBtn" type="button" class="tutorial-btn secondary">Exit</button>
+                        <button id="tutorialNextBtn" type="button" class="tutorial-btn">Continue</button>
+                    </div>
+                `;
+                document.body.appendChild(wrap);
+                tutorialModeState.overlayEl = wrap;
+                tutorialModeState.noteEl = wrap.querySelector('#tutorialNote');
+                const exitBtn = wrap.querySelector('#tutorialExitBtn');
+                const nextBtn = wrap.querySelector('#tutorialNextBtn');
+                if (exitBtn) {
+                    exitBtn.addEventListener('click', () => {
+                        stopTutorialMode(true);
+                        restartToIntroScreen();
+                    });
+                }
+                if (nextBtn) {
+                    nextBtn.addEventListener('click', () => {
+                        advanceTutorialStep();
+                    });
+                }
+                return wrap;
+            }
+
+            function showTutorialNote(message) {
+                if (!tutorialModeState.active) return;
+                const note = tutorialModeState.noteEl;
+                if (!note) return;
+                note.textContent = String(message || '');
+                setTimeout(() => {
+                    if (!tutorialModeState.active || tutorialModeState.noteEl !== note) return;
+                    if (note.textContent === String(message || '')) note.textContent = '';
+                }, 1600);
+            }
+
+            function renderTutorialStep() {
+                if (!tutorialModeState.active) return;
+                const steps = getTutorialSteps();
+                const stepIndex = Math.max(0, Math.min(steps.length - 1, tutorialModeState.stepIndex));
+                const step = steps[stepIndex];
+                const overlay = ensureTutorialOverlay();
+                const title = overlay.querySelector('#tutorialTitle');
+                const progress = overlay.querySelector('#tutorialProgress');
+                const body = overlay.querySelector('#tutorialBody');
+                const nextBtn = overlay.querySelector('#tutorialNextBtn');
+                if (title) title.textContent = step.title || 'Tutorial';
+                if (progress) progress.textContent = `${stepIndex + 1}/${steps.length}`;
+                if (body) body.textContent = step.body || '';
+                if (tutorialModeState.noteEl) tutorialModeState.noteEl.textContent = '';
+                tutorialModeState.stepDone = false;
+                setTutorialStormFocus(!!step.focusStormButton);
+                if (nextBtn) {
+                    nextBtn.textContent = step.actionLabel || 'Continue';
+                    nextBtn.disabled = !!step.onBoardTap;
+                }
+                if (typeof step.setup === 'function') {
+                    try { step.setup(); } catch (e) { }
+                }
+            }
+
+            function markTutorialStepDone() {
+                if (!tutorialModeState.active) return;
+                tutorialModeState.stepDone = true;
+                const overlay = tutorialModeState.overlayEl;
+                const nextBtn = overlay ? overlay.querySelector('#tutorialNextBtn') : null;
+                if (nextBtn) nextBtn.disabled = false;
+            }
+
+            function advanceTutorialStep() {
+                if (!tutorialModeState.active) return;
+                const steps = getTutorialSteps();
+                const current = steps[tutorialModeState.stepIndex] || null;
+                if (current && current.onBoardTap && !tutorialModeState.stepDone) return;
+                if (current && current.completeEndsTutorial) {
+                    stopTutorialMode(true);
+                    restartToIntroScreen();
+                    return;
+                }
+                tutorialModeState.stepIndex = Math.min(steps.length - 1, tutorialModeState.stepIndex + 1);
+                renderTutorialStep();
+            }
+
+            function handleTutorialBoardTap(index) {
+                if (!tutorialModeState.active) return false;
+                const steps = getTutorialSteps();
+                const step = steps[tutorialModeState.stepIndex] || null;
+                if (!step) return true;
+                if (typeof step.onBoardTap === 'function') {
+                    const handled = !!step.onBoardTap(index, () => markTutorialStepDone());
+                    return handled;
+                }
+                return true;
+            }
+
+            function startTutorialMode() {
+                try {
+                    clearFinalVictorySequence(true);
+                    clearGameOverFeedback();
+                    hideContinueOfferPopup(true);
+                    hideRunPerkPopup(true);
+                    hideFinalOfferPopup(true);
+                    stopBoss20PhaseTimer();
+                    stopBossGooShieldTimer();
+                    stopRotatingBlockerTicker();
+                    clearTechnoGremlinPowers(true);
+                    clearActiveParticlesImmediate();
+                    clearSpecialTelegraph();
+                    clearStormPreview();
+                    setBoss20BoardFreeze(false);
+                } catch (e) { }
+                finalOfferPreludeActive = false;
+                finalOfferModalOpen = false;
+                continueOfferOpen = false;
+                levelAdvancePending = false;
+                outOfClicksShown = false;
+                runContinueUses = 0;
+                screensPassed = 1;
+                totalScore = 0;
+                runStartedByPlayer = true;
+                setGameMode(GAME_MODES.tutorial);
+                tutorialModeState.active = true;
+                tutorialModeState.stepIndex = 0;
+                tutorialModeState.stepDone = false;
+                ensureTutorialOverlay();
+                renderTutorialStep();
+                inputLocked = false;
+                updateHUD();
+            }
+
+            function stopTutorialMode(silent = false) {
+                tutorialModeState.active = false;
+                tutorialModeState.stepDone = false;
+                clearTutorialTarget();
+                setTutorialStormFocus(false);
+                const overlay = tutorialModeState.overlayEl;
+                tutorialModeState.overlayEl = null;
+                tutorialModeState.noteEl = null;
+                if (overlay && overlay.parentNode) {
+                    try { overlay.parentNode.removeChild(overlay); } catch (e) { }
+                }
+                if (!silent) setGameMode(GAME_MODES.adventure);
             }
 
             function clearFinalVictorySequence(unlockInput = false) {
@@ -5716,6 +6116,13 @@ function escapeHtmlAttr(str) {
                     const max = (b.maxLevel == null) ? Infinity : Math.max(min, Number(b.maxLevel) || min);
                     if (level >= min && level <= max) Object.assign(base, b.values || {});
                 }
+                if (isEnduranceMode()) {
+                    base.sizeMixStart = Array.isArray(ENDURANCE_SIZE_MIX_PROFILE.sizeMixStart) ? ENDURANCE_SIZE_MIX_PROFILE.sizeMixStart.slice() : base.sizeMixStart;
+                    base.sizeMixEven = Array.isArray(ENDURANCE_SIZE_MIX_PROFILE.sizeMixEven) ? ENDURANCE_SIZE_MIX_PROFILE.sizeMixEven.slice() : base.sizeMixEven;
+                    base.sizeMixEnd = Array.isArray(ENDURANCE_SIZE_MIX_PROFILE.sizeMixEnd) ? ENDURANCE_SIZE_MIX_PROFILE.sizeMixEnd.slice() : base.sizeMixEnd;
+                    base.sizeMixLevelsToEven = Math.max(1, Math.floor(Number(ENDURANCE_SIZE_MIX_PROFILE.sizeMixLevelsToEven) || base.sizeMixLevelsToEven || 8));
+                    base.sizeMixLevelsToEnd = Math.max(base.sizeMixLevelsToEven, Math.floor(Number(ENDURANCE_SIZE_MIX_PROFILE.sizeMixLevelsToEnd) || base.sizeMixLevelsToEnd || 20));
+                }
                 return base;
             }
 
@@ -5737,6 +6144,14 @@ function escapeHtmlAttr(str) {
                 if (lvl < 10) return Math.min(10, lvl);
                 const remapped = 5 + Math.floor((lvl - 10) / 2);
                 return Math.max(1, Math.min(10, remapped));
+            }
+
+            function getEnduranceDensityForLevel(levelNum = getCurrentLevelNumber()) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
+                const start = 0.58;
+                const end = 0.62;
+                const t = Math.max(0, Math.min(1, (lvl - 1) / 19)); // level 1 -> 0, level 20+ -> 1
+                return start + ((end - start) * t);
             }
 
             function getBlockerSettings(levelNum = getCurrentLevelNumber()) {
@@ -6068,6 +6483,11 @@ function escapeHtmlAttr(str) {
 
             function setSpecialForCell(index, typeId) {
                 if (!Number.isFinite(index) || index < 0 || index >= state.length) return;
+                if (isEnduranceMode() && typeId) {
+                    specialState[index] = null;
+                    specialMetaState[index] = null;
+                    return;
+                }
                 specialState[index] = typeId || null;
                 specialMetaState[index] = typeId ? createInitialSpecialMeta(typeId) : null;
             }
@@ -9268,8 +9688,12 @@ function escapeHtmlAttr(str) {
                 const spawnProfileLevel = getSpawnProfileLevel(levelNum);
                 const spawnProfileCompleted = Math.max(0, Math.min(9, spawnProfileLevel - 1));
                 const difficulty = getDifficultyForLevel(spawnProfileLevel);
-                const baseDensity = Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
-                const densityGrowth = Math.max(0, Number(difficulty.densityGrowth) || 0);
+                const baseDensity = isEnduranceMode()
+                    ? Math.max(0, Math.min(1, Number(getEnduranceDensityForLevel(levelNum)) || 0.60))
+                    : Math.max(0, Math.min(1, Number(difficulty.baseDensity) || 0.60));
+                const densityGrowth = isEnduranceMode()
+                    ? 0
+                    : Math.max(0, Number(difficulty.densityGrowth) || 0);
                 const isBossLevelNow = isMiniBossLevel(levelNum);
                 const density = Math.min(0.95, baseDensity + Math.max(0, Number(spawnProfileCompleted) || 0) * densityGrowth);
                 let target = Math.round(total * density);
@@ -9543,6 +9967,9 @@ function escapeHtmlAttr(str) {
                     const gridCell = document.createElement('div');
                     gridCell.className = 'cell';
                     gridCell.dataset.index = i; // petri underlay
+                    if (isTutorialMode() && tutorialModeState.active && Number(i) === Number(tutorialModeState.targetIndex)) {
+                        gridCell.classList.add('tutorial-target');
+                    }
                     if (isBoss20FinalFormCell(i)) gridCell.classList.add('boss20-core-zone');
                     if (Number(i) === Number(boss20State && boss20State.finalFormAnchor)) gridCell.classList.add('boss20-core-anchor');
                     if (specialDef) {
@@ -9619,6 +10046,10 @@ function escapeHtmlAttr(str) {
                 const remaining = state.filter(x => x !== null).length;
 
                 if (remaining === 0) {
+                    if (isTutorialMode() && tutorialModeState.active) {
+                        levelAdvancePending = false;
+                        return;
+                    }
                     if (levelAdvancePending) return;
                     levelAdvancePending = true;
                     if (isFinalVictoryActive()) {
@@ -10900,7 +11331,7 @@ function escapeHtmlAttr(str) {
             // ----- Core interaction -----
             function handleClick(index, isUser = false, tracker = null, suppressFinalize = false) {
                 if (isUser) {
-                    if (isBlockingPopupOpen()) return;
+                    if (!isTutorialMode() && isBlockingPopupOpen()) return;
                     if (isEpicBoss20Level() && boss20State && boss20State.finalShotActive) {
                         if (triggerBoss20FinalShot(index)) return;
                         Assistant.show('PIXEL targeting lock: follow the reticle. One precise hit should do.', { priority: 2 });
@@ -11171,6 +11602,10 @@ function escapeHtmlAttr(str) {
                     if (!c) return;
                     const i = Number(c.dataset.index);
                     if (Number.isFinite(i)) applySpecialTelegraph(i, true);
+                    if (isTutorialMode() && tutorialModeState.active) {
+                        handleTutorialBoardTap(i);
+                        return;
+                    }
                     try {
                         if (isBlockingPopupOpen() || inputLocked || stormResolving || (typeof particlesActive === 'function' && particlesActive())) return;
                     } catch (e) { }
@@ -11364,6 +11799,26 @@ function escapeHtmlAttr(str) {
             applyMusicEnabledState(false);
             applySfxEnabledState();
             applySimpleVirusArtState(false);
+            const mainMenuBtn = document.getElementById('mainMenuBtn');
+            if (mainMenuBtn) {
+                mainMenuBtn.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    try {
+                        if (typeof window.hideModal === 'function') window.hideModal('audioPopup');
+                        else {
+                            const audioPopup = document.getElementById('audioPopup');
+                            if (audioPopup) {
+                                audioPopup.classList.remove('show', 'open');
+                                audioPopup.style.display = 'none';
+                                audioPopup.setAttribute('aria-hidden', 'true');
+                            }
+                        }
+                    } catch (e) { }
+                    requestAnimationFrame(() => {
+                        try { restartToIntroScreen(); } catch (e) { }
+                    });
+                });
+            }
             const resetProgressBtn = document.getElementById('resetProgressBtn');
             if (resetProgressBtn) {
                 resetProgressBtn.addEventListener('click', (ev) => {
