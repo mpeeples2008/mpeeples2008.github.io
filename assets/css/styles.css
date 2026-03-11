@@ -5277,6 +5277,8 @@
                 flex-direction: column;
                 gap: 10px;
                 margin-top: 6px;
+                font-family: "Lucida Console", "Courier New", Courier, monospace;
+                font-size: 12px;
             }
 
             #helpPopup {
@@ -5304,7 +5306,7 @@
             .audio-popup .howto-carousel-meta {
                 margin-top: 6px;
                 text-align: center;
-                font-size: 8px;
+                font-size: 10px;
                 color: #cfe4ff;
                 opacity: 0.95;
             }
@@ -5326,14 +5328,15 @@
 
             .audio-popup .howto-card h3 {
                 margin: 0 0 6px 0;
-                font-size: 13px;
+                font-size: 15px;
+                line-height: 1.35;
                 color: #ffe9b0;
             }
 
             .audio-popup .howto-card p {
                 margin: 0 0 6px 0;
-                font-size: 10px;
-                line-height: 1.45;
+                font-size: 13px;
+                line-height: 1.58;
                 color: #d8ebff;
             }
 
@@ -5344,8 +5347,8 @@
             }
 
             .audio-popup .howto-card li {
-                font-size: 10px;
-                line-height: 1.45;
+                font-size: 13px;
+                line-height: 1.55;
                 margin: 0 0 4px 0;
             }
 
@@ -5878,7 +5881,7 @@
 
             .audio-popup .howto-caption {
                 margin-top: 2px;
-                font-size: 9px;
+                font-size: 12px;
                 text-align: center;
                 color: #cfe4ff;
                 opacity: 0.95;
