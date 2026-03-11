@@ -5179,6 +5179,26 @@
                 text-align: right;
             }
 
+            .audio-popup .settings-dev-row {
+                display: none;
+                align-items: center;
+                justify-content: flex-start;
+                gap: 8px;
+                margin-top: 10px;
+                padding-top: 8px;
+                border-top: 1px dashed rgba(255, 255, 255, 0.2);
+                flex-wrap: wrap;
+            }
+
+            .audio-popup .settings-dev-row.show {
+                display: flex;
+            }
+
+            .audio-popup .settings-dev-row .settings-reset-note {
+                margin-left: auto;
+                text-align: right;
+            }
+
             .audio-popup #resetProgressBtn {
                 font-size: 10px;
             }

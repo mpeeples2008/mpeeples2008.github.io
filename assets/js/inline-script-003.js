@@ -12220,16 +12220,75 @@ function escapeHtmlAttr(str) {
             const settingsTabPane = document.getElementById('settingsTabPane');
             const achievementsTabPane = document.getElementById('achievementsTabPane');
             const aboutTabPane = document.getElementById('aboutTabPane');
+            const devClicksPanel = document.getElementById('devClicksPanel');
+            const devAdd1Btn = document.getElementById('devAdd1Btn');
+            const devAdd5Btn = document.getElementById('devAdd5Btn');
+            const devClicksStatus = document.getElementById('devClicksStatus');
             const testLevelInput = document.getElementById('testLevelInput');
             const applyTestLevelBtn = document.getElementById('applyTestLevelBtn');
             const testClicksInput = document.getElementById('testClicksInput');
             const applyTestClicksBtn = document.getElementById('applyTestClicksBtn');
             const testClicksOverCap = document.getElementById('testClicksOverCap');
             const settingsTestStatus = document.getElementById('settingsTestStatus');
+            let devClicksUnlocked = false;
+            let devUnlockTapCount = 0;
+            let devUnlockTapTimer = null;
             function setSettingsTestStatus(message, isError) {
                 if (!settingsTestStatus) return;
                 settingsTestStatus.textContent = String(message || '');
                 settingsTestStatus.style.color = isError ? '#ffd0d0' : '#cfe4ff';
+            }
+            function setDevClicksStatus(message, isError) {
+                if (!devClicksStatus) return;
+                devClicksStatus.textContent = String(message || '');
+                devClicksStatus.style.color = isError ? '#ffd0d0' : '#ffe9b0';
+            }
+            function setDevClicksPanelVisible(visible) {
+                if (!devClicksPanel) return;
+                const on = !!visible;
+                devClicksPanel.hidden = !on;
+                devClicksPanel.setAttribute('aria-hidden', String(!on));
+                devClicksPanel.classList.toggle('show', on);
+            }
+            function unlockDevClicksPanel() {
+                if (devClicksUnlocked) return;
+                devClicksUnlocked = true;
+                setDevClicksPanelVisible(true);
+                setDevClicksStatus('Testing clicks unlocked', false);
+            }
+            function registerDevUnlockTap() {
+                if (!IS_MOBILE_COARSE || devClicksUnlocked) return;
+                try { if (devUnlockTapTimer) clearTimeout(devUnlockTapTimer); } catch (e) { }
+                devUnlockTapCount += 1;
+                devUnlockTapTimer = setTimeout(() => {
+                    devUnlockTapTimer = null;
+                    devUnlockTapCount = 0;
+                }, 1600);
+                if (devUnlockTapCount >= 7) {
+                    devUnlockTapCount = 0;
+                    try { if (devUnlockTapTimer) clearTimeout(devUnlockTapTimer); } catch (e) { }
+                    devUnlockTapTimer = null;
+                    unlockDevClicksPanel();
+                }
+            }
+            function addDevClicks(amount) {
+                const amt = Math.max(1, Math.floor(Number(amount) || 0));
+                try {
+                    let result = null;
+                    if (typeof window.addClicks === 'function') {
+                        result = window.addClicks(amt, true) || null;
+                    } else {
+                        const before = Number(clicksLeft) || 0;
+                        clicksLeft = Math.max(0, before + amt);
+                        updateHUD();
+                        result = { clicks: clicksLeft, cap: getMaxClicksCap(), changed: clicksLeft - before };
+                    }
+                    const nowClicks = Number(result && result.clicks);
+                    if (Number.isFinite(nowClicks)) setDevClicksStatus(`Clicks: ${nowClicks}`, false);
+                    else setDevClicksStatus(`Added +${amt} clicks`, false);
+                } catch (e) {
+                    setDevClicksStatus('Click add failed', true);
+                }
             }
             function syncSettingsTestInputs() {
                 if (testLevelInput) {
@@ -12269,10 +12328,23 @@ function escapeHtmlAttr(str) {
                 if (aboutTabPane) aboutTabPane.setAttribute('aria-hidden', String(!showAbout));
                 if (showAchievements) scheduleAchievementsUIRender();
             }
-            if (settingsTabBtn) settingsTabBtn.addEventListener('click', () => setSettingsPopupTab('settings'));
+            if (settingsTabBtn) settingsTabBtn.addEventListener('click', () => {
+                setSettingsPopupTab('settings');
+                registerDevUnlockTap();
+            });
             if (achievementsTabBtn) achievementsTabBtn.addEventListener('click', () => setSettingsPopupTab('achievements'));
             if (aboutTabBtn) aboutTabBtn.addEventListener('click', () => setSettingsPopupTab('about'));
             setSettingsPopupTab('settings');
+            setDevClicksPanelVisible(false);
+            setDevClicksStatus('', false);
+            if (devAdd1Btn) devAdd1Btn.addEventListener('click', (ev) => {
+                try { ev.preventDefault(); } catch (e) { }
+                addDevClicks(1);
+            });
+            if (devAdd5Btn) devAdd5Btn.addEventListener('click', (ev) => {
+                try { ev.preventDefault(); } catch (e) { }
+                addDevClicks(5);
+            });
             if (audioBtn) {
                 audioBtn.addEventListener('click', () => {
                     try { hideActiveChainBadge(false); } catch (e) { }
