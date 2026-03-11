@@ -4934,10 +4934,16 @@
             .audio-popup .settings-tab {
                 flex: 1;
                 text-align: center;
-                font-size: 9px;
+                font-family: "Lucida Console", "Courier New", Courier, monospace;
+                font-size: 14px !important;
                 padding: 6px 6px;
                 line-height: 1.2;
                 white-space: nowrap;
+            }
+
+            .audio-popup .settings-tabs button.settings-tab {
+                font-family: "Lucida Console", "Courier New", Courier, monospace !important;
+                font-size: 14px !important;
             }
 
             .audio-popup .settings-tab.active {
@@ -5175,6 +5181,12 @@
 
             .audio-popup #resetProgressBtn {
                 font-size: 10px;
+            }
+
+            .audio-popup #settingsTabPane #mainMenuBtn,
+            .audio-popup #settingsTabPane #resetProgressBtn {
+                font-size: 14px !important;
+                line-height: 1.2;
             }
 
             .audio-popup .settings-test-tools {
@@ -6116,7 +6128,7 @@
                 }
 
                 .audio-popup .settings-tab {
-                    font-size: 8px;
+                    font-size: 14px !important;
                     padding: 5px 4px;
                     letter-spacing: 0;
                 }
@@ -6761,19 +6773,19 @@
         .lore-title {
             font-family: 'Press Start 2P', monospace;
             color: #ffd166;
-            font-size: 13px;
+            font-size: 16px;
             line-height: 1.35;
         }
 
         .lore-subtitle {
             color: #ffe9b0;
-            font-size: 12px;
+            font-size: 14px;
             line-height: 1.4;
             margin-bottom: 10px;
         }
 
         .lore-body {
-            font-size: 12px;
+            font-size: 14px;
             line-height: 1.58;
             color: #d8ebff;
         }
@@ -6848,7 +6860,7 @@
         }
 
         .tutorial-body {
-            font-size: 12px;
+            font-size: 14px;
             line-height: 1.45;
             color: #d5e7ff;
             margin-bottom: 10px;
@@ -7042,7 +7054,7 @@
         }
 
         .tutorial-prelude-body {
-            font-size: 13px;
+            font-size: 14px;
             line-height: 1.62;
             color: #d6e7ff;
             white-space: normal;
