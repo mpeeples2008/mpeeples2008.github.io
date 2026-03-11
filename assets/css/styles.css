@@ -4934,8 +4934,10 @@
             .audio-popup .settings-tab {
                 flex: 1;
                 text-align: center;
-                font-size: 10px;
-                padding: 7px 8px;
+                font-size: 9px;
+                padding: 6px 6px;
+                line-height: 1.2;
+                white-space: nowrap;
             }
 
             .audio-popup .settings-tab.active {
@@ -5910,6 +5912,16 @@
             }
 
             @media (max-width: 560px) {
+                .audio-popup .settings-tabs {
+                    gap: 6px;
+                }
+
+                .audio-popup .settings-tab {
+                    font-size: 8px;
+                    padding: 5px 4px;
+                    letter-spacing: 0;
+                }
+
                 .audio-popup .howto-sprite {
                     width: 64px;
                     height: 64px;

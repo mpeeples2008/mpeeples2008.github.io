@@ -4,6 +4,9 @@
             function showStartModal() {
                 const m = document.getElementById('startModal');
                 if (!m) return;
+                m.style.display = '';
+                m.style.visibility = 'visible';
+                m.style.pointerEvents = 'auto';
                 m.classList.add('show');
                 m.setAttribute('aria-hidden', 'false');
                 // focus the close button for keyboard users
@@ -14,12 +17,18 @@
                 const m = document.getElementById('startModal');
                 if (!m) return;
                 m.classList.remove('show');
+                m.style.display = 'none';
+                m.style.visibility = 'hidden';
+                m.style.pointerEvents = 'none';
                 m.setAttribute('aria-hidden', 'true');
             }
 
             function showHowToPopup() {
                 const helpPopup = document.getElementById('helpPopup');
                 if (!helpPopup) return;
+                helpPopup.style.display = '';
+                helpPopup.style.visibility = 'visible';
+                helpPopup.style.pointerEvents = 'auto';
                 helpPopup.classList.add('show');
                 helpPopup.setAttribute('aria-hidden', 'false');
             }

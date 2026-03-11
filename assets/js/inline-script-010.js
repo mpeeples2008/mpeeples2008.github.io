@@ -21,6 +21,9 @@
 
                 function showHelp() {
                     if (!helpPopup) return;
+                    helpPopup.style.display = '';
+                    helpPopup.style.visibility = 'visible';
+                    helpPopup.style.pointerEvents = 'auto';
                     helpPopup.classList.add('show');
                     helpPopup.setAttribute('aria-hidden', 'false');
                     renderSlide(currentSlide);
@@ -28,6 +31,9 @@
                 function hideHelp() {
                     if (!helpPopup) return;
                     helpPopup.classList.remove('show');
+                    helpPopup.style.display = 'none';
+                    helpPopup.style.visibility = 'hidden';
+                    helpPopup.style.pointerEvents = 'none';
                     helpPopup.setAttribute('aria-hidden', 'true');
                 }
 
