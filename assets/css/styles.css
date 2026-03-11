@@ -5396,6 +5396,15 @@
                 padding: 12px 8px;
             }
 
+            /* Panel 1: show sprite progression without boxed tiles */
+            .audio-popup .howto-card-core-loop .howto-step {
+                background: transparent;
+                border: 0;
+                border-radius: 0;
+                padding: 4px 2px;
+                box-shadow: none;
+            }
+
             .audio-popup .howto-step img {
                 width: 44px;
                 height: 44px;
@@ -5470,6 +5479,20 @@
                 background: rgba(255, 255, 255, 0.05);
             }
 
+            /* Panel 2: show only sprite stages (no framed boxes) */
+            .audio-popup .howto-card-viral-growth .howto-size-grid > div {
+                border: 0;
+                border-radius: 0;
+                background: transparent;
+                box-shadow: none;
+                padding: 4px 2px;
+            }
+
+            /* Panel 2: emphasize visual stage progression */
+            .audio-popup .howto-card-viral-growth .howto-sprite-s2 {
+                transform: scale(0.74) translateY(3px);
+            }
+
             .audio-popup .howto-size-grid img {
                 width: 40px;
                 height: 40px;
@@ -5490,6 +5513,16 @@
             .audio-popup .howto-inline-note {
                 font-size: 11px;
                 color: #67e8f9;
+            }
+
+            .audio-popup .howto-burst-illustration {
+                display: block;
+                width: min(460px, 92%);
+                max-width: 100%;
+                height: auto;
+                margin: 8px auto 6px;
+                image-rendering: pixelated;
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
             }
 
             .audio-popup .howto-live-meter {
