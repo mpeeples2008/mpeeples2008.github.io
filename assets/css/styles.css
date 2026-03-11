@@ -4952,6 +4952,27 @@
                 display: block;
             }
 
+            /* Readability pass for Settings/Achievements/About body text.
+               Keep headers/buttons in existing display font. */
+            .audio-popup .settings-tab-pane,
+            .audio-popup .settings-tab-pane label,
+            .audio-popup .settings-tab-pane p,
+            .audio-popup .settings-tab-pane li,
+            .audio-popup .settings-tab-pane .settings-reset-note,
+            .audio-popup .settings-tab-pane .settings-test-title,
+            .audio-popup .settings-tab-pane .settings-test-checkbox-wrap,
+            .audio-popup .settings-tab-pane .settings-test-status,
+            .audio-popup .settings-tab-pane .settings-credits-title,
+            .audio-popup .settings-tab-pane .settings-credits-body,
+            .audio-popup .settings-tab-pane .about-body,
+            .audio-popup .settings-tab-pane .about-line,
+            .audio-popup .settings-tab-pane .achievement-name,
+            .audio-popup .settings-tab-pane .achievement-count,
+            .audio-popup .settings-tab-pane .achievement-desc,
+            .audio-popup .settings-tab-pane .achievements-summary {
+                font-family: "Lucida Console", "Courier New", Courier, monospace;
+            }
+
             .audio-popup .achievements-panel {
                 margin-top: 0;
                 border: 3px solid rgba(255, 255, 255, 0.16);
@@ -4969,13 +4990,13 @@
             }
 
             .audio-popup .achievements-title {
-                font-size: 10px;
+                font-size: 13px;
                 color: #ffe9b0;
                 letter-spacing: 0.02em;
             }
 
             .audio-popup .achievements-summary {
-                font-size: 9px;
+                font-size: 13px;
                 color: #ffd166;
                 opacity: 0.95;
             }
@@ -5010,22 +5031,23 @@
             }
 
             .audio-popup .achievement-name {
-                font-size: 9px;
+                font-size: 14px;
                 color: #fff3ce;
             }
 
             .audio-popup .achievement-count {
-                font-size: 9px;
+                font-size: 13px;
                 color: #ffd166;
                 white-space: nowrap;
             }
 
             .audio-popup .achievement-desc {
-                font-size: 8px;
+                font-size: 13px;
                 color: #cfe4ff;
                 opacity: 0.9;
                 margin-top: 2px;
                 margin-bottom: 5px;
+                line-height: 1.5;
             }
 
             .audio-popup .achievement-track {
@@ -5131,7 +5153,7 @@
             }
 
             .audio-popup .settings-reset-note {
-                font-size: 9px;
+                font-size: 13px;
                 color: #ffe9b0;
                 opacity: 0.9;
                 text-align: right;
@@ -5148,7 +5170,7 @@
             }
 
             .audio-popup .settings-test-title {
-                font-size: 9px;
+                font-size: 13px;
                 color: #ffe9b0;
                 margin-bottom: 8px;
                 letter-spacing: 0.02em;
@@ -5165,7 +5187,7 @@
             .audio-popup .settings-test-row label {
                 width: auto;
                 margin: 0;
-                font-size: 10px;
+                font-size: 13px;
             }
 
             .audio-popup input[type="number"]#testLevelInput,
@@ -5198,7 +5220,7 @@
                 display: inline-flex;
                 align-items: center;
                 gap: 6px;
-                font-size: 9px;
+                font-size: 13px;
                 color: #d8ebff;
             }
 
@@ -5211,7 +5233,7 @@
 
             .audio-popup .settings-test-status {
                 min-height: 12px;
-                font-size: 8px;
+                font-size: 12px;
                 color: #cfe4ff;
                 line-height: 1.35;
                 opacity: 0.96;
@@ -5224,15 +5246,15 @@
             }
 
             .audio-popup .settings-credits-title {
-                font-size: 9px;
+                font-size: 13px;
                 color: #ffe9b0;
                 margin-bottom: 6px;
                 letter-spacing: 0.02em;
             }
 
             .audio-popup .settings-credits-body {
-                font-size: 8px;
-                line-height: 1.45;
+                font-size: 13px;
+                line-height: 1.55;
                 color: #d8ebff;
                 opacity: 0.95;
                 word-break: break-word;
@@ -5250,13 +5272,13 @@
                 background: rgba(0, 0, 0, 0.18);
                 padding: 10px;
                 color: #d8ebff;
-                font-size: 10px;
-                line-height: 1.5;
+                font-size: 14px;
+                line-height: 1.62;
             }
 
             .audio-popup .about-line {
                 color: #ffe9b0;
-                font-size: 10px;
+                font-size: 14px;
             }
 
             .audio-popup .settings-audio-toggle-row {
@@ -6475,6 +6497,76 @@
             text-align: center;
         }
 
+        .lore-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 2147483647;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            background: rgba(2, 7, 18, 0.86);
+        }
+
+        .lore-modal.show {
+            display: flex;
+        }
+
+        .lore-card {
+            width: min(900px, calc(100vw - 20px));
+            max-height: min(90vh, 820px);
+            overflow: auto;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 209, 102, 0.72);
+            background: linear-gradient(180deg, rgba(8, 24, 52, 0.96), rgba(4, 12, 30, 0.97));
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.52);
+            padding: 14px 14px 12px;
+            color: #dcecff;
+            font-family: "Lucida Console", "Courier New", monospace;
+        }
+
+        .lore-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .lore-title {
+            font-family: 'Press Start 2P', monospace;
+            color: #ffd166;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .lore-subtitle {
+            color: #ffe9b0;
+            font-size: 12px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
+        .lore-body {
+            font-size: 12px;
+            line-height: 1.58;
+            color: #d8ebff;
+        }
+
+        .lore-body p {
+            margin: 0 0 10px 0;
+        }
+
+        .lore-quote {
+            color: #ffe9b0;
+            font-style: italic;
+        }
+
+        .lore-subhead {
+            color: #ffd166;
+            font-weight: 700;
+        }
+
         .ai-intro-overlay.fade-out {
             opacity: 0;
             pointer-events: none;
@@ -6634,6 +6726,24 @@
             image-rendering: pixelated;
             filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
             border-radius: 8px;
+        }
+
+        .tutorial-card-warning-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            align-items: start;
+            margin-top: 8px;
+        }
+
+        .tutorial-card-warning-row .tutorial-inline-card {
+            margin: 0;
+        }
+
+        .tutorial-card-warning-text {
+            font-size: 12px;
+            line-height: 1.5;
+            color: #d8ebff;
         }
 
         .tutorial-prelude-overlay {

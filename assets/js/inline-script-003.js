@@ -2893,6 +2893,9 @@ function escapeHtmlAttr(str) {
             const aiStartBtn = document.getElementById('aiStartBtn');
             const aiEnduranceBtn = document.getElementById('aiEnduranceBtn');
             const aiTutorialBtn = document.getElementById('aiTutorialBtn');
+            const aiLoreBtn = document.getElementById('aiLoreBtn');
+            const loreModal = document.getElementById('loreModal');
+            const loreCloseBtn = document.getElementById('loreCloseBtn');
             const startModalCloseBtn = document.getElementById('startModalClose');
             syncTutorialGateFromDom();
             if (aiStartBtn) {
@@ -2919,6 +2922,31 @@ function escapeHtmlAttr(str) {
                     setTimeout(() => {
                         try { startTutorialMode(); } catch (e) { }
                     }, 700);
+                });
+            }
+            if (aiLoreBtn && loreModal) {
+                aiLoreBtn.addEventListener('click', () => {
+                    try {
+                        loreModal.classList.add('show');
+                        loreModal.setAttribute('aria-hidden', 'false');
+                    } catch (e) { }
+                });
+            }
+            if (loreCloseBtn && loreModal) {
+                loreCloseBtn.addEventListener('click', () => {
+                    try {
+                        loreModal.classList.remove('show');
+                        loreModal.setAttribute('aria-hidden', 'true');
+                    } catch (e) { }
+                });
+            }
+            if (loreModal) {
+                loreModal.addEventListener('click', (ev) => {
+                    try {
+                        if (ev.target !== loreModal) return;
+                        loreModal.classList.remove('show');
+                        loreModal.setAttribute('aria-hidden', 'true');
+                    } catch (e) { }
                 });
             }
             if (startModalCloseBtn) {
@@ -5241,7 +5269,7 @@ function escapeHtmlAttr(str) {
                     },
                     {
                         title: 'Tutorial 8/9',
-                        bodyHtml: 'As you progress, you will receive temporary run modifiers called <b>PIXEL PERKS</b>. These are usually practical boosts and are tracked in the <b>MODS</b> bar.<br><br>The MODS bar will show what is active and, when relevant, remaining uses or charges.<br><img class="tutorial-inline-card" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_capacitor.png" alt="Example Storm Capacitor card"><br>Operational warning: We have seen attempts at infiltration from our competitors. If you are offered a MOD chip from <b>VIRAL VENTURES</b>, assume there is a catch.',
+                        bodyHtml: 'As you progress, you will receive temporary run modifiers called <b>PIXEL PERKS</b>. These are usually practical boosts and are tracked in the <b>MODS</b> bar.<br><br>The MODS bar will show what is active and, when relevant, remaining uses or charges.<div class="tutorial-card-warning-row"><img class="tutorial-inline-card" src="https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_storm_capacitor.png" alt="Example Storm Capacitor card"><div class="tutorial-card-warning-text">Operational warning: We have seen attempts at infiltration from our competitors. If you are offered a MOD chip from <b>VIRAL VENTURES</b>, assume there is a catch.</div></div>',
                         actionLabel: 'Continue',
                         focusModsBar: true,
                         setup: () => {
