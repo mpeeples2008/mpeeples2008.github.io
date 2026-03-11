@@ -2535,13 +2535,13 @@ function escapeHtmlAttr(str) {
                 if (level === 15) {
                     return {
                         lines: [
-                            'NANO-GREMLIN BREACH DETECTED',
-                            'A hacker virus has hijacked your nano bots and turned them against containment.',
+                            'MECHA-GREMLIN BREACH DETECTED',
+                            'One of the viruses has hacked into the mainframe and is turning our defenses against us!',
                             'JAM ATTACK: Nano Storm charging and firing can be temporarily disabled.',
                             'HOLOGRAM DUPLICATES: projection decoys appear on the boss row/column and pop in one hit.',
                             'FEEDBACK LOOP: each decoy pop deals 0.5 damage to the real boss.',
                             'PURGE EVENT: when the real boss is destroyed, all remaining holograms collapse instantly.',
-                            'HACKED NANOBOTS: These drones project a laser barrier that intercepts cascade particles and cuts off cascades. Watch their movement pattern and time your taps around the beam.'
+                            'HACKED NANOBOTS: drones project a laser barrier that intercepts cascade particles and cuts off cascades. Watch their movement pattern and time your taps around the beam.'
                         ]
                     };
                 }
@@ -3366,11 +3366,11 @@ function escapeHtmlAttr(str) {
                 try {
                     level20TalkSfxOnly = true;
                     const lines = [
-                        { who: 'boss', text: 'Operator, you are outclassed. This lab belongs to me now.' },
-                        { who: 'pixel', text: 'Negative. They are not fighting alone. I am still online.' },
-                        { who: 'boss', text: 'I will drain every nanobot and erase your last chance.' },
-                        { who: 'pixel', text: 'Try it. We have survived every mutation you deployed.' },
-                        { who: 'boss', text: 'Then choose carefully. Your next decision decides everything.' }
+                        { who: 'boss', text: 'Attention, tiny operator: all your lab are belong to me.' },
+                        { who: 'pixel', text: 'Incorrect. Your meme accuracy is low, and your odds are lower. I am still online.' },
+                        { who: 'boss', text: 'I will drain every nano bot and leave you with zero continues.' },
+                        { who: 'pixel', text: 'Bold speech from a mutant in a jar. We have survived every mutation you tried.' },
+                        { who: 'boss', text: 'Then choose wisely and face your consequences..' }
                     ];
                     let i = 0;
                     const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
@@ -3466,9 +3466,10 @@ function escapeHtmlAttr(str) {
                 try {
                     level20TalkSfxOnly = true;
                     const lines = [
-                        { who: 'pixel', text: 'We are winning. Keep the pressure on!' },
-                        { who: 'boss', text: 'Fool. You have not won. You have only set me free.' },
-                        { who: 'pixel', text: 'Operator, distract him a little longer. I have an idea.' }
+                        { who: 'pixel', text: 'Containment at 87%... we are absolutely not doomed. Probably.' },
+                        { who: 'boss', text: 'Fool. You have set me free. This lab is now under new management.' },
+                        { who: 'pixel', text: 'Operator, distract him a little longer. I have an idea.' },
+                        { who: 'boss', text: 'Your time has come!' }
                     ];
                     let i = 0;
                     const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
@@ -3566,10 +3567,10 @@ function escapeHtmlAttr(str) {
                 try {
                     level20TalkSfxOnly = true;
                     const lines = [
-                        { who: 'boss', text: 'Yes... victory is mine. You are finished.' },
-                        { who: 'pixel', text: "Don't be so sure." },
-                        { who: 'boss', text: 'I am invincible. I stole your viral shielding technology.' },
-                        { who: 'pixel', text: "Operator, now is our chance. I hacked the mainframe and super-charged your nanobots. Shields won't be a problem now." }
+                        { who: 'boss', text: 'Witness perfection. You are finished, and this lab is now mine!' },
+                        { who: 'pixel', text: "Counterpoint: no." },
+                        { who: 'boss', text: 'Mock me while you can. My stolen shields make me immortal.' },
+                        { who: 'pixel', text: "Operator, this is the opening. I breached the mainframe and overclocked your nano bots. Hit hard, shields won’t hold." }
                     ];
                     let i = 0;
                     const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
@@ -3665,10 +3666,10 @@ function escapeHtmlAttr(str) {
                 try {
                     level20TalkSfxOnly = true;
                     const lines = [
-                        { who: 'boss', text: "No... this can't be. I can never be defeated!" },
-                        { who: 'pixel', text: 'Your biggest mistake was attempting to use our own tools against us!' },
-                        { who: 'boss', text: "I'll destroy you!" },
-                        { who: 'pixel', text: "He's setting up for one final attack. Don't worry, I'll help you target his weakspot. Just one more good hit should do it." }
+                        { who: 'boss', text: "Impossible! I cannot fall!" },
+                        { who: 'pixel', text: 'You exposed your own architecture when you hijacked ours.' },
+                        { who: 'boss', text: "Then I’ll erase you both!" },
+                        { who: 'pixel', text: "Operator, he’s charging one last strike. Operator, lock onto the weakspot marker. One clean hit ends this." }
                     ];
                     let i = 0;
                     const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
@@ -4088,7 +4089,7 @@ function escapeHtmlAttr(str) {
                     const mountFinalOfferModal = () => {
                         const pixelDesc = '+6 clicks, +1 Nano Storm, and boss systems run slower for a short time.';
                         const soloDesc = 'No bonus and no penalty. Enter level 20 with your current resources.';
-                        const brokerDesc = '+15 clicks, +1 Nano Storm charge, and boss HP -20%; score drops to 49% and future score Double Deals are disabled.';
+                        const brokerDesc = '+15 clicks, +1 Nano Storm charge, and boss HP -20%; VV keeps 51% of your points and future MODS are disabled.';
                         const el = document.createElement('div');
                         el.className = 'final-offer-modal';
                         el.setAttribute('role', 'dialog');
