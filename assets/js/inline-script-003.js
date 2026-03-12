@@ -6060,86 +6060,127 @@ function escapeHtmlAttr(str) {
                 finalVictoryState.shown = true;
                 host.classList.add('show-win');
                 const ending = getFinalEndingProfile();
-                const creditsLines = buildFinalVictoryCreditsHtml();
-                const storyText = `<div class="fv-roll-line fv-roll-story-line">${escapeHtml(String(ending.storyText || ''))}</div>`;
-                const recapHtml = buildFinalVictoryRunSummaryHtml();
-                host.innerHTML = `
-                    <div class="final-victory-modal" role="dialog" aria-modal="true" aria-label="Victory">
-                        <div class="fv-title">PATHOGEN SUPPRESSED</div>
-                        <div class="fv-image-wrap">
-                            <img src="${escapeHtmlAttr(ending.imageUrl || FINAL_VICTORY_DEFAULT_IMAGE_URL || '')}" alt="Victory" onerror="this.style.display='none';" />
-                        </div>
-                        <div class="fv-credits-wrap">
-                            <div class="fv-info-panel is-active" data-fv-panel="story">
-                                <div class="fv-roll-section fv-roll-story">
-                                    <div class="fv-roll-title">EPILOGUE</div>
-                                    ${storyText}
+                const endingColor = (ending.key === 'broker') ? '#9dff7d' : '#ffd166';
+                const baseStoryText = String(ending.storyText || '');
+                const continueMarker = (runPerkState && runPerkState.continueDealTaken) ? ' user chose continue' : '';
+                const typedStoryText = `${baseStoryText}${continueMarker}`;
+
+                const mountSplash = () => {
+                    const creditsLines = buildFinalVictoryCreditsHtml();
+                    const recapHtml = buildFinalVictoryRunSummaryHtml();
+                    host.innerHTML = `
+                        <div class="final-victory-modal" role="dialog" aria-modal="true" aria-label="Victory">
+                            <div class="fv-title">PATHOGEN SUPPRESSED</div>
+                            <div class="fv-image-wrap">
+                                <img src="${escapeHtmlAttr(ending.imageUrl || FINAL_VICTORY_DEFAULT_IMAGE_URL || '')}" alt="Victory" onerror="this.style.display='none';" />
+                            </div>
+                            <div class="fv-credits-wrap">
+                                <div class="fv-info-panel" data-fv-panel="credits" hidden>
+                                    <div class="fv-roll-section fv-roll-credits">
+                                        <div class="fv-roll-title">CREDITS</div>
+                                        ${creditsLines}
+                                    </div>
+                                </div>
+                                <div class="fv-info-panel is-active" data-fv-panel="stats">
+                                    <div class="fv-roll-section fv-roll-summary">
+                                        ${recapHtml}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="fv-info-panel" data-fv-panel="credits" hidden>
-                                <div class="fv-roll-section fv-roll-credits">
-                                    <div class="fv-roll-title">CREDITS</div>
-                                    ${creditsLines}
-                                </div>
-                            </div>
-                            <div class="fv-info-panel" data-fv-panel="stats" hidden>
-                                <div class="fv-roll-section fv-roll-summary">
-                                    ${recapHtml}
-                                </div>
+                            <div class="fv-final-card">MISSION COMPLETE</div>
+                            <div class="fv-actions">
+                                <button type="button" class="fv-restart-btn">START NEW RUN</button>
+                                <button type="button" class="fv-tab-btn" data-fv-tab="credits">CREDITS</button>
+                                <button type="button" class="fv-tab-btn" data-fv-tab="stats">GAME STATS</button>
                             </div>
                         </div>
-                        <div class="fv-final-card">MISSION COMPLETE</div>
-                        <div class="fv-actions">
-                            <button type="button" class="fv-restart-btn">START NEW RUN</button>
-                            <button type="button" class="fv-tab-btn" data-fv-tab="credits">CREDITS</button>
-                            <button type="button" class="fv-tab-btn" data-fv-tab="stats">GAME STATS</button>
-                        </div>
-                    </div>
-                `;
-                const restartBtn = host.querySelector('.fv-restart-btn');
-                if (restartBtn) {
-                    restartBtn.addEventListener('click', () => {
-                        restartToIntroScreen();
-                    }, { once: true });
-                }
-                const setFinalVictoryPanel = (name) => {
-                    const target = String(name || 'story');
-                    const panels = host.querySelectorAll('.fv-info-panel[data-fv-panel]');
-                    if (!panels || !panels.length) return;
-                    let active = false;
-                    panels.forEach((panel) => {
-                        const id = String(panel.getAttribute('data-fv-panel') || '');
-                        const on = (id === target);
-                        panel.hidden = !on;
-                        panel.classList.toggle('is-active', on);
-                        if (on) active = true;
-                    });
-                    if (!active) {
+                    `;
+                    const restartBtn = host.querySelector('.fv-restart-btn');
+                    if (restartBtn) {
+                        restartBtn.addEventListener('click', () => {
+                            restartToIntroScreen();
+                        }, { once: true });
+                    }
+                    const setFinalVictoryPanel = (name) => {
+                        const target = String(name || 'stats');
+                        const panels = host.querySelectorAll('.fv-info-panel[data-fv-panel]');
+                        if (!panels || !panels.length) return;
+                        let active = false;
                         panels.forEach((panel) => {
-                            const on = String(panel.getAttribute('data-fv-panel') || '') === 'story';
+                            const id = String(panel.getAttribute('data-fv-panel') || '');
+                            const on = (id === target);
                             panel.hidden = !on;
                             panel.classList.toggle('is-active', on);
+                            if (on) active = true;
                         });
-                    }
+                        if (!active) {
+                            panels.forEach((panel) => {
+                                const on = String(panel.getAttribute('data-fv-panel') || '') === 'stats';
+                                panel.hidden = !on;
+                                panel.classList.toggle('is-active', on);
+                            });
+                        }
+                        const tabButtons = host.querySelectorAll('.fv-tab-btn[data-fv-tab]');
+                        tabButtons.forEach((btn) => {
+                            const isOn = String(btn.getAttribute('data-fv-tab') || '') === target;
+                            btn.classList.toggle('active', isOn);
+                        });
+                    };
                     const tabButtons = host.querySelectorAll('.fv-tab-btn[data-fv-tab]');
                     tabButtons.forEach((btn) => {
-                        const isOn = String(btn.getAttribute('data-fv-tab') || '') === target;
-                        btn.classList.toggle('active', isOn);
+                        btn.addEventListener('click', () => {
+                            const tab = String(btn.getAttribute('data-fv-tab') || '');
+                            setFinalVictoryPanel(tab);
+                        });
                     });
+                    setFinalVictoryPanel('stats');
+                    startFinalCreditsMusic();
+                    finalVictoryFinalCardTimer = setTimeout(() => {
+                        try { host.classList.add('show-final-card'); } catch (e) { }
+                    }, 35000);
                 };
-                const tabButtons = host.querySelectorAll('.fv-tab-btn[data-fv-tab]');
-                tabButtons.forEach((btn) => {
-                    btn.addEventListener('click', () => {
-                        const tab = String(btn.getAttribute('data-fv-tab') || '');
-                        const isActive = btn.classList.contains('active');
-                        setFinalVictoryPanel(isActive ? 'story' : tab);
-                    });
-                });
-                setFinalVictoryPanel('story');
-                startFinalCreditsMusic();
-                finalVictoryFinalCardTimer = setTimeout(() => {
-                    try { host.classList.add('show-final-card'); } catch (e) { }
-                }, 35000);
+
+                host.innerHTML = `
+                    <div class="fv-typed-stage" role="dialog" aria-modal="true" aria-label="Epilogue">
+                        <div class="fv-typed-title">EPILOGUE</div>
+                        <div class="fv-typed-body" style="color:${escapeHtmlAttr(endingColor)};"></div>
+                        <div class="fv-typed-hint">Click to continue</div>
+                    </div>
+                `;
+                const typedBody = host.querySelector('.fv-typed-body');
+                const typedHint = host.querySelector('.fv-typed-hint');
+                const chars = Array.from(typedStoryText);
+                let i = 0;
+                let typingDone = false;
+                const typeTick = () => {
+                    if (!typedBody) return;
+                    if (i >= chars.length) {
+                        typingDone = true;
+                        if (typedHint) typedHint.classList.add('show');
+                        return;
+                    }
+                    typedBody.textContent += chars[i++];
+                    setTimeout(typeTick, 18);
+                };
+                typeTick();
+
+                const onProceed = (ev) => {
+                    try { ev.preventDefault(); } catch (e) { }
+                    if (!typingDone) return;
+                    host.removeEventListener('click', onProceed);
+                    host.removeEventListener('touchstart', onProceed);
+                    host.removeEventListener('keydown', onKeyProceed);
+                    mountSplash();
+                };
+                const onKeyProceed = (ev) => {
+                    if (!typingDone) return;
+                    if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') onProceed(ev);
+                };
+                host.addEventListener('click', onProceed);
+                host.addEventListener('touchstart', onProceed, { passive: false });
+                host.addEventListener('keydown', onKeyProceed);
+                host.setAttribute('tabindex', '0');
+                try { host.focus(); } catch (e) { }
                 return true;
             }
 

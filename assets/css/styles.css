@@ -8410,6 +8410,8 @@ html.assistant-disabled .assistant-fallback-bubble {
             height: clamp(66px, 11vh, 96px);
             position: relative;
             padding: 0;
+            width: min(84%, 620px);
+            margin: 0 auto;
         }
 
 .final-victory-modal .fv-info-panel {
@@ -8476,9 +8478,9 @@ html.assistant-disabled .assistant-fallback-bubble {
         }
 
 .final-victory-modal .fv-summary-title {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Lucida Console', monospace;
             color: #ffdcb5;
-            font-size: clamp(8px, 1vw, 10px);
+            font-size: clamp(12px, 1.3vw, 14px);
             margin-bottom: 6px;
             text-align: center;
         }
@@ -8487,8 +8489,8 @@ html.assistant-disabled .assistant-fallback-bubble {
             display: grid;
             grid-template-columns: 1fr auto;
             gap: 6px 10px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: clamp(7px, 0.9vw, 9px);
+            font-family: 'Lucida Console', monospace;
+            font-size: clamp(12px, 1.2vw, 14px);
             color: #d7e8ff;
         }
 
@@ -8558,6 +8560,54 @@ html.assistant-disabled .assistant-fallback-bubble {
             border-color: rgba(255, 216, 172, 0.72);
             background: linear-gradient(180deg, #3a5276, #243d5f);
             color: #ffe8c8;
+        }
+
+.final-victory-overlay .fv-typed-stage {
+            width: min(84vw, 760px);
+            max-height: min(72vh, 520px);
+            margin: 0 auto;
+            padding: 16px 18px 14px;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 209, 149, 0.58);
+            background: rgba(7, 12, 22, 0.9);
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(255, 228, 178, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+.final-victory-overlay .fv-typed-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(12px, 1.6vw, 16px);
+            color: #ffe3be;
+            text-align: center;
+        }
+
+.final-victory-overlay .fv-typed-body {
+            font-family: 'Lucida Console', monospace;
+            font-size: clamp(13px, 1.6vw, 17px);
+            line-height: 1.6;
+            text-align: left;
+            white-space: normal;
+            word-break: break-word;
+            max-height: min(46vh, 330px);
+            overflow: auto;
+            scrollbar-width: thin;
+            padding: 2px 2px 2px 0;
+        }
+
+.final-victory-overlay .fv-typed-hint {
+            font-family: 'Lucida Console', monospace;
+            font-size: clamp(12px, 1.4vw, 14px);
+            color: #d7e8ff;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 160ms ease;
+        }
+
+.final-victory-overlay .fv-typed-hint.show {
+            opacity: 1;
         }
 
 .final-victory-modal .fv-restart-btn:hover {
