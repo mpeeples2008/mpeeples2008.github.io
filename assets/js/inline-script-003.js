@@ -2955,71 +2955,10 @@ function escapeHtmlAttr(str) {
             const loreModal = document.getElementById('loreModal');
             const loreCloseBtn = document.getElementById('loreCloseBtn');
             const startModalCloseBtn = document.getElementById('startModalClose');
-            let mainMenuTutorialNudgeShown = false;
-            let mainMenuTutorialNudgeEl = null;
-            let mainMenuTutorialNudgeRaf = 0;
-            let mainMenuTutorialNudgeResizeBound = false;
-            function clearMainMenuTutorialNudge() {
-                if (mainMenuTutorialNudgeRaf) {
-                    try { cancelAnimationFrame(mainMenuTutorialNudgeRaf); } catch (e) { }
-                    mainMenuTutorialNudgeRaf = 0;
-                }
-                if (mainMenuTutorialNudgeResizeBound) {
-                    try { window.removeEventListener('resize', updateMainMenuTutorialNudgePosition); } catch (e) { }
-                    mainMenuTutorialNudgeResizeBound = false;
-                }
-                const el = mainMenuTutorialNudgeEl || document.getElementById('mainMenuTutorialNudge');
-                mainMenuTutorialNudgeEl = null;
-                if (el && el.parentNode) {
-                    try { el.parentNode.removeChild(el); } catch (e) { }
-                }
-            }
-            function updateMainMenuTutorialNudgePosition() {
-                if (!mainMenuTutorialNudgeEl || !aiTutorialBtn) return;
-                const r = aiTutorialBtn.getBoundingClientRect();
-                if (!Number.isFinite(r.left) || !Number.isFinite(r.top)) return;
-                const x = Math.round(Math.max(8, r.left - 14));
-                const y = Math.round(Math.max(8, r.top + (r.height * 0.5)));
-                mainMenuTutorialNudgeEl.style.left = x + 'px';
-                mainMenuTutorialNudgeEl.style.top = y + 'px';
-            }
-            function maybeShowMainMenuTutorialNudge() {
-                if (mainMenuTutorialNudgeShown || !aiTutorialBtn) return;
-                const intro = document.getElementById('aiIntro');
-                if (!intro || intro.style.display === 'none' || intro.getAttribute('aria-hidden') === 'true') return;
-                mainMenuTutorialNudgeShown = true;
-                const nudge = document.createElement('div');
-                nudge.id = 'mainMenuTutorialNudge';
-                nudge.className = 'main-menu-tutorial-nudge';
-                nudge.setAttribute('aria-hidden', 'true');
-                nudge.innerHTML = `
-                    <span class="mmtn-arrow">➜</span>
-                    <span class="mmtn-text">New Recruits Start Here</span>
-                `;
-                document.body.appendChild(nudge);
-                mainMenuTutorialNudgeEl = nudge;
-                updateMainMenuTutorialNudgePosition();
-                if (!mainMenuTutorialNudgeResizeBound) {
-                    window.addEventListener('resize', updateMainMenuTutorialNudgePosition);
-                    mainMenuTutorialNudgeResizeBound = true;
-                }
-                let endAt = Date.now() + 12000;
-                const tick = () => {
-                    if (!mainMenuTutorialNudgeEl) return;
-                    if (Date.now() >= endAt) {
-                        clearMainMenuTutorialNudge();
-                        return;
-                    }
-                    updateMainMenuTutorialNudgePosition();
-                    mainMenuTutorialNudgeRaf = requestAnimationFrame(tick);
-                };
-                mainMenuTutorialNudgeRaf = requestAnimationFrame(tick);
-            }
             function dismissIntroOverlayNow() {
                 try {
                     const intro = document.getElementById('aiIntro');
                     if (!intro) return;
-                    clearMainMenuTutorialNudge();
                     intro.classList.add('fade-out');
                     intro.style.pointerEvents = 'none';
                     setTimeout(() => {
@@ -3087,7 +3026,6 @@ function escapeHtmlAttr(str) {
             }
             if (aiTutorialBtn) {
                 aiTutorialBtn.addEventListener('click', () => {
-                    clearMainMenuTutorialNudge();
                     runStartedByPlayer = true;
                     tutorialGateState.startPressed = true;
                     markAudioUserInteracted();
@@ -3146,9 +3084,6 @@ function escapeHtmlAttr(str) {
                     maybeShowTutorialIntro(false);
                 });
             }
-            setTimeout(() => {
-                try { maybeShowMainMenuTutorialNudge(); } catch (e) { }
-            }, 280);
             try {
                 const onFirstInteraction = () => {
                     markAudioUserInteracted();
