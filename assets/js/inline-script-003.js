@@ -44,6 +44,7 @@ const FINAL_VICTORY_PIXEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeple
 const FINAL_VICTORY_BROKER_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/hostile_takeover.png';
 const FINAL_VICTORY_SOLO_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/independent_variable.png';
 const FINAL_CREDITS_THEME_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/Super%20Power%20Cool%20Dude.mp3';
+const CONTINUE_OFFER_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/competitive_opportunity.png';
 const FINAL_VICTORY_CREDITS = [
   'Containment Restored',
   'Gone Viral!',
@@ -2328,7 +2329,9 @@ function escapeHtmlAttr(str) {
                     finalOfferSeen: false,
                     finalOfferChoice: '',
                     finalBossHpScale: 1,
-                    finalBossSlowUntil: 0
+                    finalBossSlowUntil: 0,
+                    continueDealTaken: false,
+                    continueDealPenaltyTotal: 0
                 };
             }
             let runPerkState = createDefaultRunPerkState();
@@ -4587,6 +4590,7 @@ function escapeHtmlAttr(str) {
                 // update pixel meter visualization (10 segments)
                 try { updateClicksMeter(clicksLeft); } catch (e) { }
                 try { updatePerkHudIndicators(); } catch (e) { }
+                try { updateHudSponsorMark(); } catch (e) { }
                 try { updateStormUI(); } catch (e) { }
                 try { queueRunPerkMilestonesFromScore(); } catch (e) { }
                 try { maybeShowPendingRunPerkPopup(); } catch (e) { }
@@ -6323,6 +6327,59 @@ function escapeHtmlAttr(str) {
                 return Math.max(1, Math.floor(Number(RUN_CONTINUE_CONFIG && RUN_CONTINUE_CONFIG.grantClicks) || 10));
             }
 
+            function updateHudSponsorMark() {
+                try {
+                    const mark = document.querySelector('.pathodyne-mark-inline');
+                    if (!mark) return;
+                    const isViral = !!(runPerkState && runPerkState.continueDealTaken);
+                    mark.classList.toggle('is-viral', isViral);
+                    mark.setAttribute('title', isViral ? 'Viral Ventures Contract Active' : 'Pathodyne Mark');
+                } catch (e) { }
+            }
+
+            function showContinueScorePenaltyFx(penaltyPoints, percent = 25) {
+                const pts = Math.max(0, Math.floor(Number(penaltyPoints) || 0));
+                if (pts <= 0) return;
+                try {
+                    const scoreTarget = document.getElementById('score') || document.getElementById('scoreDisplay');
+                    if (!scoreTarget) return;
+                    const r = scoreTarget.getBoundingClientRect();
+                    const toast = document.createElement('div');
+                    toast.className = 'score-penalty-toast';
+                    toast.textContent = `-${percent}% SCORE  (-${pts})`;
+                    toast.style.left = Math.round(r.left + (r.width / 2)) + 'px';
+                    toast.style.top = Math.round(Math.max(8, r.top - 8)) + 'px';
+                    document.body.appendChild(toast);
+                    requestAnimationFrame(() => { try { toast.classList.add('show'); } catch (e) { } });
+                    setTimeout(() => { try { toast.classList.remove('show'); } catch (e) { } }, 900);
+                    setTimeout(() => { try { toast.remove(); } catch (e) { } }, 1300);
+                } catch (e) { }
+            }
+
+            function applyRunContinueScorePenalty(percent = 25, durationMs = 850) {
+                const pct = Math.max(0, Math.min(95, Number(percent) || 0));
+                const before = Math.max(0, Math.floor(Number(totalScore) || 0));
+                const penalty = Math.max(0, Math.floor(before * (pct / 100)));
+                const after = Math.max(0, before - penalty);
+                if (penalty <= 0) return { before, after, penalty, percent: pct };
+                const start = Date.now();
+                const duration = Math.max(120, Math.floor(Number(durationMs) || 850));
+                const animate = () => {
+                    const t = Math.max(0, Math.min(1, (Date.now() - start) / duration));
+                    const eased = 1 - Math.pow(1 - t, 2);
+                    totalScore = Math.max(after, Math.floor(before - (penalty * eased)));
+                    updateHUD();
+                    if (t < 1) requestAnimationFrame(animate);
+                    else {
+                        totalScore = after;
+                        updateHUD();
+                    }
+                };
+                requestAnimationFrame(animate);
+                showContinueScorePenaltyFx(penalty, pct);
+                return { before, after, penalty, percent: pct };
+            }
+
             function canOfferRunContinue(levelNum = getCurrentLevelNumber()) {
                 if (!(RUN_CONTINUE_CONFIG && RUN_CONTINUE_CONFIG.enabled)) return false;
                 const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
@@ -6376,9 +6433,8 @@ function escapeHtmlAttr(str) {
                     el.className = 'continue-offer-popup';
                     el.setAttribute('role', 'alertdialog');
                     el.innerHTML = `
-                        <div class="co-title">EMERGENCY PROTOCOL</div>
-                        <div class="co-sub">One continue is available for this run.</div>
-                        <div class="co-detail">Restore <b>+${getRunContinueClickGrant()}</b> nano-bots and continue this level?</div>
+                        <div class="co-art" style="background-image:url('${escapeHtmlAttr(CONTINUE_OFFER_IMAGE_URL)}');"></div>
+                        <div class="co-message">I'll give you +${getRunContinueClickGrant()} nano bots to continue this level. All it will cost you is 25% of your points</div>
                         <div class="co-status" aria-live="polite"></div>
                         <div class="co-actions">
                             <button type="button" class="co-continue-btn">CONTINUE</button>
@@ -6392,11 +6448,11 @@ function escapeHtmlAttr(str) {
                     const statusEl = el.querySelector('.co-status');
                     const continueBtn = el.querySelector('.co-continue-btn');
                     const giveUpBtn = el.querySelector('.co-giveup-btn');
-                    const closeWith = (fn) => {
+                    const closeWith = (fn, delayMs = 180) => {
                         hideContinueOfferPopup(false);
                         setTimeout(() => {
                             try { if (typeof fn === 'function') fn(); } catch (e) { }
-                        }, 180);
+                        }, Math.max(0, Math.floor(Number(delayMs) || 0)));
                     };
                     if (continueBtn) {
                         continueBtn.addEventListener('click', () => {
@@ -6409,14 +6465,26 @@ function escapeHtmlAttr(str) {
                             const before = Math.max(0, Number(clicksLeft) || 0);
                             clicksLeft = Math.min(getMaxClicksCap(), before + getRunContinueClickGrant());
                             const applied = Math.max(0, clicksLeft - before);
+                            const penaltyResult = applyRunContinueScorePenalty(25, 900);
+                            if (runPerkState) {
+                                runPerkState.continueDealTaken = true;
+                                runPerkState.continueDealPenaltyTotal = Math.max(0, Number(runPerkState.continueDealPenaltyTotal) || 0) + Math.max(0, Number(penaltyResult && penaltyResult.penalty) || 0);
+                            }
+                            updateHudSponsorMark();
                             outOfClicksShown = false;
                             inputLocked = false;
                             try { playSfx('fill'); } catch (e) { }
+                            if (statusEl) {
+                                const lost = Math.max(0, Number(penaltyResult && penaltyResult.penalty) || 0);
+                                statusEl.textContent = lost > 0
+                                    ? `VIRAL VENTURES CLAIMS ${lost} POINTS.`
+                                    : 'VIRAL VENTURES CLAIMS THEIR SHARE.';
+                            }
                             updateHUD();
                             closeWith(() => {
                                 try { scheduleRender(); } catch (e) { }
                                 if (typeof opts.onContinue === 'function') opts.onContinue({ level: levelNum, grant: applied });
-                            });
+                            }, 980);
                         }, { once: true });
                     }
                     if (giveUpBtn) {
