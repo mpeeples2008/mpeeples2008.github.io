@@ -2325,6 +2325,7 @@ function escapeHtmlAttr(str) {
                     acceptedDeals: 0,
                     popupOpen: false,
                     disableScoreDeals: false,
+                    scorePeak: 0,
                     finalOfferPending: false,
                     finalOfferSeen: false,
                     finalOfferChoice: '',
@@ -4003,8 +4004,29 @@ function escapeHtmlAttr(str) {
 
             function buildRunPerkOfferPair(levelNum = getCurrentLevelNumber()) {
                 const round = Math.max(0, Number(runPerkState.picksCount) || 0);
+                const brokerOnly = !!(runPerkState && runPerkState.continueDealTaken);
                 const picked = [];
                 const used = new Set();
+                if (brokerOnly) {
+                    let brokerA = pickRunPerkForSource('broker', levelNum, round, used);
+                    if (!brokerA) brokerA = 'broker_quickfix';
+                    if (!RUN_PERK_DEFS[brokerA]) brokerA = 'broker_quickfix';
+                    used.add(brokerA);
+                    picked.push(brokerA);
+
+                    let brokerB = pickRunPerkForSource('broker', levelNum, round, used);
+                    if (!brokerB) {
+                        const brokerPool = getRunPerkPoolForSource('broker', levelNum)
+                            .filter((id) => id !== brokerA && isRunPerkRelevant(id, levelNum));
+                        brokerB = brokerPool[0] || 'broker_hotwire';
+                    }
+                    if (!RUN_PERK_DEFS[brokerB]) brokerB = 'broker_hotwire';
+                    if (brokerB === brokerA) brokerB = 'broker_heavy_armor';
+                    if (!RUN_PERK_DEFS[brokerB]) brokerB = 'broker_quickfix';
+                    picked.push(brokerB);
+                    return picked.map((id) => RUN_PERK_DEFS[id]).filter(Boolean).slice(0, 2);
+                }
+
                 let pixelId = pickRunPerkForSource('pixel', levelNum, round, used) || 'emergency_cells';
                 if (!isRunPerkRelevant(pixelId, levelNum)) pixelId = 'emergency_cells';
                 used.add(pixelId);
@@ -4504,10 +4526,15 @@ function escapeHtmlAttr(str) {
                 if (isEnduranceMode()) return;
                 if (!runPerkState || runPerkState.picksCount >= RUN_PERK_PROFILE.maxPicks) return;
                 if (runPerkState.disableScoreDeals) return;
+                runPerkState.scorePeak = Math.max(
+                    Math.max(0, Number(runPerkState.scorePeak) || 0),
+                    Math.max(0, Number(totalScore) || 0)
+                );
+                const scoreForMilestones = Math.max(0, Number(runPerkState.scorePeak) || 0);
                 const thresholds = Array.isArray(RUN_PERK_PROFILE.thresholds) ? RUN_PERK_PROFILE.thresholds : [];
                 while (runPerkState.nextThresholdIndex < thresholds.length) {
                     const nextScore = Number(thresholds[runPerkState.nextThresholdIndex]) || 0;
-                    if (totalScore < nextScore) break;
+                    if (scoreForMilestones < nextScore) break;
                     const alreadyQueued = Math.max(0, Number(runPerkState.pendingOffers) || 0);
                     const alreadyPicked = Math.max(0, Number(runPerkState.picksCount) || 0);
                     if ((alreadyQueued + alreadyPicked) >= RUN_PERK_PROFILE.maxPicks) break;
