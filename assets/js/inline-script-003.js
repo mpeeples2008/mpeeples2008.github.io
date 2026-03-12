@@ -2340,22 +2340,28 @@ function escapeHtmlAttr(str) {
             const ACHIEVEMENT_STORAGE_KEY = 'goneViral_achievements_v1';
             const ACHIEVEMENT_SCHEMA_VERSION = 1;
             const ACHIEVEMENT_DEFS = [
-                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 500 viruses in one run.', stat: 'runPops', target: 500, scope: 'run' },
-                { id: 'run_level_5', title: 'Containment I', description: 'Complete level 5 in one run.', stat: 'runLevelReached', target: 6, scope: 'run' },
-                { id: 'run_level_10', title: 'Containment II', description: 'Complete level 10 in one run.', stat: 'runLevelReached', target: 11, scope: 'run' },
-                { id: 'run_level_15', title: 'Containment III', description: 'Complete level 15 in one run.', stat: 'runLevelReached', target: 16, scope: 'run' },
-                { id: 'run_shell_breaker_10', title: 'Shield Breaker', description: 'Break 50 sheilded viruses in one run.', stat: 'runArmoredShellsBroken', target: 50, scope: 'run' },
-                { id: 'run_chain_20', title: 'Chain Master', description: 'Record 3 chains of 20+ in one run.', stat: 'runChain20Count', target: 3, scope: 'run' },
-                { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 5 times in one run.', stat: 'runNanoStormUses', target: 5, scope: 'run' },
-                { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left.', stat: 'runClutchClears', target: 1, scope: 'run' },
-                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,000 viruses in one run.', stat: 'runPops', target: 2000, scope: 'run' },
-                { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs.', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
-                { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored viruses across runs.', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
-                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 500 levels across runs.', stat: 'levelsClearedLifetime', target: 500, scope: 'lifetime' },
+                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 500 viruses in one run (Adventure Mode).', stat: 'runPops', target: 500, scope: 'run' },
+                { id: 'run_level_5', title: 'Containment I', description: 'Complete level 5 in one run (Adventure Mode).', stat: 'runLevelReached', target: 6, scope: 'run' },
+                { id: 'run_level_10', title: 'Containment II', description: 'Complete level 10 in one run (Adventure Mode).', stat: 'runLevelReached', target: 11, scope: 'run' },
+                { id: 'run_level_15', title: 'Containment III', description: 'Complete level 15 in one run (Adventure Mode).', stat: 'runLevelReached', target: 16, scope: 'run' },
+                { id: 'run_shell_breaker_10', title: 'Shield Breaker', description: 'Break 50 sheilded viruses in one run (Adventure Mode).', stat: 'runArmoredShellsBroken', target: 50, scope: 'run' },
+                { id: 'run_chain_20', title: 'Chain Master', description: 'Record 3 chains of 20+ in one run (Adventure Mode).', stat: 'runChain20Count', target: 3, scope: 'run' },
+                { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 5 times in one run (Adventure Mode).', stat: 'runNanoStormUses', target: 5, scope: 'run' },
+                { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left (Adventure Mode).', stat: 'runClutchClears', target: 1, scope: 'run' },
+                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,000 viruses in one run (Adventure Mode).', stat: 'runPops', target: 2000, scope: 'run' },
+                { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs (Adventure Mode).', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
+                { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored viruses across runs (Adventure Mode).', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
+                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 500 levels across runs (Adventure Mode).', stat: 'levelsClearedLifetime', target: 500, scope: 'lifetime' },
+                { id: 'endurance_levels_10', title: 'Endurance I', description: 'Clear 10 levels in Endurance Mode.', stat: 'enduranceLevelsClearedLifetime', target: 10, scope: 'lifetime' },
+                { id: 'endurance_levels_20', title: 'Endurance II', description: 'Clear 20 levels in Endurance Mode.', stat: 'enduranceLevelsClearedLifetime', target: 20, scope: 'lifetime' },
+                { id: 'endurance_levels_30', title: 'Endurance III', description: 'Clear 30 levels in Endurance Mode.', stat: 'enduranceLevelsClearedLifetime', target: 30, scope: 'lifetime' },
+                { id: 'endurance_score_25000', title: 'Endurance Score I', description: 'Reach 25,000 score in Endurance Mode.', stat: 'enduranceBestScore', target: 25000, scope: 'lifetime' },
+                { id: 'endurance_score_50000', title: 'Endurance Score II', description: 'Reach 50,000 score in Endurance Mode.', stat: 'enduranceBestScore', target: 50000, scope: 'lifetime' },
+                { id: 'endurance_score_100000', title: 'Endurance Score III', description: 'Reach 100,000 score in Endurance Mode.', stat: 'enduranceBestScore', target: 100000, scope: 'lifetime' },
                 { id: 'ending_hostile_takeover', title: 'HOSTILE TAKEOVER', description: 'Win Adventure Mode with the Hostile Takeover ending.', stat: 'endingHostileTakeoverWins', target: 1, scope: 'lifetime' },
                 { id: 'ending_system_restored', title: 'SYSTEM RESTORED', description: 'Win Adventure Mode with the System Restored ending.', stat: 'endingSystemRestoredWins', target: 1, scope: 'lifetime' },
                 { id: 'ending_independent_variable', title: 'INDEPENDENT VARIABLE', description: 'Win Adventure Mode with the Independent Variable ending.', stat: 'endingIndependentVariableWins', target: 1, scope: 'lifetime' },
-                { id: 'ending_true', title: 'The True Ending', description: 'Win with Independent Variable without using Continue.', stat: 'endingTrueWins', target: 1, scope: 'lifetime' }
+                { id: 'ending_true', title: 'The True Ending', description: 'Win Adventure Mode with Independent Variable without using Continue.', stat: 'endingTrueWins', target: 1, scope: 'lifetime' }
             ];
             let achievementSaveTimer = null;
             let achievementUiQueued = false;
@@ -2857,11 +2863,13 @@ function escapeHtmlAttr(str) {
                 else setTimeout(run, 0);
             }
 
-            function incrementAchievementStat(statKey, amount = 1, scope = 'lifetime') {
+            function incrementAchievementStat(statKey, amount = 1, scope = 'lifetime', opts = {}) {
                 const key = String(statKey || '');
                 if (!key) return;
                 const inc = Number(amount);
                 if (!Number.isFinite(inc) || inc <= 0) return;
+                const allowEndurance = !!(opts && opts.allowEndurance);
+                if (!isAdventureMode() && !allowEndurance) return;
                 const stats = (scope === 'run') ? runAchievementStats : achievementState.stats;
                 const prev = Math.max(0, Number(stats[key]) || 0);
                 stats[key] = prev + inc;
@@ -2869,10 +2877,12 @@ function escapeHtmlAttr(str) {
                 evaluateAchievements();
             }
 
-            function setAchievementBest(statKey, candidate, scope = 'lifetime') {
+            function setAchievementBest(statKey, candidate, scope = 'lifetime', opts = {}) {
                 const key = String(statKey || '');
                 if (!key) return;
                 const val = Math.max(0, Number(candidate) || 0);
+                const allowEndurance = !!(opts && opts.allowEndurance);
+                if (!isAdventureMode() && !allowEndurance) return;
                 const stats = (scope === 'run') ? runAchievementStats : achievementState.stats;
                 const prev = Math.max(0, Number(stats[key]) || 0);
                 if (val <= prev) return;
@@ -4560,6 +4570,11 @@ function escapeHtmlAttr(str) {
                     try { window.highScore = highScore; } catch (e) { }
                     if (highScoreEl) highScoreEl.textContent = String(highScore);
                 }
+                try {
+                    if (isEnduranceMode()) {
+                        setAchievementBest('enduranceBestScore', Math.max(0, Number(totalScore) || 0), 'lifetime', { allowEndurance: true });
+                    }
+                } catch (e) { }
                 // Update the floating score box (5 digits, zero-padded)
 
                 const disp = document.getElementById('scoreDisplay');
@@ -10947,7 +10962,11 @@ function escapeHtmlAttr(str) {
                     clicksLeft = Math.min(getMaxClicksCap(), clicksBeforeClearReward + clearRewardClicks);
                     playSfx('win');
                     screensPassed += 1;
-                    incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
+                    if (isEnduranceMode()) {
+                        incrementAchievementStat('enduranceLevelsClearedLifetime', 1, 'lifetime', { allowEndurance: true });
+                    } else {
+                        incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
+                    }
                     const nextLevelNum = screensPassed + 1;
                     setAchievementBest('runLevelReached', nextLevelNum, 'run');
                     updateHUD();

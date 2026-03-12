@@ -7406,6 +7406,15 @@
                 text-indent: 0;
             }
 
+            #startModal .start-modal-logo {
+                display: block;
+                width: min(260px, 56vw);
+                max-width: 100%;
+                height: auto;
+                margin: 0 0 10px 0;
+                image-rendering: auto;
+            }
+
             /* small image anchored bottom-right inside the modal */
             /* small image placed as a flex item to avoid overlapping text */
             #startModal .modal-img,
