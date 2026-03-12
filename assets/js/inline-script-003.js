@@ -10595,6 +10595,26 @@ function escapeHtmlAttr(str) {
                 return changed;
             }
 
+            function enforceEarlyAdventureSize1Cap(levelNum, maxCount = 2) {
+                const lvl = Math.max(1, Math.floor(Number(levelNum) || getCurrentLevelNumber()));
+                if (!isAdventureMode() || lvl > 3) return 0;
+                const cap = Math.max(0, Math.floor(Number(maxCount) || 0));
+                const smallIdx = [];
+                for (let i = 0; i < state.length; i++) {
+                    if (state[i] === 0) smallIdx.push(i);
+                }
+                if (smallIdx.length <= cap) return 0;
+                shuffle(smallIdx);
+                let changed = 0;
+                for (let i = cap; i < smallIdx.length; i++) {
+                    const idx = smallIdx[i];
+                    // Promote excess size-1 viruses to size-2 for smoother early-board starts.
+                    state[idx] = 1;
+                    changed++;
+                }
+                return changed;
+            }
+
 
             function randomizeBoard(preserveClicks = false) {
                 levelAdvancePending = false;
@@ -10652,6 +10672,7 @@ function escapeHtmlAttr(str) {
                     state[cellIndex] = sampleSizeRandom(spawnProfileLevel, spawnProfileCompleted);
                     setSpecialForCell(cellIndex, rollSpecialVirusType(levelNum));
                 }
+                enforceEarlyAdventureSize1Cap(levelNum, 2);
                 if (isBossLevelNow) {
                     placeMiniBossForLevel(levelNum, idx.slice(target));
                 } else {
