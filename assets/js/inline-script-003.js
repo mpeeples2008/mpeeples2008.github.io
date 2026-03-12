@@ -4955,11 +4955,15 @@ function escapeHtmlAttr(str) {
             function getFinalEndingProfile() {
                 const choiceId = getFinalOfferChoiceId();
                 if (choiceId === 'final_pixel_safe_protocol') {
+                    const tookContinueDeal = !!(runPerkState && runPerkState.continueDealTaken);
+                    const continuation = tookContinueDeal
+                        ? '\n\nThe Competitive Opportunity clause you signed remains active, unfortunately. Viral Ventures now holds “contingent strategic rights” to select discoveries, including your genome. PIXEL has flagged the language as… creative. Our lawyers will look over it and get back to you.'
+                        : '\n\nThankfully you declined the Competitive Opportunity offered by Viral Ventures. No equity was exchanged, no rights were transferred so the lab answers only to itself.';
                     return {
                         key: 'pixel',
                         label: 'PIXEL PERK',
                         imageUrl: FINAL_VICTORY_PIXEL_IMAGE_URL,
-                        storyText: 'SYSTEM RESTORED: PIXEL stabilized core systems and restored lab autonomy. Survivors begin rebuilding under guarded optimism.'
+                        storyText: 'SYSTEM RESTORED: With your help, PIXEL was able to stabilize core systems and restore lab autonomy. Luckily we were able to keep lab technology out of the hands of the Viral Ventures executives. Now it is time to rebuild.' + continuation
                     };
                 }
                 if (choiceId === 'final_viral_hostile_buyout') {
@@ -4974,11 +4978,15 @@ function escapeHtmlAttr(str) {
                         storyText: 'HOSTILE TAKEOVER: You succeeded in restoring containment, but at a cost. By giving 51% of control to the shady Viral Ventures they now own the cleanup rights and all lab technology. The future feels compromised.' + continuation
                     };
                 }
+                const tookContinueDeal = !!(runPerkState && runPerkState.continueDealTaken);
+                const soloContinuation = tookContinueDeal
+                    ? '\n\nAs you walk out the door of the lab you run into the Viral Ventures liason. He is holding a copy of the Competitive Opportunity contract you signed. He smiles as he tells you he is sure he can help you develop a payment plan.'
+                    : '\n\nAs you walk out the door of the lab and into the sunset, you finally feel free. Where will your journey take you next?';
                 return {
                     key: 'solo',
                     label: 'ON MY OWN',
                     imageUrl: FINAL_VICTORY_SOLO_IMAGE_URL || FINAL_VICTORY_DEFAULT_IMAGE_URL,
-                    storyText: 'INDEPENDENT VARIABLE: You took no deals, no shortcuts. You held the line alone and wrote your own ending. As you walk out the door of the lab and into the sunset, you finally feel free. Where will your journey take you next?'
+                    storyText: 'INDEPENDENT VARIABLE: You took no deals, no shortcuts. You held the line alone and wrote your own ending.' + soloContinuation
                 };
             }
 
@@ -6068,74 +6076,31 @@ function escapeHtmlAttr(str) {
                 const typedStoryText = String(ending.storyText || '');
 
                 const mountSplash = () => {
-                    const creditsLines = buildFinalVictoryCreditsHtml();
-                    const recapHtml = buildFinalVictoryRunSummaryHtml();
                     host.innerHTML = `
                         <div class="final-victory-modal" role="dialog" aria-modal="true" aria-label="Victory">
                             <div class="fv-title">PATHOGEN SUPPRESSED</div>
                             <div class="fv-image-wrap">
                                 <img src="${escapeHtmlAttr(ending.imageUrl || FINAL_VICTORY_DEFAULT_IMAGE_URL || '')}" alt="Victory" onerror="this.style.display='none';" />
                             </div>
-                            <div class="fv-credits-wrap">
-                                <div class="fv-info-panel" data-fv-panel="credits" hidden>
-                                    <div class="fv-roll-section fv-roll-credits">
-                                        <div class="fv-roll-title">CREDITS</div>
-                                        ${creditsLines}
-                                    </div>
-                                </div>
-                                <div class="fv-info-panel is-active" data-fv-panel="stats">
-                                    <div class="fv-roll-section fv-roll-summary">
-                                        ${recapHtml}
-                                    </div>
-                                </div>
-                            </div>
                             <div class="fv-final-card">MISSION COMPLETE</div>
                             <div class="fv-actions">
                                 <button type="button" class="fv-restart-btn">START NEW RUN</button>
-                                <button type="button" class="fv-tab-btn" data-fv-tab="credits">CREDITS</button>
-                                <button type="button" class="fv-tab-btn" data-fv-tab="stats">GAME STATS</button>
                             </div>
                         </div>
                     `;
                     const restartBtn = host.querySelector('.fv-restart-btn');
                     if (restartBtn) {
                         restartBtn.addEventListener('click', () => {
-                            restartToIntroScreen();
+                            try { clearFinalVictorySequence(false); } catch (e) { }
+                            showFinalRunStatsPopup({
+                                title: 'RUN COMPLETE',
+                                subtitle: 'Pathogen Suppressed',
+                                onContinue: () => {
+                                    restartToIntroScreen();
+                                }
+                            });
                         }, { once: true });
                     }
-                    const setFinalVictoryPanel = (name) => {
-                        const target = String(name || 'stats');
-                        const panels = host.querySelectorAll('.fv-info-panel[data-fv-panel]');
-                        if (!panels || !panels.length) return;
-                        let active = false;
-                        panels.forEach((panel) => {
-                            const id = String(panel.getAttribute('data-fv-panel') || '');
-                            const on = (id === target);
-                            panel.hidden = !on;
-                            panel.classList.toggle('is-active', on);
-                            if (on) active = true;
-                        });
-                        if (!active) {
-                            panels.forEach((panel) => {
-                                const on = String(panel.getAttribute('data-fv-panel') || '') === 'stats';
-                                panel.hidden = !on;
-                                panel.classList.toggle('is-active', on);
-                            });
-                        }
-                        const tabButtons = host.querySelectorAll('.fv-tab-btn[data-fv-tab]');
-                        tabButtons.forEach((btn) => {
-                            const isOn = String(btn.getAttribute('data-fv-tab') || '') === target;
-                            btn.classList.toggle('active', isOn);
-                        });
-                    };
-                    const tabButtons = host.querySelectorAll('.fv-tab-btn[data-fv-tab]');
-                    tabButtons.forEach((btn) => {
-                        btn.addEventListener('click', () => {
-                            const tab = String(btn.getAttribute('data-fv-tab') || '');
-                            setFinalVictoryPanel(tab);
-                        });
-                    });
-                    setFinalVictoryPanel('stats');
                     startFinalCreditsMusic();
                     finalVictoryFinalCardTimer = setTimeout(() => {
                         try { host.classList.add('show-final-card'); } catch (e) { }
@@ -6385,6 +6350,54 @@ function escapeHtmlAttr(str) {
                         <div class="go-tip"><b>PIXEL tip:</b> ${escapeHtml(tipLine)}</div>
                     </div>
                 `;
+            }
+
+            function showFinalRunStatsPopup(opts = {}) {
+                const title = opts.title || 'RUN COMPLETE';
+                const subtitle = opts.subtitle || 'Performance Summary';
+                const onContinue = (typeof opts.onContinue === 'function') ? opts.onContinue : () => { };
+                try {
+                    const existing = document.querySelector('.final-run-stats-popup');
+                    if (existing) {
+                        try { existing.remove(); } catch (e) { }
+                    }
+                    const el = document.createElement('div');
+                    el.className = 'final-run-stats-popup';
+                    el.setAttribute('role', 'dialog');
+                    el.setAttribute('aria-modal', 'true');
+                    el.style.pointerEvents = 'auto';
+                    const recapHtml = buildGameOverRecapHtml();
+                    el.innerHTML = `
+                        <div class="go-title">${escapeHtml(String(title || 'RUN COMPLETE'))}</div>
+                        <div class="go-sub">${escapeHtml(String(subtitle || 'Performance Summary'))}</div>
+                        ${recapHtml}
+                        <div class="go-actions"><button type="button" class="go-restart-btn" aria-label="Continue">CONTINUE</button></div>
+                    `;
+                    document.body.appendChild(el);
+                    void el.offsetWidth;
+                    el.classList.add('show');
+                    const continueBtn = el.querySelector('.go-restart-btn');
+                    if (continueBtn) {
+                        continueBtn.addEventListener('click', (ev) => {
+                            try { ev.preventDefault(); ev.stopPropagation(); } catch (e) { }
+                            try {
+                                el.classList.remove('show');
+                                el.classList.add('hide');
+                                el.addEventListener('animationend', () => {
+                                    try { el.remove(); } catch (e2) { }
+                                    try { onContinue(); } catch (e3) { }
+                                }, { once: true });
+                            } catch (e) {
+                                try { el.remove(); } catch (e2) { }
+                                try { onContinue(); } catch (e3) { }
+                            }
+                        }, { once: true });
+                    }
+                    return true;
+                } catch (e) {
+                    try { onContinue(); } catch (e2) { }
+                    return false;
+                }
             }
 
 

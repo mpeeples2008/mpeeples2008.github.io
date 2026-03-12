@@ -3448,6 +3448,114 @@
             box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.22);
         }
 
+        .final-run-stats-popup {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            z-index: 97000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 10px;
+            padding: 30px 40px;
+            border-radius: 14px;
+            border: 6px solid rgba(0, 0, 0, 0.55);
+            background: linear-gradient(180deg, #1b2f4f, #13233f);
+            color: #ffd166;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 20px;
+            text-align: center;
+            pointer-events: none;
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+
+        .final-run-stats-popup .go-title {
+            font-size: 24px;
+            text-transform: uppercase;
+            text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+            letter-spacing: 0.04em;
+        }
+
+        .final-run-stats-popup .go-sub {
+            font-size: 14px;
+            color: #d9ecff;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        .final-run-stats-popup .go-recap {
+            width: min(420px, 84vw);
+            margin-top: 8px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 3px solid rgba(0, 0, 0, 0.45);
+            background: linear-gradient(180deg, rgba(15, 26, 43, 0.6), rgba(8, 16, 29, 0.66));
+            color: #e4f0ff;
+            text-align: left;
+            font-size: 10px;
+            line-height: 1.45;
+        }
+
+        .final-run-stats-popup .go-recap-title {
+            font-size: 11px;
+            margin-bottom: 8px;
+            color: #ffd166;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.45);
+        }
+
+        .final-run-stats-popup .go-recap-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 4px 10px;
+            align-items: center;
+        }
+
+        .final-run-stats-popup .go-recap-grid span { color: #cde5ff; }
+        .final-run-stats-popup .go-recap-grid b { color: #fff4d8; justify-self: end; }
+        .final-run-stats-popup .go-recap-achv { margin-top: 8px; color: #d7ecff; }
+        .final-run-stats-popup .go-recap-list { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .final-run-stats-popup .go-recap-list span {
+            display: inline-block;
+            padding: 3px 6px;
+            border-radius: 999px;
+            border: 1px solid rgba(193, 224, 255, 0.44);
+            background: rgba(197, 223, 255, 0.1);
+            color: #e6f3ff;
+            font-size: 9px;
+        }
+        .final-run-stats-popup .go-recap-more { margin-top: 6px; color: #b9d8ff; font-size: 9px; text-align: right; }
+        .final-run-stats-popup .go-tip {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(182, 216, 255, 0.24);
+            color: #cfe8ff;
+            font-size: 9px;
+            line-height: 1.45;
+        }
+        .final-run-stats-popup .go-actions { margin-top: 10px; display: flex; justify-content: center; width: 100%; }
+        .final-run-stats-popup .go-restart-btn {
+            appearance: none;
+            border: 3px solid rgba(0, 0, 0, 0.52);
+            border-radius: 8px;
+            padding: 8px 14px;
+            min-width: 132px;
+            background: linear-gradient(180deg, #d7e9ff, #a9c8f3);
+            color: #16243a;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            line-height: 1.1;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+            text-transform: uppercase;
+        }
+        .final-run-stats-popup .go-restart-btn:hover { filter: brightness(1.04); }
+        .final-run-stats-popup .go-restart-btn:active { transform: translateY(1px); box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.22); }
+
         .continue-offer-popup {
             position: fixed;
             left: 50%;
@@ -4417,8 +4525,14 @@
         .game-over-popup.show {
             animation: gameOverIn 400ms ease both;
         }
+        .final-run-stats-popup.show {
+            animation: gameOverIn 400ms ease both;
+        }
 
         .game-over-popup.hide {
+            animation: gameOverOut 400ms ease forwards;
+        }
+        .final-run-stats-popup.hide {
             animation: gameOverOut 400ms ease forwards;
         }
 
