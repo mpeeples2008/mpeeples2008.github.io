@@ -7042,9 +7042,7 @@ function escapeHtmlAttr(str) {
                     // Endless mode starts from level-1 profile and ramps gradually.
                     return Math.max(1, Math.min(10, 1 + Math.floor((lvl - 1) / 3)));
                 }
-                if (lvl === 16 || lvl === 17) return 6;
-                if (lvl === 18) return 7;
-                if (lvl === 19) return 8;
+                if (lvl >= 16 && lvl <= 19) return 6;
                 if (lvl < 10) return Math.min(10, lvl);
                 const remapped = 5 + Math.floor((lvl - 10) / 2);
                 return Math.max(1, Math.min(10, remapped));
