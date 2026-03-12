@@ -185,14 +185,25 @@ function escapeHtmlAttr(str) {
             ]
         };
         const ENDURANCE_SIZE_MIX_PROFILE = {
-            // Endurance-only: keep density from base profile, but shift size mix slowly.
-            // sampleSizeRandom() blends using screensPassed (levels completed).
+            // Endurance-only: keep density from base profile, but ramp size mix aggressively early.
+            // sampleSizeRandom() blends using screensPassed (levels completed):
+            //  - level 1..5   : start -> even
+            //  - level 6..12  : even  -> end
+            //  - level 13..20 : end   -> late
+            //  - level 21..28 : late  -> post (more small-virus pressure)
             sizeMixStart: [0.04, 0.17, 0.35, 0.44],
             sizeMixEven: [0.11, 0.24, 0.33, 0.32],
             sizeMixEnd: [0.24, 0.32, 0.28, 0.16],
-            // Reach "even" by level 10 (9 levels completed), then reach "end" by level 20.
-            sizeMixLevelsToEven: 9,
-            sizeMixLevelsToEnd: 10
+            sizeMixLate: [0.32, 0.28, 0.28, 0.12],
+            sizeMixPost: [0.38, 0.30, 0.22, 0.10],
+            // completed=4   -> level 5
+            // completed=11  -> level 12
+            // completed=19  -> level 20
+            // completed=27  -> level 28
+            sizeMixLevelsToEven: 4,
+            sizeMixLevelsToEnd: 7,
+            sizeMixLevelsToLate: 8,
+            sizeMixLevelsToPost: 8
         };
 
         // Wrap everything that queries DOM in DOMContentLoaded so elements exist before we attach listeners
@@ -347,6 +358,11 @@ function escapeHtmlAttr(str) {
                     if (document.body) document.body.dataset.gameMode = normalized;
                 } catch (e) { }
                 try { window.currentGameMode = normalized; } catch (e) { }
+                try {
+                    if (typeof window.syncHighScoreForMode === 'function') {
+                        window.syncHighScoreForMode(normalized);
+                    }
+                } catch (e) { }
                 return normalized;
             }
             function isEnduranceMode() {
@@ -2297,18 +2313,19 @@ function escapeHtmlAttr(str) {
             const ACHIEVEMENT_STORAGE_KEY = 'goneViral_achievements_v1';
             const ACHIEVEMENT_SCHEMA_VERSION = 1;
             const ACHIEVEMENT_DEFS = [
-                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 300 viruses in one run.', stat: 'runPops', target: 300, scope: 'run' },
+                { id: 'run_pop_1000', title: 'Viral Exterminator', description: 'Pop 500 viruses in one run.', stat: 'runPops', target: 500, scope: 'run' },
                 { id: 'run_level_5', title: 'Containment I', description: 'Complete level 5 in one run.', stat: 'runLevelReached', target: 6, scope: 'run' },
                 { id: 'run_level_10', title: 'Containment II', description: 'Complete level 10 in one run.', stat: 'runLevelReached', target: 11, scope: 'run' },
                 { id: 'run_level_15', title: 'Containment III', description: 'Complete level 15 in one run.', stat: 'runLevelReached', target: 16, scope: 'run' },
-                { id: 'run_shell_breaker_10', title: 'Shell Breaker', description: 'Break 25 armored shells in one run.', stat: 'runArmoredShellsBroken', target: 25, scope: 'run' },
-                { id: 'run_chain_20', title: 'Chain Master', description: 'Reach a 20+ chain in one run.', stat: 'runBestChain', target: 20, scope: 'run' },
-                { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 3 times in one run.', stat: 'runNanoStormUses', target: 3, scope: 'run' },
+                { id: 'run_level_20', title: 'Containment IV', description: 'Complete level 20 in one run.', stat: 'runLevelReached', target: 21, scope: 'run' },
+                { id: 'run_shell_breaker_10', title: 'Shell Breaker', description: 'Break 50 armored shells in one run.', stat: 'runArmoredShellsBroken', target: 50, scope: 'run' },
+                { id: 'run_chain_20', title: 'Chain Master', description: 'Record 3 chains of 20+ in one run.', stat: 'runChain20Count', target: 3, scope: 'run' },
+                { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 5 times in one run.', stat: 'runNanoStormUses', target: 5, scope: 'run' },
                 { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left.', stat: 'runClutchClears', target: 1, scope: 'run' },
-                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,000 viruses across runs.', stat: 'totalPopsLifetime', target: 2000, scope: 'lifetime' },
+                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,500 viruses in one run.', stat: 'runPops', target: 2500, scope: 'run' },
                 { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs.', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
                 { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored viruses across runs.', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
-                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 250 levels across runs.', stat: 'levelsClearedLifetime', target: 250, scope: 'lifetime' }
+                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 500 levels across runs.', stat: 'levelsClearedLifetime', target: 500, scope: 'lifetime' }
             ];
             let achievementSaveTimer = null;
             let achievementUiQueued = false;
@@ -2968,9 +2985,37 @@ function escapeHtmlAttr(str) {
 
 
             // High-score persistence (localStorage)
-            const highScoreKey = 'goneViral_highScore';
-            let highScore = Number(localStorage.getItem(highScoreKey) || 0);
+            const highScoreKeyAdventure = 'goneViral_highScore_adventure';
+            const highScoreKeyEndurance = 'goneViral_highScore_endurance';
+            function getHighScoreKeyForMode(modeName = currentGameMode) {
+                return String(modeName) === GAME_MODES.endurance ? highScoreKeyEndurance : highScoreKeyAdventure;
+            }
+            function loadHighScoreForMode(modeName = currentGameMode) {
+                const key = getHighScoreKeyForMode(modeName);
+                let v = 0;
+                try { v = Number(localStorage.getItem(key) || 0); } catch (e) { v = 0; }
+                if (!Number.isFinite(v) || v < 0) v = 0;
+                return Math.max(0, Math.floor(v));
+            }
+            function saveHighScoreForMode(modeName = currentGameMode, value = highScore) {
+                const key = getHighScoreKeyForMode(modeName);
+                const v = Math.max(0, Math.floor(Number(value) || 0));
+                try { localStorage.setItem(key, String(v)); } catch (e) { }
+                try { window.HIGH_SCORE_KEY = key; } catch (e) { }
+                return v;
+            }
+            function syncHighScoreForMode(modeName = currentGameMode) {
+                highScore = loadHighScoreForMode(modeName);
+                if (!highScoreEl) try { highScoreEl = document.getElementById('highScoreValue'); } catch (e) { }
+                if (highScoreEl) highScoreEl.textContent = String(highScore);
+                try { window.highScore = highScore; } catch (e) { }
+                try { window.HIGH_SCORE_KEY = getHighScoreKeyForMode(modeName); } catch (e) { }
+                return highScore;
+            }
+            window.syncHighScoreForMode = syncHighScoreForMode;
+            let highScore = loadHighScoreForMode(currentGameMode);
             let highScoreEl = null;
+            syncHighScoreForMode(currentGameMode);
 
             function markAudioUserInteracted() {
                 const wasInteracted = audioUserInteracted;
@@ -3128,7 +3173,9 @@ function escapeHtmlAttr(str) {
                     highScore = 0;
                     if (!highScoreEl) highScoreEl = document.getElementById('highScoreValue');
                     if (highScoreEl) highScoreEl.textContent = '0';
-                    try { localStorage.removeItem(highScoreKey); } catch (e) { }
+                    try { localStorage.removeItem(highScoreKeyAdventure); } catch (e) { }
+                    try { localStorage.removeItem(highScoreKeyEndurance); } catch (e) { }
+                    try { window.highScore = 0; } catch (e) { }
                     try {
                         if (window.Achievements && typeof window.Achievements.reset === 'function') {
                             window.Achievements.reset();
@@ -4401,7 +4448,8 @@ function escapeHtmlAttr(str) {
                 if (typeof highScore !== 'number') highScore = 0;
                 if (totalScore > highScore) {
                     highScore = totalScore;
-                    try { localStorage.setItem(highScoreKey, String(highScore)); } catch (e) { }
+                    saveHighScoreForMode(currentGameMode, highScore);
+                    try { window.highScore = highScore; } catch (e) { }
                     if (highScoreEl) highScoreEl.textContent = String(highScore);
                 }
                 // Update the floating score box (5 digits, zero-padded)
@@ -6460,10 +6508,14 @@ function escapeHtmlAttr(str) {
                 const S = ensureLen(Array.isArray(difficulty.sizeMixStart) ? difficulty.sizeMixStart : [0.05, 0.20, 0.35, 0.40]);
                 const M = ensureLen(Array.isArray(difficulty.sizeMixEven) ? difficulty.sizeMixEven : [0.15, 0.25, 0.30, 0.30]);
                 const E = ensureLen(Array.isArray(difficulty.sizeMixEnd) ? difficulty.sizeMixEnd : [0.32, 0.33, 0.23, 0.12]);
+                const L = ensureLen(Array.isArray(difficulty.sizeMixLate) ? difficulty.sizeMixLate : E);
+                const P = ensureLen(Array.isArray(difficulty.sizeMixPost) ? difficulty.sizeMixPost : L);
                 const levelsToEven = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToEven) || 6));
                 const levelsToEnd = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToEnd) || 12));
+                const levelsToLate = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToLate) || 0));
+                const levelsToPost = Math.max(0, Math.floor(Number(difficulty.sizeMixLevelsToPost) || 0));
                 const rawCompleted = (completedOverride == null) ? Math.max(0, Number(screensPassed) || 0) : Math.max(0, Number(completedOverride) || 0);
-                const completed = Math.min(9, rawCompleted);
+                const completed = rawCompleted;
 
                 let weights;
                 if (typeof screensPassed === 'undefined') {
@@ -6476,8 +6528,16 @@ function escapeHtmlAttr(str) {
                     const local = completed - levelsToEven;
                     const t2 = levelsToEnd === 0 ? 1 : (local / levelsToEnd);
                     weights = lerpArrays(M, E, t2);
+                } else if (completed <= levelsToEven + levelsToEnd + levelsToLate) {
+                    const local = completed - (levelsToEven + levelsToEnd);
+                    const t3 = levelsToLate === 0 ? 1 : (local / levelsToLate);
+                    weights = lerpArrays(E, L, t3);
+                } else if (completed <= levelsToEven + levelsToEnd + levelsToLate + levelsToPost) {
+                    const local = completed - (levelsToEven + levelsToEnd + levelsToLate);
+                    const t4 = levelsToPost === 0 ? 1 : (local / levelsToPost);
+                    weights = lerpArrays(L, P, t4);
                 } else {
-                    weights = E.slice();
+                    weights = P.slice();
                 }
 
                 // Normalize defensively
@@ -11795,7 +11855,10 @@ function escapeHtmlAttr(str) {
                         const count = tracker.pops || 0;
                         console.log('[Badge] final tracker.pops =', count);
                         setAchievementBest('runBestChain', count, 'run');
-                        if (count >= 20) incrementAchievementStat('chain20LifetimeCount', 1, 'lifetime');
+                        if (count >= 20) {
+                            incrementAchievementStat('runChain20Count', 1, 'run');
+                            incrementAchievementStat('chain20LifetimeCount', 1, 'lifetime');
+                        }
                         if (count >= 4) tutorialEvent('firstChain');
                         updateStormChainProgress(count);
                         grantStormChargeFromChain(count);

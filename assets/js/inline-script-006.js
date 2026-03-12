@@ -1,11 +1,17 @@
 ﻿
         (function () {
             try {
-                window.HIGH_SCORE_KEY = window.HIGH_SCORE_KEY || 'goneViral_highScore';
+                window.getHighScoreStorageKey = window.getHighScoreStorageKey || function (modeName) {
+                    var mode = String(modeName || window.currentGameMode || 'adventure').toLowerCase();
+                    return mode === 'endurance' ? 'goneViral_highScore_endurance' : 'goneViral_highScore_adventure';
+                };
+                window.HIGH_SCORE_KEY = window.getHighScoreStorageKey(window.currentGameMode);
 
                 window.loadHighScore = function () {
                     try {
-                        var raw = localStorage.getItem(window.HIGH_SCORE_KEY);
+                        var key = window.getHighScoreStorageKey(window.currentGameMode);
+                        window.HIGH_SCORE_KEY = key;
+                        var raw = localStorage.getItem(key);
                         window.highScore = Number(raw || 0);
                         console.log('[GoneViral] loadHighScore ->', raw, 'parsed:', window.highScore);
                     } catch (e) {
@@ -21,8 +27,10 @@
 
                 window.saveHighScore = function () {
                     try {
+                        var key = window.getHighScoreStorageKey(window.currentGameMode);
+                        window.HIGH_SCORE_KEY = key;
                         var val = Number(window.highScore || 0);
-                        localStorage.setItem(window.HIGH_SCORE_KEY, String(val));
+                        localStorage.setItem(key, String(val));
                         console.log('[GoneViral] saveHighScore ->', val);
                     } catch (e) {
                         console.warn('[GoneViral] saveHighScore failed', e);
