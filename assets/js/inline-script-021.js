@@ -60,12 +60,17 @@
             // integrate with existing Start button behavior:
             window.addEventListener('load', function () {
                 try {
-                    const startButtons = Array.from(document.querySelectorAll('#aiStartBtn, #aiEnduranceBtn, #startBtn, button.start'));
+                    const startButtons = Array.from(document.querySelectorAll('#aiStartBtn, #startBtn, button.start'));
                     const intro = document.getElementById('aiIntro') || document.getElementById('intro');
                     if (startButtons.length) {
                         // add an additional listener to show the modal after the intro fades
                         startButtons.forEach((startBtn) => {
                             startBtn.addEventListener('click', function () {
+                                try {
+                                    // Endurance mode should skip the AI mission intro modal.
+                                    const id = String((startBtn && startBtn.id) || '');
+                                    if (id === 'aiEnduranceBtn') return;
+                                } catch (e) { }
                                 try {
                                     // show modal after intro fade completes (about 650ms)
                                     setTimeout(function () { showStartModal(); }, 650);

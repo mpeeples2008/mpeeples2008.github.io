@@ -5,6 +5,28 @@ const levelCompleteImages = Array.from({ length: 36 }, (_, i) => {
   const n = String(i + 1).padStart(2, '0');
   return `https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/levelcomplete_${n}.png`;
 });
+let levelCompleteImageDeck = [];
+
+function shuffleArrayInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = tmp;
+  }
+  return arr;
+}
+
+function resetLevelCompleteImageDeck() {
+  levelCompleteImageDeck = shuffleArrayInPlace(levelCompleteImages.slice());
+}
+
+function getNextLevelCompleteImage() {
+  if (!Array.isArray(levelCompleteImageDeck) || levelCompleteImageDeck.length === 0) {
+    resetLevelCompleteImageDeck();
+  }
+  return String(levelCompleteImageDeck.shift() || levelCompleteImages[0] || '');
+}
 const BOSS_LEVEL_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level.png';
 const BOSS_LEVEL10_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level2.png';
 const BOSS_LEVEL15_IMAGE_URL = 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/boss_level_3.png';
@@ -41,7 +63,7 @@ function getBossLevelIntroImageUrl(levelNum) {
 
 function showLevelComplete(opts = {}) {
   const title = opts.title || 'LEVEL COMPLETE';
-  const imgSrc = opts.imageUrl || levelCompleteImages[Math.floor(Math.random() * levelCompleteImages.length)] || '';
+  const imgSrc = opts.imageUrl || getNextLevelCompleteImage();
   const onDismiss = (typeof opts.onDismiss === 'function') ? opts.onDismiss : null;
   const emitAssistant = opts.emitAssistant !== false;
   const extraClass = String(opts.className || '').trim();
@@ -2144,7 +2166,7 @@ function escapeHtmlAttr(str) {
                     id: 'final_viral_hostile_buyout',
                     source: 'broker',
                     title: 'Hostile Buyout',
-                    desc: '+15 clicks, +1 Nano Storm charge, and boss HP -20%; lose 51% of your current points and all future Double Deals are disabled.',
+                    desc: '+15 clicks, +1 Nano Storm charge, and boss HP -20%; lose 51% of your current points and all future MOD CENTER offers are disabled.',
                     cardFrontUrl: 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/card_quickfix.png'
                 },
                 bossSlowMs: 20000,
@@ -2914,20 +2936,72 @@ function escapeHtmlAttr(str) {
             const loreModal = document.getElementById('loreModal');
             const loreCloseBtn = document.getElementById('loreCloseBtn');
             const startModalCloseBtn = document.getElementById('startModalClose');
+            function dismissIntroOverlayNow() {
+                try {
+                    const intro = document.getElementById('aiIntro');
+                    if (!intro) return;
+                    intro.classList.add('fade-out');
+                    intro.style.pointerEvents = 'none';
+                    setTimeout(() => {
+                        try {
+                            intro.style.display = 'none';
+                            intro.style.visibility = 'hidden';
+                            intro.setAttribute('aria-hidden', 'true');
+                        } catch (e) { }
+                    }, 650);
+                } catch (e) { }
+            }
+            function forceCleanRunStart(modeName) {
+                try {
+                    setGameMode(modeName || GAME_MODES.adventure);
+                } catch (e) { }
+                try {
+                    stopTutorialMode(true);
+                } catch (e) { }
+                try {
+                    ['audioPopup', 'helpPopup', 'startModal', 'level5DynamicsModal', 'loreModal'].forEach((id) => {
+                        const el = document.getElementById(id);
+                        if (!el) return;
+                        el.classList.remove('show', 'open');
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                        el.style.pointerEvents = 'none';
+                        el.setAttribute('aria-hidden', 'true');
+                    });
+                } catch (e) { }
+                try {
+                    screensPassed = 0;
+                    totalScore = 0;
+                    outOfClicksShown = false;
+                    continueOfferOpen = false;
+                    runContinueUses = 0;
+                    runStartedByPlayer = true;
+                    inputLocked = false;
+                    stormResolving = false;
+                    randomizeBoard(false);
+                    updateHUD();
+                } catch (e) { }
+            }
             syncTutorialGateFromDom();
             if (aiStartBtn) {
                 aiStartBtn.addEventListener('click', () => {
                     setGameMode(GAME_MODES.adventure);
                     runStartedByPlayer = true;
                     tutorialGateState.startPressed = true;
+                    dismissIntroOverlayNow();
+                    try {
+                        inputLocked = false;
+                        stormResolving = false;
+                    } catch (e) { }
                     markAudioUserInteracted();
                 });
             }
             if (aiEnduranceBtn) {
                 aiEnduranceBtn.addEventListener('click', () => {
-                    setGameMode(GAME_MODES.endurance);
-                    runStartedByPlayer = true;
                     tutorialGateState.startPressed = true;
+                    tutorialGateState.briefingAcknowledged = true;
+                    dismissIntroOverlayNow();
+                    forceCleanRunStart(GAME_MODES.endurance);
                     markAudioUserInteracted();
                 });
             }
@@ -4348,7 +4422,7 @@ function escapeHtmlAttr(str) {
                     el.dataset.pickReady = '0';
                     el.classList.add('pick-locked');
                     el.innerHTML = `
-                        <div class="rp-title">DOUBLE DEAL</div>
+                        <div class="rp-title">MOD CENTER</div>
                         <div class="rp-sub">${escapeHtml(subTitleText)}</div>
                         <div class="rp-list">
                             ${renderDealCard(pair[0])}
@@ -7277,6 +7351,41 @@ function escapeHtmlAttr(str) {
                 } catch (e) { }
             }
 
+            // Boss-spawned viruses should appear with the same purple burst feel as normal pops.
+            // Visual-only: glow + stain pulse, no emitted particles and no gameplay side effects.
+            function playVirusSpawnBurstEffect(index, attempt = 0) {
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= (ROWS * COLS) || !boardEl) return;
+                const run = () => {
+                    try {
+                        const cell = boardEl.querySelector(`[data-index='${idx}']`);
+                        if (!cell) {
+                            if (attempt < 2) setTimeout(() => playVirusSpawnBurstEffect(idx, attempt + 1), 34);
+                            return;
+                        }
+                        const virus = cell.querySelector('.virus');
+                        if (!virus) {
+                            if (attempt < 2) setTimeout(() => playVirusSpawnBurstEffect(idx, attempt + 1), 34);
+                            return;
+                        }
+                        const r = cell.getBoundingClientRect();
+                        const cx = r.left + (r.width / 2);
+                        const cy = r.top + (r.height / 2);
+                        showPooledGlowAt(cx, cy);
+                        let stain = virus.querySelector('.stain');
+                        if (!stain) {
+                            stain = document.createElement('div');
+                            stain.className = 'stain';
+                            virus.appendChild(stain);
+                        }
+                        stain.classList.remove('show');
+                        void stain.offsetWidth;
+                        stain.classList.add('show');
+                    } catch (e) { }
+                };
+                try { requestAnimationFrame(run); } catch (e) { run(); }
+            }
+
             function getBoardCellCenter(index) {
                 if (!boardEl || !Number.isFinite(index)) return null;
                 try {
@@ -7782,6 +7891,7 @@ function escapeHtmlAttr(str) {
                 const armoredChance = clamp01(Number.isFinite(Number(options.fuelArmoredChance)) ? Number(options.fuelArmoredChance) : Number(pacing.fuelArmoredChance));
                 shuffle(empties);
                 let spawned = 0;
+                const spawnedIndices = [];
                 for (let i = 0; i < addCount; i++) {
                     const idx = empties[i];
                     if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) continue;
@@ -7791,10 +7901,14 @@ function escapeHtmlAttr(str) {
                     if (Math.random() < armoredChance) setSpecialForCell(idx, 'armored');
                     else clearSpecialForCell(idx);
                     spawned++;
+                    spawnedIndices.push(idx);
                 }
                 if (spawned > 0) {
                     bossFuelLastAtByLevel[lvl] = now;
                     scheduleRender();
+                    for (let i = 0; i < spawnedIndices.length; i++) {
+                        playVirusSpawnBurstEffect(spawnedIndices[i]);
+                    }
                 }
                 return spawned;
             }
@@ -9781,9 +9895,8 @@ function escapeHtmlAttr(str) {
                     if (useLevel5SummonFx) {
                         playBossSummonTravelFx(originIndex, idx);
                         playBossSpawnStamp(idx);
-                    } else {
-                        playMiniBossBurstEffect(idx, false);
                     }
+                    playVirusSpawnBurstEffect(idx);
                     spawned++;
                 }
                 // Keep a minimum amount of board fuel during boss encounters.
@@ -10272,6 +10385,7 @@ function escapeHtmlAttr(str) {
                     stormResolving = false;
                     stormCharges = 1;
                     comboInsurance = 0;
+                    try { resetLevelCompleteImageDeck(); } catch (e) { }
                     setStormArmed(false);
                     resetStormChainIndicator();
                     resetRunAchievementStats(getCurrentLevelNumber());
