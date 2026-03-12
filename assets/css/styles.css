@@ -8589,7 +8589,7 @@ html.assistant-disabled .assistant-fallback-bubble {
             font-size: clamp(13px, 1.6vw, 17px);
             line-height: 1.6;
             text-align: left;
-            white-space: normal;
+            white-space: pre-wrap;
             word-break: break-word;
             max-height: min(46vh, 330px);
             overflow: auto;

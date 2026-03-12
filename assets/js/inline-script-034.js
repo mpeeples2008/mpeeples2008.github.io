@@ -37,7 +37,11 @@
       var modal = document.getElementById(id);
       if (!modal) return;
       modal.classList.add('open');
+      // Some legacy popups (like audioPopup) use `.show` for visibility.
+      modal.classList.add('show');
       modal.style.display = '';
+      modal.style.visibility = 'visible';
+      modal.style.pointerEvents = 'auto';
       modal.removeAttribute('aria-hidden');
       setInertForModal(modal, true);
       // dispatch event
@@ -51,8 +55,11 @@
       var modal = document.getElementById(id);
       if (!modal) return;
       modal.classList.remove('open');
+      modal.classList.remove('show');
       // try to hide visually but don't remove from DOM
       modal.style.display = 'none';
+      modal.style.visibility = 'hidden';
+      modal.style.pointerEvents = 'none';
       modal.setAttribute('aria-hidden','true');
       setInertForModal(modal, false);
       modal.dispatchEvent(new CustomEvent('modal:close', {bubbles:true}));
@@ -105,24 +112,25 @@
     }
   });
 
-  // On DOM ready: wire known triggers and show startModal if present and not previously dismissed
+  // On DOM ready: wire known triggers
   document.addEventListener('DOMContentLoaded', function(){
-    // wire any elements with data-modal-open to ensure they exist (no-op)
-    // Show startModal at startup if present and not dismissed by user (localStorage)
+    // This project controls intro/tutorial/start flow elsewhere; do not auto-open startModal here.
     try {
       var start = document.getElementById('startModal');
       if (start) {
-        var seen = false;
-        try { seen = localStorage.getItem('startModalDismissed') === 'true'; } catch(e){}
-        if (!seen) {
-          window.showModal('startModal');
-        } else {
-          // ensure it's hidden
-          start.style.display = 'none';
-          start.setAttribute('aria-hidden','true');
-        }
+        start.classList.remove('open', 'show');
+        start.style.display = 'none';
+        start.style.visibility = 'hidden';
+        start.style.pointerEvents = 'none';
+        start.setAttribute('aria-hidden', 'true');
       }
     } catch(e){}
+    // Clear stale inert locks so first-load interactions always work.
+    try {
+      Array.from(document.body.children || []).forEach(function(el){
+        try { el.removeAttribute('inert'); } catch(e) {}
+      });
+    } catch(e) {}
     // ensure audioPopup hidden by default unless opened
     var audio = document.getElementById('audioPopup') || document.getElementById('audio-popup');
     if (audio) {

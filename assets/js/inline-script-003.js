@@ -3491,10 +3491,10 @@ function escapeHtmlAttr(str) {
                 try {
                     level20TalkSfxOnly = true;
                     const lines = [
-                        { who: 'boss', text: 'Attention, tiny operator: all your lab are belong to me.' },
-                        { who: 'pixel', text: 'Incorrect. Your meme accuracy is low, and your odds are lower. I am still online.' },
-                        { who: 'boss', text: 'I will drain every nano bot and leave you with zero continues.' },
-                        { who: 'pixel', text: 'Bold speech from a mutant in a jar. We have survived every mutation you tried.' },
+                        { who: 'boss', text: 'Attention, tiny operator. The lab is now mine.' },
+                        { who: 'pixel', text: 'Incorrect. The operator is not alone, I am still online.' },
+                        { who: 'boss', text: 'I will drain every nano bot and leave you with no hope.' },
+                        { who: 'pixel', text: 'Bold speech from a mutant in a jar. We have survived everything you have tried so far.' },
                         { who: 'boss', text: 'Then choose wisely and face your consequences..' }
                     ];
                     let i = 0;
@@ -4963,11 +4963,15 @@ function escapeHtmlAttr(str) {
                     };
                 }
                 if (choiceId === 'final_viral_hostile_buyout') {
+                    const tookContinueDeal = !!(runPerkState && runPerkState.continueDealTaken);
+                    const continuation = tookContinueDeal
+                        ? '\n\nYou accepted a Competitive Opportunity™ from Viral Ventures but you did not read the fine print. Your genome has been successfully acquired. Viral Ventures Enterprises now holds exclusive rights to your biological identity, likeness, and any future mutations thereof. As a valued corporate asset, you are not permitted to leave the facility. Please return to your designated holding cell... I mean designated quarters.'
+                        : '\n\nViral Ventures has assumed operational control of the lab and all associated intellectual property. Future research directions will be determined by “market optimization protocols". You remain employed.';
                     return {
                         key: 'broker',
                         label: 'VIRAL VENTURE',
                         imageUrl: FINAL_VICTORY_BROKER_IMAGE_URL,
-                        storyText: 'HOSTILE TAKEOVER: You succeeded in restoring containment, but at a cost. By giving 51% of control to the shady Viral Ventures they now own the cleanup rights and all lab technology. The future feels compromised.'
+                        storyText: 'HOSTILE TAKEOVER: You succeeded in restoring containment, but at a cost. By giving 51% of control to the shady Viral Ventures they now own the cleanup rights and all lab technology. The future feels compromised.' + continuation
                     };
                 }
                 return {
@@ -6061,9 +6065,7 @@ function escapeHtmlAttr(str) {
                 host.classList.add('show-win');
                 const ending = getFinalEndingProfile();
                 const endingColor = (ending.key === 'broker') ? '#9dff7d' : '#ffd166';
-                const baseStoryText = String(ending.storyText || '');
-                const continueMarker = (runPerkState && runPerkState.continueDealTaken) ? ' user chose continue' : '';
-                const typedStoryText = `${baseStoryText}${continueMarker}`;
+                const typedStoryText = String(ending.storyText || '');
 
                 const mountSplash = () => {
                     const creditsLines = buildFinalVictoryCreditsHtml();
