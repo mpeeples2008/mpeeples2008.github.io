@@ -2951,6 +2951,7 @@ function escapeHtmlAttr(str) {
             const aiEnduranceBtn = document.getElementById('aiEnduranceBtn');
             const aiTutorialBtn = document.getElementById('aiTutorialBtn');
             const aiLoreBtn = document.getElementById('aiLoreBtn');
+            const sponsorMarkEl = document.querySelector('.pathodyne-mark-inline');
             const loreModal = document.getElementById('loreModal');
             const loreCloseBtn = document.getElementById('loreCloseBtn');
             const startModalCloseBtn = document.getElementById('startModalClose');
@@ -3056,6 +3057,25 @@ function escapeHtmlAttr(str) {
                         loreModal.classList.remove('show');
                         loreModal.setAttribute('aria-hidden', 'true');
                     } catch (e) { }
+                });
+            }
+            if (sponsorMarkEl) {
+                try {
+                    sponsorMarkEl.setAttribute('role', 'button');
+                    sponsorMarkEl.setAttribute('tabindex', '0');
+                    sponsorMarkEl.removeAttribute('aria-hidden');
+                } catch (e) { }
+                sponsorMarkEl.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); ev.stopPropagation(); } catch (e) { }
+                    handleSponsorMarkInfoClick();
+                });
+                sponsorMarkEl.addEventListener('keydown', (ev) => {
+                    try {
+                        if (ev.key !== 'Enter' && ev.key !== ' ' && ev.key !== 'Spacebar') return;
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                    } catch (e) { }
+                    handleSponsorMarkInfoClick();
                 });
             }
             if (startModalCloseBtn) {
@@ -6450,7 +6470,34 @@ function escapeHtmlAttr(str) {
                     if (!mark) return;
                     const isViral = !!(runPerkState && runPerkState.continueDealTaken);
                     mark.classList.toggle('is-viral', isViral);
-                    mark.setAttribute('title', isViral ? 'Viral Ventures Contract Active' : 'Pathodyne Mark');
+                    const label = isViral ? 'Viral Ventures Contract Active' : 'Pathodyne Mark';
+                    mark.setAttribute('title', label);
+                    mark.setAttribute('aria-label', label);
+                } catch (e) { }
+            }
+
+            let sponsorMarkHintTs = 0;
+            function handleSponsorMarkInfoClick() {
+                try {
+                    const now = Date.now();
+                    if ((now - sponsorMarkHintTs) < 700) return;
+                    sponsorMarkHintTs = now;
+                    const isViral = !!(runPerkState && runPerkState.continueDealTaken);
+                    const linesPathodyne = [
+                        'That mark is Pathodyne corporate branding. They stamp everything, including us.',
+                        'Pathodyne logo detected. Officially reassuring. Unofficially unsettling.',
+                        'Corporate watermark online: Pathodyne. Legal says this counts as comfort.'
+                    ];
+                    const linesViral = [
+                        'That is the Viral Ventures mark. Translation: they own a piece of this run now.',
+                        'Viral Ventures contract active. I strongly recommend never signing things in glowing green.',
+                        'Sponsor update: Viral Ventures. Their accounting team is scarier than the pathogens.'
+                    ];
+                    const pool = isViral ? linesViral : linesPathodyne;
+                    const line = pool[Math.floor(Math.random() * pool.length)] || pool[0] || '';
+                    if (line && window.Assistant && Assistant.show) {
+                        Assistant.show(line, { priority: 1 });
+                    }
                 } catch (e) { }
             }
 

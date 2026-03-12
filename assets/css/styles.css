@@ -7672,14 +7672,22 @@ html.assistant-disabled .assistant-fallback-bubble {
                 background: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/P-mark.png') no-repeat center / contain;
                 opacity: 0.8;
                 filter: drop-shadow(0 2px 4px rgba(255, 211, 102, 0.45)) drop-shadow(0 0 7px rgba(255, 205, 90, 0.26));
-                pointer-events: none;
-                transition: filter 220ms ease, background-image 180ms linear, opacity 180ms linear;
+                pointer-events: auto;
+                cursor: pointer;
+                transition: filter 220ms ease, background-image 180ms linear, opacity 180ms linear, transform 150ms ease;
             }
 
             .control-trio .pathodyne-mark-inline.is-viral {
                 background-image: url('https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/V-mark.png');
                 opacity: 0.9;
                 filter: drop-shadow(0 2px 4px rgba(146, 255, 118, 0.5)) drop-shadow(0 0 10px rgba(98, 225, 92, 0.38));
+            }
+
+            .control-trio .pathodyne-mark-inline:hover,
+            .control-trio .pathodyne-mark-inline:focus-visible {
+                transform: translateY(-1px) scale(1.03);
+                outline: none;
+                filter: drop-shadow(0 2px 6px rgba(255, 221, 154, 0.56)) drop-shadow(0 0 12px rgba(255, 215, 115, 0.34));
             }
 
             .control-trio .ctrl {
