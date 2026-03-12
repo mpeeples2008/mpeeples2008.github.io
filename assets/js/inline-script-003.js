@@ -2329,6 +2329,7 @@ function escapeHtmlAttr(str) {
                     finalOfferPending: false,
                     finalOfferSeen: false,
                     finalOfferChoice: '',
+                    finalEndingAchievementGranted: false,
                     finalBossHpScale: 1,
                     finalBossSlowUntil: 0,
                     continueDealTaken: false,
@@ -2343,15 +2344,18 @@ function escapeHtmlAttr(str) {
                 { id: 'run_level_5', title: 'Containment I', description: 'Complete level 5 in one run.', stat: 'runLevelReached', target: 6, scope: 'run' },
                 { id: 'run_level_10', title: 'Containment II', description: 'Complete level 10 in one run.', stat: 'runLevelReached', target: 11, scope: 'run' },
                 { id: 'run_level_15', title: 'Containment III', description: 'Complete level 15 in one run.', stat: 'runLevelReached', target: 16, scope: 'run' },
-                { id: 'run_level_20', title: 'Containment IV', description: 'Complete level 20 in one run.', stat: 'runLevelReached', target: 21, scope: 'run' },
-                { id: 'run_shell_breaker_10', title: 'Shell Breaker', description: 'Break 50 armored shells in one run.', stat: 'runArmoredShellsBroken', target: 50, scope: 'run' },
+                { id: 'run_shell_breaker_10', title: 'Shield Breaker', description: 'Break 50 sheilded viruses in one run.', stat: 'runArmoredShellsBroken', target: 50, scope: 'run' },
                 { id: 'run_chain_20', title: 'Chain Master', description: 'Record 3 chains of 20+ in one run.', stat: 'runChain20Count', target: 3, scope: 'run' },
                 { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 5 times in one run.', stat: 'runNanoStormUses', target: 5, scope: 'run' },
                 { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left.', stat: 'runClutchClears', target: 1, scope: 'run' },
-                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,500 viruses in one run.', stat: 'runPops', target: 2500, scope: 'run' },
+                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,000 viruses in one run.', stat: 'runPops', target: 2000, scope: 'run' },
                 { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs.', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
                 { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored viruses across runs.', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
-                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 500 levels across runs.', stat: 'levelsClearedLifetime', target: 500, scope: 'lifetime' }
+                { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 500 levels across runs.', stat: 'levelsClearedLifetime', target: 500, scope: 'lifetime' },
+                { id: 'ending_hostile_takeover', title: 'HOSTILE TAKEOVER', description: 'Win Adventure Mode with the Hostile Takeover ending.', stat: 'endingHostileTakeoverWins', target: 1, scope: 'lifetime' },
+                { id: 'ending_system_restored', title: 'SYSTEM RESTORED', description: 'Win Adventure Mode with the System Restored ending.', stat: 'endingSystemRestoredWins', target: 1, scope: 'lifetime' },
+                { id: 'ending_independent_variable', title: 'INDEPENDENT VARIABLE', description: 'Win Adventure Mode with the Independent Variable ending.', stat: 'endingIndependentVariableWins', target: 1, scope: 'lifetime' },
+                { id: 'ending_true', title: 'The True Ending', description: 'Win with Independent Variable without using Continue.', stat: 'endingTrueWins', target: 1, scope: 'lifetime' }
             ];
             let achievementSaveTimer = null;
             let achievementUiQueued = false;
@@ -6074,6 +6078,21 @@ function escapeHtmlAttr(str) {
                 const ending = getFinalEndingProfile();
                 const endingColor = (ending.key === 'broker') ? '#9dff7d' : '#ffd166';
                 const typedStoryText = String(ending.storyText || '');
+                try {
+                    if (runPerkState && !runPerkState.finalEndingAchievementGranted) {
+                        if (ending.key === 'broker') {
+                            incrementAchievementStat('endingHostileTakeoverWins', 1, 'lifetime');
+                        } else if (ending.key === 'pixel') {
+                            incrementAchievementStat('endingSystemRestoredWins', 1, 'lifetime');
+                        } else if (ending.key === 'solo') {
+                            incrementAchievementStat('endingIndependentVariableWins', 1, 'lifetime');
+                            if (!(runPerkState && runPerkState.continueDealTaken)) {
+                                incrementAchievementStat('endingTrueWins', 1, 'lifetime');
+                            }
+                        }
+                        runPerkState.finalEndingAchievementGranted = true;
+                    }
+                } catch (e) { }
 
                 const mountSplash = () => {
                     host.innerHTML = `
