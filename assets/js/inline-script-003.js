@@ -210,23 +210,23 @@ function escapeHtmlAttr(str) {
         const ENDURANCE_SIZE_MIX_PROFILE = {
             // Endurance-only: keep density from base profile, but ramp size mix aggressively early.
             // sampleSizeRandom() blends using screensPassed (levels completed):
-            //  - level 1..5   : start -> even
-            //  - level 6..12  : even  -> end
-            //  - level 13..20 : end   -> late
-            //  - level 21..28 : late  -> post (more small-virus pressure)
+            //  - level 1..2   : start -> even
+            //  - level 3..15  : even  -> end
+            //  - level 16..18 : end   -> late
+            //  - level 19..22 : late  -> post (more small-virus pressure)
             sizeMixStart: [0.04, 0.17, 0.35, 0.44],
             sizeMixEven: [0.11, 0.24, 0.33, 0.32],
             sizeMixEnd: [0.24, 0.32, 0.28, 0.16],
             sizeMixLate: [0.32, 0.28, 0.28, 0.12],
             sizeMixPost: [0.38, 0.30, 0.22, 0.10],
             // completed=4   -> level 5
-            // completed=11  -> level 12
-            // completed=19  -> level 20
-            // completed=27  -> level 28
+            // completed=12  -> level 13
+            // completed=17  -> level 18
+            // completed=21  -> level 22
             sizeMixLevelsToEven: 4,
-            sizeMixLevelsToEnd: 7,
-            sizeMixLevelsToLate: 8,
-            sizeMixLevelsToPost: 8
+            sizeMixLevelsToEnd: 8,
+            sizeMixLevelsToLate: 5,
+            sizeMixLevelsToPost: 4
         };
 
         // Wrap everything that queries DOM in DOMContentLoaded so elements exist before we attach listeners
@@ -2352,9 +2352,9 @@ function escapeHtmlAttr(str) {
                 { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs (Adventure Mode).', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
                 { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored viruses across runs (Adventure Mode).', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
                 { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 500 levels across runs (Adventure Mode).', stat: 'levelsClearedLifetime', target: 500, scope: 'lifetime' },
-                { id: 'endurance_levels_10', title: 'Endurance I', description: 'Clear 10 levels in Endurance Mode.', stat: 'enduranceLevelsClearedLifetime', target: 10, scope: 'lifetime' },
-                { id: 'endurance_levels_20', title: 'Endurance II', description: 'Clear 20 levels in Endurance Mode.', stat: 'enduranceLevelsClearedLifetime', target: 20, scope: 'lifetime' },
-                { id: 'endurance_levels_30', title: 'Endurance III', description: 'Clear 30 levels in Endurance Mode.', stat: 'enduranceLevelsClearedLifetime', target: 30, scope: 'lifetime' },
+                { id: 'endurance_levels_10', title: 'Endurance I', description: 'Clear 10 levels in one run (Endurance Mode).', stat: 'enduranceRunLevelReached', target: 11, scope: 'run' },
+                { id: 'endurance_levels_20', title: 'Endurance II', description: 'Clear 20 levels in one run (Endurance Mode).', stat: 'enduranceRunLevelReached', target: 21, scope: 'run' },
+                { id: 'endurance_levels_30', title: 'Endurance III', description: 'Clear 30 levels in one run (Endurance Mode).', stat: 'enduranceRunLevelReached', target: 31, scope: 'run' },
                 { id: 'endurance_score_25000', title: 'Endurance Score I', description: 'Reach 25,000 score in Endurance Mode.', stat: 'enduranceBestScore', target: 25000, scope: 'lifetime' },
                 { id: 'endurance_score_50000', title: 'Endurance Score II', description: 'Reach 50,000 score in Endurance Mode.', stat: 'enduranceBestScore', target: 50000, scope: 'lifetime' },
                 { id: 'endurance_score_100000', title: 'Endurance Score III', description: 'Reach 100,000 score in Endurance Mode.', stat: 'enduranceBestScore', target: 100000, scope: 'lifetime' },
@@ -2955,10 +2955,71 @@ function escapeHtmlAttr(str) {
             const loreModal = document.getElementById('loreModal');
             const loreCloseBtn = document.getElementById('loreCloseBtn');
             const startModalCloseBtn = document.getElementById('startModalClose');
+            let mainMenuTutorialNudgeShown = false;
+            let mainMenuTutorialNudgeEl = null;
+            let mainMenuTutorialNudgeRaf = 0;
+            let mainMenuTutorialNudgeResizeBound = false;
+            function clearMainMenuTutorialNudge() {
+                if (mainMenuTutorialNudgeRaf) {
+                    try { cancelAnimationFrame(mainMenuTutorialNudgeRaf); } catch (e) { }
+                    mainMenuTutorialNudgeRaf = 0;
+                }
+                if (mainMenuTutorialNudgeResizeBound) {
+                    try { window.removeEventListener('resize', updateMainMenuTutorialNudgePosition); } catch (e) { }
+                    mainMenuTutorialNudgeResizeBound = false;
+                }
+                const el = mainMenuTutorialNudgeEl || document.getElementById('mainMenuTutorialNudge');
+                mainMenuTutorialNudgeEl = null;
+                if (el && el.parentNode) {
+                    try { el.parentNode.removeChild(el); } catch (e) { }
+                }
+            }
+            function updateMainMenuTutorialNudgePosition() {
+                if (!mainMenuTutorialNudgeEl || !aiTutorialBtn) return;
+                const r = aiTutorialBtn.getBoundingClientRect();
+                if (!Number.isFinite(r.left) || !Number.isFinite(r.top)) return;
+                const x = Math.round(Math.max(8, r.left - 14));
+                const y = Math.round(Math.max(8, r.top + (r.height * 0.5)));
+                mainMenuTutorialNudgeEl.style.left = x + 'px';
+                mainMenuTutorialNudgeEl.style.top = y + 'px';
+            }
+            function maybeShowMainMenuTutorialNudge() {
+                if (mainMenuTutorialNudgeShown || !aiTutorialBtn) return;
+                const intro = document.getElementById('aiIntro');
+                if (!intro || intro.style.display === 'none' || intro.getAttribute('aria-hidden') === 'true') return;
+                mainMenuTutorialNudgeShown = true;
+                const nudge = document.createElement('div');
+                nudge.id = 'mainMenuTutorialNudge';
+                nudge.className = 'main-menu-tutorial-nudge';
+                nudge.setAttribute('aria-hidden', 'true');
+                nudge.innerHTML = `
+                    <span class="mmtn-arrow">➜</span>
+                    <span class="mmtn-text">New Recruits Start Here</span>
+                `;
+                document.body.appendChild(nudge);
+                mainMenuTutorialNudgeEl = nudge;
+                updateMainMenuTutorialNudgePosition();
+                if (!mainMenuTutorialNudgeResizeBound) {
+                    window.addEventListener('resize', updateMainMenuTutorialNudgePosition);
+                    mainMenuTutorialNudgeResizeBound = true;
+                }
+                let endAt = Date.now() + 12000;
+                const tick = () => {
+                    if (!mainMenuTutorialNudgeEl) return;
+                    if (Date.now() >= endAt) {
+                        clearMainMenuTutorialNudge();
+                        return;
+                    }
+                    updateMainMenuTutorialNudgePosition();
+                    mainMenuTutorialNudgeRaf = requestAnimationFrame(tick);
+                };
+                mainMenuTutorialNudgeRaf = requestAnimationFrame(tick);
+            }
             function dismissIntroOverlayNow() {
                 try {
                     const intro = document.getElementById('aiIntro');
                     if (!intro) return;
+                    clearMainMenuTutorialNudge();
                     intro.classList.add('fade-out');
                     intro.style.pointerEvents = 'none';
                     setTimeout(() => {
@@ -3026,6 +3087,7 @@ function escapeHtmlAttr(str) {
             }
             if (aiTutorialBtn) {
                 aiTutorialBtn.addEventListener('click', () => {
+                    clearMainMenuTutorialNudge();
                     runStartedByPlayer = true;
                     tutorialGateState.startPressed = true;
                     markAudioUserInteracted();
@@ -3084,6 +3146,9 @@ function escapeHtmlAttr(str) {
                     maybeShowTutorialIntro(false);
                 });
             }
+            setTimeout(() => {
+                try { maybeShowMainMenuTutorialNudge(); } catch (e) { }
+            }, 280);
             try {
                 const onFirstInteraction = () => {
                     markAudioUserInteracted();
@@ -11010,7 +11075,8 @@ function escapeHtmlAttr(str) {
                     playSfx('win');
                     screensPassed += 1;
                     if (isEnduranceMode()) {
-                        incrementAchievementStat('enduranceLevelsClearedLifetime', 1, 'lifetime', { allowEndurance: true });
+                        const nextLevelNumEndurance = screensPassed + 1;
+                        setAchievementBest('enduranceRunLevelReached', nextLevelNumEndurance, 'run', { allowEndurance: true });
                     } else {
                         incrementAchievementStat('levelsClearedLifetime', 1, 'lifetime');
                     }
