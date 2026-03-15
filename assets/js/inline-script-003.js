@@ -1613,6 +1613,7 @@ function escapeHtmlAttr(str) {
                         boss20State.phase2RescueQueued = false;
                         boss20State.phase2LastRegenAt = 0;
                         boss20State.phase3LastRegenAt = 0;
+                        boss20State.phase3LastClickDrainAt = 0;
                         boss20State.phase2OmegaQueued = false;
                         setMiniBossStateFromMeta(idx, meta);
                         scheduleRender();
@@ -1716,9 +1717,11 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_PHASE2_REPOP_DENSITY = 0.62;
             const EPIC_BOSS20_PHASE2_REPOP_MIN_NON_BOSS = 20;
             const EPIC_BOSS20_PHASE2_REPOP_MAX_NON_BOSS = 24;
-            const EPIC_BOSS20_PHASE2_REPOP_SIZE_MIX = null;
+            const EPIC_BOSS20_PHASE2_REPOP_SIZE_MIX = [0.12, 0.28, 0.36, 0.24];
             const EPIC_BOSS20_PHASE_SHIFT_MS = 2200;
             const EPIC_BOSS20_PHASE_SHIFT_CLICK_REWARD = 8;
+            const EPIC_BOSS20_RESCUE_CLICK_REFILL = 14;
+            const EPIC_BOSS20_RESCUE_STORM_REFILL = 1;
             const EPIC_BOSS20_PHASE2_BREAK_FREEZE_MS = 2000;
             const EPIC_BOSS20_PHASE2_BREAK_FLASH_MS = 500;
             const EPIC_BOSS20_PHASE2_BREAK_SHATTER_MS = 440;
@@ -1732,6 +1735,7 @@ function escapeHtmlAttr(str) {
             const EPIC_BOSS20_RESCUE_STALL_MS = 4000;
             const EPIC_BOSS20_PHASE3_HP = 24;
             const EPIC_BOSS20_PHASE3_ACTION_MS = 1800;
+            const EPIC_BOSS20_PHASE3_OPENING_MIX = [0.24, 0.34, 0.28, 0.14];
             const EPIC_BOSS20_PHASE3_ENTRY_BURSTS = 4;
             const EPIC_BOSS20_PHASE3_ENTRY_BURST_INTERVAL_MS = 260;
             const EPIC_BOSS20_PHASE3_REGEN_ENABLED = true;
@@ -1799,12 +1803,13 @@ function escapeHtmlAttr(str) {
                         armoredChance: 1.0
                     },
                     phase2: {
-                        minNonBossViruses: 18,
-                        fuelSpawnSizeWeights: [0.02, 0.18, 0.52, 0.28],
+                        minNonBossViruses: 17,
+                        fuelSpawnSizeWeights: [0.06, 0.22, 0.40, 0.32],
                         fuelArmoredChance: 0.26,
-                        fuelCooldownMs: 1000,
-                        spawnSizeWeights: [0.00, 0.00, 0.64, 0.36],
-                        armoredChance: 1.0
+                        fuelCooldownMs: 1150,
+                        spawnSizeWeights: [0.04, 0.22, 0.40, 0.34],
+                        armoredChance: 1.0,
+                        stormRechargeDelta: 4
                     },
                     phase2Desperation: {
                         minNonBossViruses: 20,
@@ -1816,11 +1821,16 @@ function escapeHtmlAttr(str) {
                     },
                     phase3: {
                         minNonBossViruses: 17,
-                        fuelSpawnSizeWeights: [0.06, 0.20, 0.46, 0.28],
+                        fuelSpawnSizeWeights: [0.18, 0.36, 0.30, 0.16],
                         fuelArmoredChance: 0.24,
                         fuelCooldownMs: 920,
-                        spawnSizeWeights: [0.12, 0.22, 0.40, 0.26],
-                        armoredChance: 1.0
+                        spawnSizeWeights: [0.18, 0.34, 0.30, 0.18],
+                        armoredChance: 1.0,
+                        stormRechargeDelta: 5,
+                        clickDrainChance: 0.32,
+                        clickDrainCooldownMs: 3200,
+                        clickDrainAmount: 1,
+                        clickDrainMinClicks: 3
                     }
                 }
             };
@@ -1882,6 +1892,7 @@ function escapeHtmlAttr(str) {
                     phase2RescueQueued: false,
                     phase2LastRegenAt: 0,
                     phase3LastRegenAt: 0,
+                    phase3LastClickDrainAt: 0,
                     phase2DrainInProgress: false,
                     phase2OmegaQueued: false,
                     finalShotActive: false,
@@ -7347,6 +7358,18 @@ function escapeHtmlAttr(str) {
             function getStormRechargeChainMin(levelNum = getCurrentLevelNumber()) {
                 const d = getDifficultyForLevel(levelNum);
                 let base = Math.max(1, Math.floor(Number(d.stormRechargeChainMin) || 21));
+                try {
+                    if (isEpicBoss20Level() && boss20State && boss20State.active) {
+                        const phase = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
+                        if (phase >= 2) {
+                            const pacing = getBossPacingProfile(20, {
+                                phase,
+                                desperation: phase === 2 && isBoss20Phase2DesperationActive()
+                            });
+                            base += Math.max(0, Math.floor(Number(pacing && pacing.stormRechargeDelta) || 0));
+                        }
+                    }
+                } catch (e) { }
                 base += Math.floor(Number(runPerkState && runPerkState.stormRechargeDelta) || 0);
                 if (runPerkState && runPerkState.dirtyReactorFixedRecharge) {
                     base = 18;
@@ -8417,6 +8440,36 @@ function escapeHtmlAttr(str) {
                 return (nextHp - hpNow);
             }
 
+            function maybeApplyBoss20Phase3ClickDrain(originIndex) {
+                if (!isEpicBoss20Level() || !boss20State || !boss20State.active) return 0;
+                const phaseNow = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
+                const inBigForm = !!boss20State.finalFormActive;
+                if (phaseNow < 3 && !inBigForm) return 0;
+                if (boss20State.inCinematic || boss20State.inFinalWindow) return 0;
+                if (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease) return 0;
+                const pacing = getBossPacingProfile(20, { phase: Math.max(3, phaseNow) });
+                const chance = Math.max(0, Math.min(1, Number(pacing && pacing.clickDrainChance) || 0));
+                if (chance <= 0) return 0;
+                const minClicks = Math.max(1, Math.floor(Number(pacing && pacing.clickDrainMinClicks) || 3));
+                const amount = Math.max(1, Math.floor(Number(pacing && pacing.clickDrainAmount) || 1));
+                if ((Number(clicksLeft) || 0) < minClicks) return 0;
+                const now = Date.now();
+                const cooldownMs = Math.max(800, Math.floor(Number(pacing && pacing.clickDrainCooldownMs) || 3200));
+                if ((now - Number(boss20State.phase3LastClickDrainAt || 0)) < cooldownMs) return 0;
+                if (Math.random() >= chance) return 0;
+                const idx = Math.floor(Number(originIndex));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
+                const before = Math.max(0, Math.floor(Number(clicksLeft) || 0));
+                const next = Math.max(0, before - amount);
+                if (next >= before) return 0;
+                clicksLeft = next;
+                boss20State.phase3LastClickDrainAt = now;
+                try { playSfx('grow'); } catch (e) { }
+                try { playBossSummonPulse(idx, 'blue'); } catch (e) { }
+                try { updateHUD(); } catch (e) { }
+                return before - next;
+            }
+
             function showBoss20HpGainFx(index, amount = 0) {
                 const idx = Math.floor(Number(index));
                 const gain = Math.max(1, Math.floor(Number(amount) || 0));
@@ -8652,20 +8705,20 @@ function escapeHtmlAttr(str) {
                         });
                     } else {
                         const pulseCount = (Math.random() < 0.55) ? 2 : 1;
-                        acted = spawnBossArmorPulse(pulseCount, origin, { offAxisChance: 0.30 });
+                        acted = spawnBossArmorPulse(pulseCount, origin, { anyBoardChance: 0.78, offAxisChance: 0.72 });
                         if (acted <= 0) acted = applyBoss20ArmorThreat(origin, 2);
                     }
                 } else {
                     maybeActivateBoss20HeroMark(origin);
                     const modeRoll = Math.random();
                     if (modeRoll < 0.34) {
-                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.88, offAxisChance: 0.44 });
+                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.92, offAxisChance: 0.58 });
                     } else if (modeRoll < 0.67) {
-                        acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 0.84, offAxisChance: 0.38 }) + applyBoss20ArmorThreat(origin, 1);
+                        acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 0.90, offAxisChance: 0.54 }) + applyBoss20ArmorThreat(origin, 1);
                     } else {
-                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.94, offAxisChance: 0.55 }) + applyBoss20ArmorThreat(origin, 1);
+                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.96, offAxisChance: 0.64 }) + applyBoss20ArmorThreat(origin, 1);
                     }
-                    if (acted <= 0) acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 1.0, offAxisChance: 0.6 });
+                    if (acted <= 0) acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 1.0, offAxisChance: 0.72 });
                 }
                 const fueled = ensureBossBoardFuel(20, origin, {
                     phaseContext: { phase, desperation: (phase === 2) && isBoss20Phase2DesperationActive() }
@@ -8674,6 +8727,8 @@ function escapeHtmlAttr(str) {
                 if (phase >= 3 || (boss20State && boss20State.finalFormActive)) {
                     const healed = maybeApplyBoss20Phase3Regen(origin);
                     if (healed > 0) acted += 1;
+                    const drained = maybeApplyBoss20Phase3ClickDrain(origin);
+                    if (drained > 0) acted += 1;
                 }
                 if (acted > 0) {
                     boss20State.actionCounter = Math.max(0, Number(boss20State.actionCounter) || 0) + 1;
@@ -9270,6 +9325,7 @@ function escapeHtmlAttr(str) {
                 boss20State.phase2RescueQueued = false;
                 boss20State.phase2DrainInProgress = false;
                 boss20State.phase2LastRegenAt = 0;
+                boss20State.phase3LastClickDrainAt = 0;
                 boss20State.phase2OmegaQueued = false;
                 boss20State.rescueShieldUntil = Date.now() + Math.max(1200, EPIC_BOSS20_RESCUE_CINEMATIC_MS + 500);
                 stopBoss20PhaseTimer();
@@ -9298,8 +9354,8 @@ function escapeHtmlAttr(str) {
                         inputLocked = false;
                         return;
                     }
-                    clicksLeft = getMaxClicksCap();
-                    stormCharges = MAX_STORM_CHARGES;
+                    clicksLeft = Math.min(getMaxClicksCap(), Math.max(0, Number(EPIC_BOSS20_RESCUE_CLICK_REFILL) || 14));
+                    stormCharges = Math.max(0, Math.min(MAX_STORM_CHARGES, Math.floor(Number(EPIC_BOSS20_RESCUE_STORM_REFILL) || 1)));
                     try { setStormArmed(false); } catch (e) { }
                     try { flashStormChargeGain(); } catch (e) { }
                     try { runPerkState.armorPiercerPermanent = true; } catch (e) { }
@@ -9377,6 +9433,7 @@ function escapeHtmlAttr(str) {
                     boss20State.phase2RescueQueued = false;
                     boss20State.phase2LastRegenAt = 0;
                     boss20State.phase3LastRegenAt = 0;
+                    boss20State.phase3LastClickDrainAt = 0;
                     boss20State.phase2OmegaQueued = false;
                     phase3Spawned = populateBoss20Phase3Board(idx);
                     setMiniBossStateFromMeta(idx, meta);
@@ -9616,7 +9673,9 @@ function escapeHtmlAttr(str) {
                 const idx = Math.floor(Number(bossIndex));
                 if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
                 if (state[idx] === null || specialState[idx] !== 'boss') return 0;
-                const openingMix = [0.16, 0.34, 0.34, 0.16];
+                const openingMix = Array.isArray(EPIC_BOSS20_PHASE3_OPENING_MIX) && EPIC_BOSS20_PHASE3_OPENING_MIX.length >= 4
+                    ? EPIC_BOSS20_PHASE3_OPENING_MIX
+                    : [0.24, 0.34, 0.28, 0.14];
                 const sampleOpeningSize = () => {
                     const total = openingMix.reduce((a, b) => a + Math.max(0, Number(b) || 0), 0) || 1;
                     let roll = Math.random() * total;
