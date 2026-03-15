@@ -8111,7 +8111,7 @@ function escapeHtmlAttr(str) {
                 for (let i = 0; i < state.length; i++) {
                     if (isBoss20FinalFormCell(i)) continue;
                     if (specialState[i] === 'boss') continue;
-                    if (state[i] === null) empties.push(i);
+                    if (state[i] === null && !hasBiofilmAt(i)) empties.push(i);
                     else nonBossOccupied++;
                 }
                 if (nonBossOccupied >= targetMin || !empties.length) return 0;
@@ -8126,7 +8126,7 @@ function escapeHtmlAttr(str) {
                     const idx = empties[i];
                     if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) continue;
                     if (isBoss20FinalFormCell(idx)) continue;
-                    if (state[idx] !== null || specialState[idx] === 'boss') continue;
+                    if (state[idx] !== null || specialState[idx] === 'boss' || hasBiofilmAt(idx)) continue;
                     state[idx] = sampleSizeFromWeights(sizeWeights, 2);
                     if (Math.random() < armoredChance) setSpecialForCell(idx, 'armored');
                     else clearSpecialForCell(idx);
@@ -10013,7 +10013,7 @@ function escapeHtmlAttr(str) {
                     if (r < 0 || r >= ROWS || c < 0 || c >= COLS) break;
                     const idx = r * COLS + c;
                     if (isBoss20FinalFormCell(idx)) continue;
-                    if (state[idx] === null) out.push(idx);
+                    if (state[idx] === null && !hasBiofilmAt(idx)) out.push(idx);
                 }
                 return out;
             }
@@ -10062,7 +10062,7 @@ function escapeHtmlAttr(str) {
                 const anyCandidates = [];
                 for (let i = 0; i < state.length; i++) {
                     if (isBoss20FinalFormCell(i)) continue;
-                    if (state[i] === null) anyCandidates.push(i);
+                    if (state[i] === null && !hasBiofilmAt(i)) anyCandidates.push(i);
                 }
                 if (!anyCandidates.length) return 0;
                 let offAxisCandidates = [];
@@ -10098,7 +10098,7 @@ function escapeHtmlAttr(str) {
                         if (!Number.isFinite(pick)) continue;
                         if (used.has(pick)) continue;
                         if (isBoss20FinalFormCell(pick)) continue;
-                        if (state[pick] !== null) continue;
+                        if (state[pick] !== null || hasBiofilmAt(pick)) continue;
                         used.add(pick);
                         return pick;
                     }
@@ -10166,6 +10166,7 @@ function escapeHtmlAttr(str) {
                     for (let i = 0; i < state.length; i++) {
                         if (isBoss20FinalFormCell(i)) continue;
                         if (state[i] !== null) continue;
+                        if (hasBiofilmAt(i)) continue;
                         const row = Math.floor(i / COLS);
                         const col = i % COLS;
                         if (row === originRow || col === originCol) candidates.push(i);
@@ -10174,7 +10175,7 @@ function escapeHtmlAttr(str) {
                 if (!candidates.length) {
                     for (let i = 0; i < state.length; i++) {
                         if (isBoss20FinalFormCell(i)) continue;
-                        if (state[i] === null) candidates.push(i);
+                        if (state[i] === null && !hasBiofilmAt(i)) candidates.push(i);
                     }
                 }
                 if (!candidates.length) return 0;
