@@ -4,9 +4,6 @@
             const neutralMouth = document.querySelector('.mouth-shape.neutral');
             if (neutralMouth) {
                 neutralMouth.removeAttribute('opacity');
-                console.log("Neutral mouth opacity attribute removed.");
-            } else {
-                console.warn("Neutral mouth not found — check SVG structure.");
             }
         });
     

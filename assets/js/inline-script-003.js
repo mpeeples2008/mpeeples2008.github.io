@@ -8475,7 +8475,6 @@ function escapeHtmlAttr(str) {
                 boss20State.phase3LastRegenAt = now;
                 setMiniBossStateFromMeta(idx, meta);
                 try { showBoss20HpGainFx(idx, nextHp - hpNow); } catch (e) { }
-                try { console.log('[Boss20] Regen applied', { idx, amount: (nextHp - hpNow), hp: nextHp, maxHp, phase: phaseNow, finalForm: inBigForm }); } catch (e) { }
                 try { playSfx('fill'); } catch (e) { }
                 try { playBossSummonPulse(idx, 'blue'); } catch (e) { }
                 scheduleRender();
@@ -12331,7 +12330,6 @@ function escapeHtmlAttr(str) {
                 waitForParticlesThenShow(tracker, () => {
                     try {
                         const count = tracker.pops || 0;
-                        console.log('[Badge] final tracker.pops =', count);
                         setAchievementBest('runBestChain', count, 'run');
                         if (count >= 20) {
                             incrementAchievementStat('runChain20Count', 1, 'run');

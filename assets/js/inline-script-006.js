@@ -13,7 +13,6 @@
                         window.HIGH_SCORE_KEY = key;
                         var raw = localStorage.getItem(key);
                         window.highScore = Number(raw || 0);
-                        console.log('[GoneViral] loadHighScore ->', raw, 'parsed:', window.highScore);
                     } catch (e) {
                         console.warn('[GoneViral] loadHighScore failed', e);
                         window.highScore = window.highScore || 0;
@@ -31,7 +30,6 @@
                         window.HIGH_SCORE_KEY = key;
                         var val = Number(window.highScore || 0);
                         localStorage.setItem(key, String(val));
-                        console.log('[GoneViral] saveHighScore ->', val);
                     } catch (e) {
                         console.warn('[GoneViral] saveHighScore failed', e);
                     }
@@ -57,13 +55,9 @@
                                         try { window.saveHighScore(); } catch (e) { console.warn(e); }
                                         var el = document.getElementById('highScoreValue');
                                         if (el) el.textContent = String(window.highScore);
-                                        console.log('[GoneViral] updateHUD persisted high ->', window.highScore);
                                     }
                                 } catch (e) { console.warn('updateHUD wrapper error', e); }
                             };
-                            console.log('[GoneViral] updateHUD wrapped to persist highs');
-                        } else {
-                            console.log('[GoneViral] updateHUD not found to wrap');
                         }
                     } catch (e) { console.warn(e); }
 
