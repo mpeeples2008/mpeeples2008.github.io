@@ -54,6 +54,20 @@
     try {
       var modal = document.getElementById(id);
       if (!modal) return;
+      try {
+        var active = document.activeElement;
+        if (active && modal.contains(active)) {
+          var fallback = document.getElementById('audioBtn')
+            || document.getElementById('helpBtn')
+            || document.getElementById('startBtn')
+            || document.body;
+          if (fallback && fallback !== active && typeof fallback.focus === 'function') {
+            fallback.focus();
+          } else if (active && typeof active.blur === 'function') {
+            active.blur();
+          }
+        }
+      } catch(e) {}
       modal.classList.remove('open');
       modal.classList.remove('show');
       // try to hide visually but don't remove from DOM
