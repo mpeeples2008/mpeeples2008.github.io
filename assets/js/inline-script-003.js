@@ -1895,6 +1895,7 @@ function escapeHtmlAttr(str) {
                     phase3LastClickDrainAt: 0,
                     phase2DrainInProgress: false,
                     phase2OmegaQueued: false,
+                    comboCutoffHintShown: false,
                     finalShotActive: false,
                     finalShotTriggered: false,
                     finalShotTarget: -1,
@@ -12154,6 +12155,12 @@ function escapeHtmlAttr(str) {
                 inputLocked = true;
                 applyBoss20ComboCutoffFx();
                 try { playSfx(EPIC_BOSS20_COMBO_CUTOFF_SFX || 'techno_jammer'); } catch (e) { }
+                try {
+                    if (boss20State && !boss20State.comboCutoffHintShown && window.Assistant && Assistant.show) {
+                        boss20State.comboCutoffHintShown = true;
+                        Assistant.show('Viraxis just force-cut the cascade. He can shut down overlong chain reactions, so do not rely on one endless combo.', { priority: 2 });
+                    }
+                } catch (e) { }
                 scheduleBoss20ComboCutoffResume();
                 return true;
             }
