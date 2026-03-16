@@ -2834,15 +2834,8 @@ function escapeHtmlAttr(str) {
                 return panel;
             }
 
-            function renderAchievementsUI() {
-                const panel = ensureAchievementsPanel();
-                if (!panel) return;
-                const list = document.getElementById('achievementList');
-                const summary = document.getElementById('achievementSummary');
-                if (!list || !summary) return;
-                const unlockedCount = countUnlockedAchievements();
-                summary.textContent = unlockedCount + '/' + ACHIEVEMENT_DEFS.length + ' unlocked';
-                const html = ACHIEVEMENT_DEFS.map((def) => {
+            function buildAchievementsListHtml() {
+                return ACHIEVEMENT_DEFS.map((def) => {
                     const p = getAchievementProgress(def);
                     const unlocked = !!achievementState.unlocked[def.id];
                     const done = unlocked || p.done;
@@ -2858,7 +2851,26 @@ function escapeHtmlAttr(str) {
                         </div>
                     `;
                 }).join('');
-                list.innerHTML = html;
+            }
+
+            function renderAchievementsUI() {
+                const panel = ensureAchievementsPanel();
+                if (!panel) return;
+                const list = document.getElementById('achievementList');
+                const summary = document.getElementById('achievementSummary');
+                if (!list || !summary) return;
+                const unlockedCount = countUnlockedAchievements();
+                summary.textContent = unlockedCount + '/' + ACHIEVEMENT_DEFS.length + ' unlocked';
+                list.innerHTML = buildAchievementsListHtml();
+            }
+
+            function renderStartAchievementsUI() {
+                const list = document.getElementById('startAchievementsList');
+                const summary = document.getElementById('startAchievementsSummary');
+                if (!list || !summary) return;
+                const unlockedCount = countUnlockedAchievements();
+                summary.textContent = unlockedCount + '/' + ACHIEVEMENT_DEFS.length + ' unlocked';
+                list.innerHTML = buildAchievementsListHtml();
             }
 
             function scheduleAchievementsUIRender() {
@@ -2867,6 +2879,7 @@ function escapeHtmlAttr(str) {
                 const run = () => {
                     achievementUiQueued = false;
                     renderAchievementsUI();
+                    renderStartAchievementsUI();
                 };
                 if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
                 else setTimeout(run, 0);
@@ -2964,6 +2977,8 @@ function escapeHtmlAttr(str) {
             const sponsorMarkEl = document.querySelector('.pathodyne-mark-inline');
             const loreModal = document.getElementById('loreModal');
             const loreCloseBtn = document.getElementById('loreCloseBtn');
+            const startAchievementsModal = document.getElementById('startAchievementsModal');
+            const startAchievementsCloseBtn = document.getElementById('startAchievementsCloseBtn');
             const startModalCloseBtn = document.getElementById('startModalClose');
             function dismissIntroOverlayNow() {
                 try {
@@ -3054,23 +3069,13 @@ function escapeHtmlAttr(str) {
             }
             if (aiAchievementsBtn) {
                 aiAchievementsBtn.addEventListener('click', () => {
-                    try { markAudioUserInteracted(); } catch (e) { }
+                    try { renderStartAchievementsUI(); } catch (e) { }
                     try {
-                        if (typeof window.showModal === 'function') {
-                            window.showModal('audioPopup');
-                        } else {
-                            const audioPopup = document.getElementById('audioPopup');
-                            if (audioPopup) {
-                                audioPopup.classList.add('show', 'open');
-                                audioPopup.style.display = 'flex';
-                                audioPopup.style.visibility = 'visible';
-                                audioPopup.style.pointerEvents = 'auto';
-                                audioPopup.setAttribute('aria-hidden', 'false');
-                            }
+                        if (startAchievementsModal) {
+                            startAchievementsModal.classList.add('show');
+                            startAchievementsModal.setAttribute('aria-hidden', 'false');
                         }
                     } catch (e) { }
-                    try { setSettingsPopupTab('achievements'); } catch (e) { }
-                    try { scheduleAchievementsUIRender(); } catch (e) { }
                 });
             }
             if (loreCloseBtn && loreModal) {
@@ -3087,6 +3092,23 @@ function escapeHtmlAttr(str) {
                         if (ev.target !== loreModal) return;
                         loreModal.classList.remove('show');
                         loreModal.setAttribute('aria-hidden', 'true');
+                    } catch (e) { }
+                });
+            }
+            if (startAchievementsCloseBtn && startAchievementsModal) {
+                startAchievementsCloseBtn.addEventListener('click', () => {
+                    try {
+                        startAchievementsModal.classList.remove('show');
+                        startAchievementsModal.setAttribute('aria-hidden', 'true');
+                    } catch (e) { }
+                });
+            }
+            if (startAchievementsModal) {
+                startAchievementsModal.addEventListener('click', (ev) => {
+                    try {
+                        if (ev.target !== startAchievementsModal) return;
+                        startAchievementsModal.classList.remove('show');
+                        startAchievementsModal.setAttribute('aria-hidden', 'true');
                     } catch (e) { }
                 });
             }
