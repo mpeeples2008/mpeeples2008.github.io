@@ -8538,10 +8538,10 @@ html.assistant-disabled .assistant-fallback-bubble {
             border: 1px solid rgba(173, 205, 255, 0.26);
             background: rgba(8, 14, 28, 0.7);
             overflow: hidden;
-            height: clamp(66px, 11vh, 96px);
+            height: clamp(84px, 14vh, 132px);
             position: relative;
             padding: 0;
-            width: min(84%, 620px);
+            width: min(90%, 700px);
             margin: 0 auto;
         }
 
@@ -8818,7 +8818,8 @@ html.assistant-disabled .assistant-fallback-bubble {
                 max-height: 42vh;
             }
             .final-victory-modal .fv-credits-wrap {
-                height: clamp(52px, 9vh, 78px);
+                height: clamp(84px, 16vh, 136px);
+                width: min(94%, 700px);
             }
             .final-victory-modal .fv-restart-btn {
                 font-size: 10px;

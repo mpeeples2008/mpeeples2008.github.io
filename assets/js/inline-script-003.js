@@ -2600,12 +2600,10 @@ function escapeHtmlAttr(str) {
                     return {
                         lines: [
                             'MECHA-GREMLIN BREACH DETECTED',
-                            'One of the viruses has hacked into the mainframe and is turning our defenses against us!',
-                            'JAM ATTACK: Nano Storm charging and firing can be temporarily disabled.',
-                            'HOLOGRAM DUPLICATES: projection decoys appear on the boss row/column and pop in one hit.',
-                            'FEEDBACK LOOP: each decoy pop deals 0.5 damage to the real boss.',
-                            'PURGE EVENT: when the real boss is destroyed, all remaining holograms collapse instantly.',
-                            'HACKED NANOBOTS: drones project a laser barrier that intercepts cascade particles and cuts off cascades. Watch their movement pattern and time your taps around the beam.'
+                            'This hacker virus has seized our rogue nanobots and weaponized the lab defenses.',
+                            'JAM ATTACK: Nano Storm can be temporarily disabled.',
+                            'DECOYS: hologram copies pop in one hit, and damaging them hurts the real boss.',
+                            'HACKED NANOBOTS: laser barriers intercept cascade particles. Watch the beam and time your taps.'
                         ]
                     };
                 }
