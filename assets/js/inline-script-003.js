@@ -3680,8 +3680,7 @@ function escapeHtmlAttr(str) {
                     const lines = [
                         { who: 'pixel', text: 'Containment at 87%... we are absolutely not doomed. Probably.' },
                         { who: 'boss', text: 'Fool. You have set me free. This lab is now under new management.' },
-                        { who: 'pixel', text: 'Operator, distract him a little longer. I have an idea.' },
-                        { who: 'boss', text: 'Your time has come!' }
+                        { who: 'pixel', text: 'Operator, distract him a little longer. I have an idea.' }
                     ];
                     let i = 0;
                     const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
@@ -3779,10 +3778,10 @@ function escapeHtmlAttr(str) {
                 try {
                     level20TalkSfxOnly = true;
                     const lines = [
-                        { who: 'boss', text: 'Witness perfection. You are finished, and this lab is now mine!' },
-                        { who: 'pixel', text: "Counterpoint: no." },
-                        { who: 'boss', text: 'Mock me while you can. My stolen shields make me immortal.' },
-                        { who: 'pixel', text: "Operator, this is the opening. I breached the mainframe and overclocked your nano bots. Hit hard, shields won’t hold." }
+                        { who: 'boss', text: 'Witness my final form. You are finished, and this lab is now mine!' },
+                        { who: 'pixel', text: "We're not scared of you VIRAXIS!" },
+                        { who: 'boss', text: 'Mock me while you can. I have evolved regeneration capabilities. I am immmortal!' },
+                        { who: 'pixel', text: "Operator, this is our opening. I breached the mainframe and overclocked your nano bots. Hit hard, shields won’t hold for long." }
                     ];
                     let i = 0;
                     const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
@@ -3878,10 +3877,10 @@ function escapeHtmlAttr(str) {
                 try {
                     level20TalkSfxOnly = true;
                     const lines = [
-                        { who: 'boss', text: "Impossible! I cannot fall!" },
-                        { who: 'pixel', text: 'You exposed your own architecture when you hijacked ours.' },
-                        { who: 'boss', text: "Then I’ll erase you both!" },
-                        { who: 'pixel', text: "Operator, he’s charging one last strike. Operator, lock onto the weakspot marker. One clean hit ends this." }
+                        { who: 'boss', text: "Impossible! VIRAXIS PRIME does not fall to a S.P.A.R.E. operator." },
+                        { who: 'pixel', text: 'You are nothing more than a containment failure!' },
+                        { who: 'boss', text: "Then you will fail with me!" },
+                        { who: 'pixel', text: "Operator, VIRAXIS PRIME is overloading the core. Lock onto the targetting marker. We have one chance to end this." }
                     ];
                     let i = 0;
                     const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
@@ -5343,7 +5342,7 @@ function escapeHtmlAttr(str) {
                     },
                     {
                         title: 'Tutorial 3/9',
-                        bodyHtml: 'You have been granted access to (1) standard issue Nano Storm charge.<br><br>To use, press the highlighted button on your HUD to arm the weapon and then designate a target virus by tapping. The central speciman will receive 2 impacts, each adjacent cell will receive 1 impact. You can gain additional uses by causing long cascades to recharge the battery.<br><br>I recommend standing back... Figuratively.',
+                        bodyHtml: 'You have been granted access to (1) standard issue Nano Storm charge.<br><br>To use, press the highlighted button on your HUD to arm the weapon and then designate a target virus by tapping. The central speciman will receive 2 impacts, each adjacent cell will receive 1 impact. You can gain additional charges using cascades to recharge the battery. I recommend standing back... Figuratively.',
                         actionLabel: 'Continue',
                         focusStormButton: true,
                         setup: () => {
@@ -5424,7 +5423,7 @@ function escapeHtmlAttr(str) {
                     },
                     {
                         title: 'Tutorial 5/9',
-                        bodyHtml: 'Not all specimens behave according to standard containment expectations. Certain viruses may exhibit enhanced durability, adaptive defenses, or inconvenient structural reinforcements. These are classified as Special Containment Targets.<br><br>Special targets require modified engagement strategies. Repeated impact may be necessary. Panic is not.<br><br>Armored virus drill: tap the highlighted virus once to trigger a cascade into the armored target. First impact removes the shell, second impact damages the virus.',
+                        bodyHtml: 'Not all specimens behave according to standard expectations. Certain viruses may exhibit enhanced durability, adaptive defenses, or inconvenient structural reinforcements.<br><br>Armored virus drill: tap the highlighted virus once to trigger a cascade into the armored target. First impact removes the shell, second impact damages the virus.',
                         actionLabel: 'Continue',
                         setup: () => {
                             const target = 26;
@@ -5469,7 +5468,7 @@ function escapeHtmlAttr(str) {
                     },
                     {
                         title: 'Tutorial 6/9',
-                        bodyHtml: 'Containment bosses are large, persistent threats that require sustained pressure. They do not collapse from a single clean hit. Tap the highlighted setup virus once and observe the cascade striking the boss multiple times. Note that bosses may develop additional behaviors and we will brief you on those details as they arise. For now, focus on pressure, positioning, and chain discipline.',
+                        bodyHtml: 'Containment bosses are large, persistent threats that require sustained pressure. Tap the highlighted setup virus once and observe the cascade striking the boss multiple times. Note that bosses may develop additional behaviors and we will brief you on those details as they arise.',
                         actionLabel: 'Continue',
                         setup: () => {
                             const target = 21;
@@ -5517,7 +5516,7 @@ function escapeHtmlAttr(str) {
                     },
                     {
                         title: 'Tutorial 7/9',
-                        bodyHtml: 'To assist you in your duties as a new S.P.A.R.E. recruit, we have given you remote access to PIXEL—the lab\'s deeply overqualified AI assistant—through your HUD. PIXEL’s training data includes advanced containment theory, nano-scale combat modeling, and an extensive archive of mid-century “cinematic science fiction.”<br><br>Watch PIXEL for hints, warnings, and updates when containment conditions change. The sarcasm is optional. The information is not.',
+                        bodyHtml: 'To assist you in your duties as a new S.P.A.R.E. recruit, we have given you remote access to PIXEL—the lab\'s deeply overqualified AI assistant—through your HUD. PIXEL’s training data includes advanced containment theory, nano-scale combat modeling, and an extensive archive of mid-century “cinematic science fiction.”<br><br>Watch PIXEL for hints, warnings, and updates when conditions change. The sarcasm is optional. The information is not.',
                         actionLabel: 'Continue',
                         focusAssistant: true,
                         setup: () => {
