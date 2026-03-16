@@ -28,6 +28,7 @@
                     try {
                         var key = window.getHighScoreStorageKey(window.currentGameMode);
                         window.HIGH_SCORE_KEY = key;
+                        if (window.__goneViralRunModified) return Number(window.highScore || 0);
                         var val = Number(window.highScore || 0);
                         localStorage.setItem(key, String(val));
                     } catch (e) {
@@ -47,6 +48,7 @@
                             window.updateHUD = function () {
                                 try { orig.apply(this, arguments); } catch (e) { console.warn('orig updateHUD failed', e); }
                                 try {
+                                    if (window.__goneViralRunModified) return;
                                     // determine saved value
                                     var saved = Number(localStorage.getItem(window.HIGH_SCORE_KEY) || 0);
                                     var current = (typeof totalScore !== 'undefined') ? Number(totalScore) : (typeof window.totalScore !== 'undefined' ? Number(window.totalScore) : null);

@@ -1405,6 +1405,7 @@ function escapeHtmlAttr(str) {
                     }
                 };
                 window.setLevel = function (levelNum) {
+                    try { markRunModified('set-level'); } catch (e) { }
                     const targetLevel = Math.max(1, Math.floor(Number(levelNum) || 1));
                     screensPassed = targetLevel - 1;
                     try { applyVisualPhase(targetLevel); } catch (e) { }
@@ -1453,6 +1454,7 @@ function escapeHtmlAttr(str) {
                     return { mode: currentGameMode, active: !!tutorialModeState.active };
                 };
                 window.addClicks = function (amount = 1, allowOverCap = false) {
+                    try { markRunModified('add-clicks'); } catch (e) { }
                     const delta = Math.floor(Number(amount) || 0);
                     if (!Number.isFinite(delta) || delta === 0) {
                         return { clicks: clicksLeft, cap: getMaxClicksCap(), changed: 0 };
@@ -1475,17 +1477,20 @@ function escapeHtmlAttr(str) {
                         return JSON.parse(JSON.stringify(runPerkState));
                     },
                     queue: function (count = 1) {
+                        try { markRunModified('perk-queue'); } catch (e) { }
                         const n = Math.max(0, Math.floor(Number(count) || 0));
                         runPerkState.pendingOffers = Math.max(0, Number(runPerkState.pendingOffers) || 0) + n;
                         setTimeout(() => { try { maybeShowPendingRunPerkPopup(); } catch (e) { } }, 0);
                         return { pendingOffers: runPerkState.pendingOffers };
                     },
                     grant: function (perkId) {
+                        try { markRunModified('perk-grant'); } catch (e) { }
                         const id = applyRunPerkChoice(perkId);
                         updateHUD();
                         return { granted: id, state: JSON.parse(JSON.stringify(runPerkState)) };
                     },
                     reset: function () {
+                        try { markRunModified('perk-reset'); } catch (e) { }
                         resetRunPerkState();
                         updateHUD();
                         return JSON.parse(JSON.stringify(runPerkState));
@@ -1504,6 +1509,7 @@ function escapeHtmlAttr(str) {
                         };
                     },
                     queueNow: function () {
+                        try { markRunModified('final-offer-queue'); } catch (e) { }
                         if (!runPerkState) return false;
                         runPerkState.finalOfferPending = true;
                         setTimeout(() => {
@@ -1512,6 +1518,7 @@ function escapeHtmlAttr(str) {
                         return true;
                     },
                     reset: function () {
+                        try { markRunModified('final-offer-reset'); } catch (e) { }
                         if (!runPerkState) return false;
                         runPerkState.finalOfferPending = false;
                         runPerkState.finalOfferSeen = false;
@@ -2155,6 +2162,14 @@ function escapeHtmlAttr(str) {
             let mobileStormCandidateIndex = null;
             const MOBILE_STORM_HOLD_MS = 120;
             let boardGeneration = 0;
+            let runIntegrityState = {
+                modified: false,
+                announced: false,
+                reason: '',
+                achievementUnlockedSnapshot: null,
+                achievementStatsSnapshot: null,
+                highScoreSnapshot: 0
+            };
             let gameOverVignetteEl = null;
             let gameOverMusicRestoreTimer = null;
             let gameOverPrevMusicVolume = null;
@@ -2800,6 +2815,10 @@ function escapeHtmlAttr(str) {
             }
 
             function evaluateAchievements(opts = {}) {
+                if (isModifiedRun()) {
+                    scheduleAchievementsUIRender();
+                    return;
+                }
                 const emitUnlock = opts.emitUnlock !== false;
                 let changed = false;
                 for (let i = 0; i < ACHIEVEMENT_DEFS.length; i++) {
@@ -2887,6 +2906,7 @@ function escapeHtmlAttr(str) {
             }
 
             function incrementAchievementStat(statKey, amount = 1, scope = 'lifetime', opts = {}) {
+                if (isModifiedRun()) return;
                 const key = String(statKey || '');
                 if (!key) return;
                 const inc = Number(amount);
@@ -2927,14 +2947,17 @@ function escapeHtmlAttr(str) {
                         }));
                     },
                     add: function (statKey, amount = 1, scope = 'lifetime') {
+                        try { markRunModified('achievement-add'); } catch (e) { }
                         incrementAchievementStat(statKey, amount, scope);
                         return this.getState();
                     },
                     setBest: function (statKey, value, scope = 'lifetime') {
+                        try { markRunModified('achievement-setbest'); } catch (e) { }
                         setAchievementBest(statKey, value, scope);
                         return this.getState();
                     },
                     reset: function () {
+                        try { markRunModified('achievement-reset'); } catch (e) { }
                         achievementState = createDefaultAchievementState();
                         resetRunAchievementStats(getCurrentLevelNumber());
                         evaluateAchievements({ emitUnlock: false });
@@ -2942,6 +2965,7 @@ function escapeHtmlAttr(str) {
                         return this.getState();
                     },
                     resetRun: function () {
+                        try { markRunModified('achievement-reset-run'); } catch (e) { }
                         resetRunAchievementStats(getCurrentLevelNumber());
                         evaluateAchievements({ emitUnlock: false });
                         return this.getState();
@@ -3025,6 +3049,7 @@ function escapeHtmlAttr(str) {
                     stormResolving = false;
                     randomizeBoard(false);
                     updateHUD();
+                    resetRunIntegrityState();
                 } catch (e) { }
             }
             syncTutorialGateFromDom();
@@ -3165,6 +3190,10 @@ function escapeHtmlAttr(str) {
             }
             function saveHighScoreForMode(modeName = currentGameMode, value = highScore) {
                 const key = getHighScoreKeyForMode(modeName);
+                if (isModifiedRun()) {
+                    try { window.HIGH_SCORE_KEY = key; } catch (e) { }
+                    return Math.max(0, Math.floor(Number(highScore) || 0));
+                }
                 const v = Math.max(0, Math.floor(Number(value) || 0));
                 try { localStorage.setItem(key, String(v)); } catch (e) { }
                 try { window.HIGH_SCORE_KEY = key; } catch (e) { }
@@ -3182,6 +3211,61 @@ function escapeHtmlAttr(str) {
             let highScore = loadHighScoreForMode(currentGameMode);
             let highScoreEl = null;
             syncHighScoreForMode(currentGameMode);
+
+            function resetRunIntegrityState() {
+                try {
+                    runIntegrityState.modified = false;
+                    runIntegrityState.announced = false;
+                    runIntegrityState.reason = '';
+                    runIntegrityState.achievementUnlockedSnapshot = Object.assign({}, achievementState && achievementState.unlocked ? achievementState.unlocked : {});
+                    runIntegrityState.achievementStatsSnapshot = Object.assign({}, achievementState && achievementState.stats ? achievementState.stats : {});
+                    runIntegrityState.highScoreSnapshot = Math.max(0, Number(highScore) || 0);
+                    try { window.__goneViralRunModified = false; } catch (e) { }
+                } catch (e) { }
+            }
+
+            function isModifiedRun() {
+                return !!(runIntegrityState && runIntegrityState.modified);
+            }
+
+            function markRunModified(reason = 'debug-helper') {
+                try {
+                    if (!runIntegrityState) return false;
+                    if (runIntegrityState.modified) return true;
+                    runIntegrityState.modified = true;
+                    runIntegrityState.reason = String(reason || 'debug-helper');
+                    try { window.__goneViralRunModified = true; } catch (e) { }
+                    if (achievementState && achievementState.unlocked && runIntegrityState.achievementUnlockedSnapshot) {
+                        achievementState.unlocked = Object.assign({}, runIntegrityState.achievementUnlockedSnapshot);
+                    }
+                    if (achievementState && achievementState.stats && runIntegrityState.achievementStatsSnapshot) {
+                        achievementState.stats = Object.assign({}, runIntegrityState.achievementStatsSnapshot);
+                    }
+                    runUnlockedAchievementIds = new Set();
+                    try { scheduleAchievementSave(0); } catch (e) { }
+                    if (Number.isFinite(Number(runIntegrityState.highScoreSnapshot))) {
+                        highScore = Math.max(0, Number(runIntegrityState.highScoreSnapshot) || 0);
+                        try {
+                            const highScoreKey = getHighScoreKeyForMode(currentGameMode);
+                            localStorage.setItem(highScoreKey, String(highScore));
+                            window.HIGH_SCORE_KEY = highScoreKey;
+                        } catch (e) { }
+                        if (!highScoreEl) try { highScoreEl = document.getElementById('highScoreValue'); } catch (e) { }
+                        if (highScoreEl) highScoreEl.textContent = String(highScore);
+                        try { window.highScore = highScore; } catch (e) { }
+                    }
+                    scheduleAchievementsUIRender();
+                    if (!runIntegrityState.announced && window.Assistant && Assistant.show) {
+                        runIntegrityState.announced = true;
+                        Assistant.show('Unauthorized console tampering detected. I am marking this as a modified run, cheater.', { priority: 2 });
+                    }
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            resetRunIntegrityState();
 
             function markAudioUserInteracted() {
                 const wasInteracted = audioUserInteracted;
@@ -4637,7 +4721,7 @@ function escapeHtmlAttr(str) {
                 if (clicksEl) clicksEl.textContent = clicksLeft; if (screensEl) screensEl.textContent = (screensPassed + 1); if (scoreEl) scoreEl.textContent = totalScore;
                 // --- high-score handling ---
                 if (typeof highScore !== 'number') highScore = 0;
-                if (totalScore > highScore) {
+                if (!isModifiedRun() && totalScore > highScore) {
                     highScore = totalScore;
                     saveHighScoreForMode(currentGameMode, highScore);
                     try { window.highScore = highScore; } catch (e) { }
@@ -5092,6 +5176,7 @@ function escapeHtmlAttr(str) {
                 return `
                     <div class="fv-summary">
                         <div class="fv-summary-title">RUN RECAP</div>
+                        ${isModifiedRun() ? `<div class="go-recap-more">MODIFIED RUN: achievements and high scores disabled</div>` : ''}
                         <div class="fv-summary-grid">
                             <span>Outcome</span><b>${escapeHtml(ending.label)}</b>
                             <span>Level</span><b>${levelReached}</b>
@@ -6353,6 +6438,7 @@ function escapeHtmlAttr(str) {
                     stormResolving = false;
                     inputLocked = false;
                     updateHUD();
+                    resetRunIntegrityState();
                     outOfClicksShown = false;
                     runContinueUses = 0;
                     continueOfferOpen = false;
@@ -6427,6 +6513,7 @@ function escapeHtmlAttr(str) {
                 const extraCount = Math.max(0, unlockedNames.length - shownNames.length);
                 const chips = shownNames.map((name) => `<span>${escapeHtml(name)}</span>`).join('');
                 const more = extraCount > 0 ? `<div class="go-recap-more">+${extraCount} more</div>` : '';
+                const modifiedNote = isModifiedRun() ? `<div class="go-recap-more">MODIFIED RUN: achievements and high scores disabled</div>` : '';
                 const tips = [
                     'Prioritize chain setup over single pops.',
                     'Clear armored viruses early so they do not stall cascades.',
@@ -6454,6 +6541,7 @@ function escapeHtmlAttr(str) {
                         <div class="go-recap-achv">Achievements this run: <b>${unlockedNames.length}</b></div>
                         ${chips ? `<div class="go-recap-list">${chips}</div>` : ''}
                         ${more}
+                        ${modifiedNote}
                         <div class="go-tip"><b>PIXEL tip:</b> ${escapeHtml(tipLine)}</div>
                     </div>
                 `;
