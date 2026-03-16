@@ -6883,6 +6883,20 @@
             text-align: center;
         }
 
+        .ai-start-split-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .ai-start-split-row .ai-start-btn {
+            width: 100%;
+            min-width: 0;
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
         .lore-modal {
             position: fixed;
             inset: 0;

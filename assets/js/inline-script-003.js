@@ -2359,7 +2359,7 @@ function escapeHtmlAttr(str) {
                 { id: 'run_chain_20', title: 'Chain Master', description: 'Record 3 chains of 20+ in one run (Adventure Mode).', stat: 'runChain20Count', target: 3, scope: 'run' },
                 { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 5 times in one run (Adventure Mode).', stat: 'runNanoStormUses', target: 5, scope: 'run' },
                 { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left (Adventure Mode).', stat: 'runClutchClears', target: 1, scope: 'run' },
-                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 2,000 viruses in one run (Adventure Mode).', stat: 'runPops', target: 2000, scope: 'run' },
+                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 5,000 viruses across runs (Adventure Mode).', stat: 'popsLifetime', target: 5000, scope: 'lifetime' },
                 { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs (Adventure Mode).', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
                 { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored viruses across runs (Adventure Mode).', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
                 { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 500 levels across runs (Adventure Mode).', stat: 'levelsClearedLifetime', target: 500, scope: 'lifetime' },
@@ -2960,6 +2960,7 @@ function escapeHtmlAttr(str) {
             const aiEnduranceBtn = document.getElementById('aiEnduranceBtn');
             const aiTutorialBtn = document.getElementById('aiTutorialBtn');
             const aiLoreBtn = document.getElementById('aiLoreBtn');
+            const aiAchievementsBtn = document.getElementById('aiAchievementsBtn');
             const sponsorMarkEl = document.querySelector('.pathodyne-mark-inline');
             const loreModal = document.getElementById('loreModal');
             const loreCloseBtn = document.getElementById('loreCloseBtn');
@@ -3049,6 +3050,27 @@ function escapeHtmlAttr(str) {
                         loreModal.classList.add('show');
                         loreModal.setAttribute('aria-hidden', 'false');
                     } catch (e) { }
+                });
+            }
+            if (aiAchievementsBtn) {
+                aiAchievementsBtn.addEventListener('click', () => {
+                    try { markAudioUserInteracted(); } catch (e) { }
+                    try {
+                        if (typeof window.showModal === 'function') {
+                            window.showModal('audioPopup');
+                        } else {
+                            const audioPopup = document.getElementById('audioPopup');
+                            if (audioPopup) {
+                                audioPopup.classList.add('show', 'open');
+                                audioPopup.style.display = 'flex';
+                                audioPopup.style.visibility = 'visible';
+                                audioPopup.style.pointerEvents = 'auto';
+                                audioPopup.setAttribute('aria-hidden', 'false');
+                            }
+                        }
+                    } catch (e) { }
+                    try { setSettingsPopupTab('achievements'); } catch (e) { }
+                    try { scheduleAchievementsUIRender(); } catch (e) { }
                 });
             }
             if (loreCloseBtn && loreModal) {
@@ -12820,6 +12842,7 @@ function escapeHtmlAttr(str) {
                 if (aboutTabPane) aboutTabPane.setAttribute('aria-hidden', String(!showAbout));
                 if (showAchievements) scheduleAchievementsUIRender();
             }
+            try { window.setSettingsPopupTab = setSettingsPopupTab; } catch (e) { }
             if (settingsTabBtn) settingsTabBtn.addEventListener('click', () => {
                 setSettingsPopupTab('settings');
                 registerDevUnlockTap();
