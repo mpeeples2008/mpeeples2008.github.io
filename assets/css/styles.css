@@ -8836,6 +8836,15 @@ html.assistant-disabled .assistant-fallback-bubble {
             transition: opacity 360ms ease, transform 360ms ease;
         }
 
+.final-victory-modal .fv-ending-note {
+            text-align: center;
+            font-family: 'Lucida Console', monospace;
+            color: #ffe07d;
+            font-size: clamp(10px, 1.05vw, 13px);
+            letter-spacing: 0.08em;
+            text-shadow: 0 0 10px rgba(255, 214, 102, 0.24);
+        }
+
 .final-victory-overlay.show-final-card .fv-final-card {
             opacity: 1;
             transform: translateY(0);
@@ -8904,6 +8913,15 @@ html.assistant-disabled .assistant-fallback-bubble {
             font-size: clamp(12px, 1.6vw, 16px);
             color: #ffe3be;
             text-align: center;
+        }
+
+.final-victory-overlay .fv-typed-subtitle {
+            font-family: 'Lucida Console', monospace;
+            font-size: clamp(10px, 1.05vw, 13px);
+            color: #ffe07d;
+            text-align: center;
+            letter-spacing: 0.08em;
+            text-shadow: 0 0 10px rgba(255, 214, 102, 0.28);
         }
 
 .final-victory-overlay .fv-typed-body {

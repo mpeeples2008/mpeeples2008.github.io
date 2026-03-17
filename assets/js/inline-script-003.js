@@ -5162,8 +5162,13 @@ function escapeHtmlAttr(str) {
                     key: 'solo',
                     label: 'ON MY OWN',
                     imageUrl: FINAL_VICTORY_SOLO_IMAGE_URL || FINAL_VICTORY_DEFAULT_IMAGE_URL,
-                    storyText: 'INDEPENDENT VARIABLE: You took no deals, no shortcuts. You held the line alone and wrote your own ending.' + soloContinuation
+                    storyText: 'INDEPENDENT VARIABLE: While others offered contracts, leverage, and escape clauses, you chose none of them. You stood alone, kept control, and brought the lab back without owing anyone a thing.' + soloContinuation
                 };
+            }
+
+            function isTrueEndingProfile(ending = null) {
+                const profile = ending || getFinalEndingProfile();
+                return !!(profile && profile.key === 'solo' && !(runPerkState && runPerkState.continueDealTaken));
             }
 
             function buildFinalVictoryRunSummaryHtml() {
@@ -5179,6 +5184,7 @@ function escapeHtmlAttr(str) {
                         ${isModifiedRun() ? `<div class="go-recap-more">MODIFIED RUN: achievements and high scores disabled</div>` : ''}
                         <div class="fv-summary-grid">
                             <span>Outcome</span><b>${escapeHtml(ending.label)}</b>
+                            ${isTrueEndingProfile(ending) ? `<span>Corporate Claims</span><b>NONE</b>` : ''}
                             <span>Level</span><b>${levelReached}</b>
                             <span>Score</span><b>${Math.max(0, Number(totalScore) || 0)}</b>
                             <span>Viruses Destroyed</span><b>${pops}</b>
@@ -6249,8 +6255,14 @@ function escapeHtmlAttr(str) {
                 finalVictoryState.shown = true;
                 host.classList.add('show-win');
                 const ending = getFinalEndingProfile();
+                const trueEnding = isTrueEndingProfile(ending);
                 const endingColor = (ending.key === 'broker') ? '#9dff7d' : '#ffd166';
                 const typedStoryText = String(ending.storyText || '');
+                try {
+                    if (trueEnding && window.Assistant && Assistant.show) {
+                        Assistant.show('No contracts. No compromise. Nicely done, operator.', { priority: 2 });
+                    }
+                } catch (e) { }
                 try {
                     if (runPerkState && !runPerkState.finalEndingAchievementGranted) {
                         if (ending.key === 'broker') {
@@ -6274,6 +6286,7 @@ function escapeHtmlAttr(str) {
                             <div class="fv-image-wrap">
                                 <img src="${escapeHtmlAttr(ending.imageUrl || FINAL_VICTORY_DEFAULT_IMAGE_URL || '')}" alt="Victory" onerror="this.style.display='none';" />
                             </div>
+                            ${trueEnding ? `<div class="fv-ending-note">TRUE ENDING ARCHIVED</div>` : ''}
                             <div class="fv-final-card">MISSION COMPLETE</div>
                             <div class="fv-actions">
                                 <button type="button" class="fv-restart-btn">START NEW RUN</button>
@@ -6302,6 +6315,7 @@ function escapeHtmlAttr(str) {
                 host.innerHTML = `
                     <div class="fv-typed-stage" role="dialog" aria-modal="true" aria-label="Epilogue">
                         <div class="fv-typed-title">EPILOGUE</div>
+                        ${trueEnding ? `<div class="fv-typed-subtitle">TRUE ENDING ARCHIVED</div>` : ''}
                         <div class="fv-typed-body" style="color:${escapeHtmlAttr(endingColor)};"></div>
                         <div class="fv-typed-hint">Click to continue</div>
                     </div>
