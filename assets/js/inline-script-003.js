@@ -10648,6 +10648,7 @@ function showInterceptionGridMockPopup(opts = {}) {
                 const bossMeta = specialMetaState[bossIndex] || {};
                 const bossLevel = Math.max(1, Math.floor(Number(bossMeta.bossLevel) || getCurrentLevelNumber()));
                 const targetIndex = pool[Math.floor(Math.random() * pool.length)];
+                const tellDelayMs = (bossLevel === 10) ? 520 : 0;
                 const applyAtImpact = () => {
                     if (sourceBoardGeneration !== boardGeneration) return;
                     if (isBlockingPopupOpen()) return;
@@ -10657,7 +10658,17 @@ function showInterceptionGridMockPopup(opts = {}) {
                         scheduleRender();
                     }
                 };
-                playBossGooShieldProjectile(bossIndex, targetIndex, applyAtImpact);
+                if (tellDelayMs > 0) {
+                    playLevel10BossGooTell(bossIndex, tellDelayMs);
+                    setTimeout(() => {
+                        if (sourceBoardGeneration !== boardGeneration) return;
+                        if (isBlockingPopupOpen()) return;
+                        if (state[bossIndex] === null || specialState[bossIndex] !== 'boss') return;
+                        playBossGooShieldProjectile(bossIndex, targetIndex, applyAtImpact);
+                    }, tellDelayMs);
+                } else {
+                    playBossGooShieldProjectile(bossIndex, targetIndex, applyAtImpact);
+                }
                 return 1;
             }
 
@@ -10939,8 +10950,8 @@ function showInterceptionGridMockPopup(opts = {}) {
                 return BOSS_BREAKPOINT_PROFILE[bossLevel] || null;
             }
 
-            function maybeTriggerBossBreakpoint(meta, originIndex = null) {
-                if (!meta || !meta.maxHp) return;
+            function getPendingBossBreakpointPayload(meta) {
+                if (!meta || !meta.maxHp) return null;
                 if (!meta.breaks) meta.breaks = { b75: false, b50: false, b25: false };
                 const bossLevel = Math.max(1, Math.floor(Number(meta.bossLevel) || getCurrentLevelNumber()));
                 const cfg = getBossBreakpointConfig(meta) || {};
@@ -10950,13 +10961,74 @@ function showInterceptionGridMockPopup(opts = {}) {
                 const count25 = Math.max(0, Math.floor(Number(counts.b25) || 2));
                 const armorOpts = (cfg && cfg.armorOpts) ? Object.assign({}, cfg.armorOpts) : null;
                 const useProjection = !!(cfg && cfg.projection) || bossLevel === 15;
-                const spawnFn = useProjection
-                    ? (count, fromIdx) => spawnBossProjectionPulse(count, fromIdx)
-                    : (count, fromIdx) => spawnBossArmorPulse(count, fromIdx, armorOpts);
                 const ratio = Math.max(0, Math.min(1, (Number(meta.hp) || 0) / Math.max(1, Number(meta.maxHp) || 1)));
-                if (!meta.breaks.b75 && ratio <= 0.75) { meta.breaks.b75 = true; if (count75 > 0) spawnFn(count75, originIndex); }
-                if (!meta.breaks.b50 && ratio <= 0.50) { meta.breaks.b50 = true; if (count50 > 0) spawnFn(count50, originIndex); }
-                if (!meta.breaks.b25 && ratio <= 0.25) { meta.breaks.b25 = true; if (count25 > 0) spawnFn(count25, originIndex); }
+                const payload = {
+                    bossLevel,
+                    useProjection,
+                    armorOpts,
+                    b75: !meta.breaks.b75 && ratio <= 0.75 ? count75 : 0,
+                    b50: !meta.breaks.b50 && ratio <= 0.50 ? count50 : 0,
+                    b25: !meta.breaks.b25 && ratio <= 0.25 ? count25 : 0
+                };
+                payload.total = Math.max(0, payload.b75) + Math.max(0, payload.b50) + Math.max(0, payload.b25);
+                return payload.total > 0 ? payload : null;
+            }
+
+            function markBossBreakpointPayloadApplied(meta, payload) {
+                if (!meta || !payload) return;
+                if (!meta.breaks) meta.breaks = { b75: false, b50: false, b25: false };
+                if (payload.b75 > 0) meta.breaks.b75 = true;
+                if (payload.b50 > 0) meta.breaks.b50 = true;
+                if (payload.b25 > 0) meta.breaks.b25 = true;
+            }
+
+            function applyBossBreakpointPayload(payload, originIndex = null) {
+                if (!payload) return 0;
+                const spawnFn = payload.useProjection
+                    ? (count, fromIdx) => spawnBossProjectionPulse(count, fromIdx)
+                    : (count, fromIdx) => spawnBossArmorPulse(count, fromIdx, payload.armorOpts);
+                let spawned = 0;
+                if (payload.b75 > 0) spawned += Math.max(0, Number(spawnFn(payload.b75, originIndex)) || 0);
+                if (payload.b50 > 0) spawned += Math.max(0, Number(spawnFn(payload.b50, originIndex)) || 0);
+                if (payload.b25 > 0) spawned += Math.max(0, Number(spawnFn(payload.b25, originIndex)) || 0);
+                return spawned;
+            }
+
+            function maybeTriggerBossBreakpoint(meta, originIndex = null) {
+                const payload = getPendingBossBreakpointPayload(meta);
+                if (!payload) return 0;
+                markBossBreakpointPayloadApplied(meta, payload);
+                return applyBossBreakpointPayload(payload, originIndex);
+            }
+
+            function playLevel5BossSpawnTell(index, durationMs = 320) {
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= (ROWS * COLS)) return;
+                try {
+                    const cell = boardEl && boardEl.querySelector ? boardEl.querySelector(`.cell[data-index='${idx}']`) : null;
+                    if (!cell) return;
+                    cell.classList.remove('boss-spawn-tell');
+                    void cell.offsetWidth;
+                    cell.classList.add('boss-spawn-tell');
+                    setTimeout(() => {
+                        try { cell.classList.remove('boss-spawn-tell'); } catch (e) { }
+                    }, Math.max(120, Math.floor(Number(durationMs) || 320) + 60));
+                } catch (e) { }
+            }
+
+            function playLevel10BossGooTell(index, durationMs = 520) {
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= (ROWS * COLS)) return;
+                try {
+                    const cell = boardEl && boardEl.querySelector ? boardEl.querySelector(`.cell[data-index='${idx}']`) : null;
+                    if (!cell) return;
+                    cell.classList.remove('boss-goo-tell');
+                    void cell.offsetWidth;
+                    cell.classList.add('boss-goo-tell');
+                    setTimeout(() => {
+                        try { cell.classList.remove('boss-goo-tell'); } catch (e) { }
+                    }, Math.max(180, Math.floor(Number(durationMs) || 520) + 80));
+                } catch (e) { }
             }
 
             function popBossProjectionsForLevel(levelNum, tracker = null, skipIndex = -1) {
@@ -11209,7 +11281,23 @@ function showInterceptionGridMockPopup(opts = {}) {
                 } else {
                     if (!isProjection) {
                         setMiniBossStateFromMeta(idx, meta);
-                        maybeTriggerBossBreakpoint(meta, idx);
+                        if (bossLevel === 5) {
+                            const breakpointPayload = getPendingBossBreakpointPayload(meta);
+                            if (breakpointPayload && breakpointPayload.total > 0) {
+                                markBossBreakpointPayloadApplied(meta, breakpointPayload);
+                                playLevel5BossSpawnTell(idx, 320);
+                                const sourceBoardGeneration = boardGeneration;
+                                setTimeout(() => {
+                                    try {
+                                        if (sourceBoardGeneration !== boardGeneration) return;
+                                        if (state[idx] === null || specialState[idx] !== 'boss') return;
+                                        applyBossBreakpointPayload(breakpointPayload, idx);
+                                    } catch (e) { }
+                                }, 320);
+                            }
+                        } else {
+                            maybeTriggerBossBreakpoint(meta, idx);
+                        }
                     }
                     try { playSfx('fill'); } catch (e) { }
                 }

@@ -1005,6 +1005,29 @@
                 display: none;
             }
 
+        .cell.boss-spawn-tell .virus.special-boss {
+            animation: level5BossSpawnTellPulse 320ms ease-out both;
+        }
+
+        .cell.boss-spawn-tell .virus.special-boss::before {
+            opacity: 0.95;
+            background: radial-gradient(circle at 35% 30%, rgba(255, 214, 214, 0.72), rgba(255, 106, 106, 0.32) 44%, rgba(88, 8, 8, 0.18) 100%);
+            box-shadow: 0 0 0 2px rgba(255, 118, 118, 0.74), 0 0 16px rgba(255, 88, 88, 0.54), inset 0 0 12px rgba(255, 166, 166, 0.26);
+        }
+
+        .cell.boss-goo-tell .virus.special-boss.special-boss-level10 {
+            animation: level10BossGooTellPulse 520ms ease-out both;
+            box-shadow: 0 0 0 1px rgba(255, 218, 132, 0.72), 0 0 20px rgba(240, 214, 94, 0.52), inset 0 0 12px rgba(255, 232, 168, 0.2);
+        }
+
+        .cell.boss-goo-tell .virus.special-boss.special-boss-level10::before {
+            content: '';
+            display: block;
+            background: radial-gradient(circle at 50% 62%, rgba(255, 244, 180, 0.8), rgba(240, 232, 112, 0.34) 38%, rgba(78, 84, 22, 0.12) 72%);
+            opacity: 0.98;
+            box-shadow: 0 0 0 2px rgba(245, 232, 122, 0.48), 0 0 18px rgba(232, 216, 88, 0.44), inset 0 0 10px rgba(255, 246, 176, 0.3);
+        }
+
         .virus.special-boss .special-badge {
             display: none;
         }
@@ -1909,6 +1932,40 @@
             }
             75% {
                 transform: translate(-1px, -1px) scale(1.015);
+            }
+        }
+
+        @keyframes level5BossSpawnTellPulse {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            40% {
+                transform: scale(1.08);
+                filter: brightness(1.18) saturate(1.08);
+            }
+            100% {
+                transform: scale(1);
+                filter: brightness(1) saturate(1);
+            }
+        }
+
+        @keyframes level10BossGooTellPulse {
+            0% {
+                transform: scale(1) translateY(0);
+                filter: brightness(1);
+            }
+            35% {
+                transform: scale(1.04) translateY(-2px);
+                filter: brightness(1.14) saturate(1.06);
+            }
+            70% {
+                transform: scale(1.02) translateY(1px);
+                filter: brightness(1.08) saturate(1.02);
+            }
+            100% {
+                transform: scale(1) translateY(0);
+                filter: brightness(1);
             }
         }
 
