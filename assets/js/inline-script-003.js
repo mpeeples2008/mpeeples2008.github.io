@@ -155,6 +155,406 @@ function escapeHtmlAttr(str) {
   return String(str).replace(/"/g, '&quot;').replace(/&/g, '&amp;');
 }
 
+const VIRUS_SMASH_MOCK_CONFIG = {
+    durationMs: 4000,
+    maxHp: 26,
+    tiers: [
+        { minHits: 20, clicks: 2, score: 2200, title: 'SPECIMEN CRUSHED' },
+        { minHits: 12, clicks: 1, score: 1100, title: 'SPECIMEN DAMAGED' },
+        { minHits: 0, clicks: 0, score: 450, title: 'DATA RETRIEVED' }
+    ]
+};
+let virusSmashMockState = null;
+const INTERCEPTION_GRID_MOCK_CONFIG = {
+    durationMs: 9000,
+    lanes: 3,
+    enemiesPerLane: 4,
+    laneSpeedPxPerSec: [120, 155, 190]
+};
+let interceptionGridMockState = null;
+
+function getVirusSmashMockSpriteUrl() {
+    try {
+        if (typeof MINIBOSS_SPRITE_URL !== 'undefined' && MINIBOSS_SPRITE_URL) return String(MINIBOSS_SPRITE_URL);
+    } catch (e) { }
+    return 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/miniboss.png';
+}
+
+function cleanupVirusSmashMock(immediate = false) {
+    try {
+        const active = virusSmashMockState;
+        virusSmashMockState = null;
+        if (active && active.rafId) cancelAnimationFrame(active.rafId);
+        if (active && active.hitTimer) clearTimeout(active.hitTimer);
+        const overlay = (active && active.overlay) || document.querySelector('.virus-smash-overlay');
+        if (!overlay) return;
+        const removeNow = () => { try { overlay.remove(); } catch (e) { } };
+        if (immediate) {
+            removeNow();
+            return;
+        }
+        try {
+            overlay.classList.remove('show');
+            overlay.classList.add('hide');
+            overlay.addEventListener('animationend', removeNow, { once: true });
+        } catch (e) {
+            removeNow();
+        }
+    } catch (e) { }
+}
+
+function getVirusSmashMockTier(hitCount = 0, destroyed = false) {
+    const hits = Math.max(0, Math.floor(Number(hitCount) || 0));
+    const tiers = Array.isArray(VIRUS_SMASH_MOCK_CONFIG.tiers) ? VIRUS_SMASH_MOCK_CONFIG.tiers : [];
+    for (let i = 0; i < tiers.length; i++) {
+        const tier = tiers[i] || {};
+        if (destroyed || hits >= Math.max(0, Number(tier.minHits) || 0)) {
+            return {
+                title: String(tier.title || 'BONUS COMPLETE'),
+                clicks: Math.max(0, Math.floor(Number(tier.clicks) || 0)),
+                score: Math.max(0, Math.floor(Number(tier.score) || 0))
+            };
+        }
+    }
+    return { title: 'BONUS COMPLETE', clicks: 0, score: 0 };
+}
+
+function showVirusSmashMockPopup(opts = {}) {
+    cleanupVirusSmashMock(true);
+    const onClose = (typeof opts.onClose === 'function') ? opts.onClose : () => { };
+    const overlay = document.createElement('div');
+    overlay.className = 'virus-smash-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Virus Smash mock');
+    overlay.innerHTML = `
+        <div class="virus-smash-panel virus-smash-panel--intro">
+            <div class="virus-smash-kicker">BONUS STAGE MOCK</div>
+            <div class="virus-smash-title">VIRUS SMASH</div>
+            <div class="virus-smash-body">Standalone test popup only. No score, clicks, or progression are changed.</div>
+            <div class="virus-smash-preview">
+                <div class="virus-smash-sprite virus-smash-sprite--preview" aria-label="Bonus target" role="img" style="--virus-smash-sprite:url('${escapeHtmlAttr(getVirusSmashMockSpriteUrl())}')"></div>
+            </div>
+            <div class="virus-smash-actions">
+                <button type="button" class="virus-smash-btn virus-smash-btn--begin">BEGIN</button>
+                <button type="button" class="virus-smash-btn virus-smash-btn--ghost">CLOSE</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    void overlay.offsetWidth;
+    overlay.classList.add('show');
+    virusSmashMockState = {
+        overlay,
+        onClose,
+        active: false,
+        hits: 0,
+        hp: Math.max(1, Math.floor(Number(VIRUS_SMASH_MOCK_CONFIG.maxHp) || 26)),
+        maxHp: Math.max(1, Math.floor(Number(VIRUS_SMASH_MOCK_CONFIG.maxHp) || 26)),
+        endAt: 0,
+        rafId: 0,
+        hitTimer: 0,
+        destroyed: false
+    };
+    const closeMock = () => {
+        const done = (virusSmashMockState && virusSmashMockState.onClose) || onClose;
+        cleanupVirusSmashMock(false);
+        try { done(); } catch (e) { }
+    };
+    const openResults = () => {
+        const st = virusSmashMockState;
+        if (!st) return;
+        const tier = getVirusSmashMockTier(st.hits, st.destroyed);
+        overlay.innerHTML = `
+            <div class="virus-smash-panel virus-smash-panel--results">
+                <div class="virus-smash-kicker">MOCK RESULTS</div>
+                <div class="virus-smash-title virus-smash-title--small">${escapeHtml(tier.title)}</div>
+                <div class="virus-smash-results-grid">
+                    <span>Hits</span><b>${Math.max(0, st.hits)}</b>
+                    <span>Mock Score</span><b>+${tier.score}</b>
+                    <span>Mock Nano-Bots</span><b>+${tier.clicks}</b>
+                </div>
+                <div class="virus-smash-stage-copy">This is a presentation test only. No game state was changed.</div>
+                <button type="button" class="virus-smash-btn virus-smash-btn--continue">CLOSE</button>
+            </div>
+        `;
+        const btn = overlay.querySelector('.virus-smash-btn--continue');
+        if (btn) btn.addEventListener('click', closeMock, { once: true });
+    };
+    const stopStage = () => {
+        const st = virusSmashMockState;
+        if (!st) return;
+        st.active = false;
+        if (st.rafId) cancelAnimationFrame(st.rafId);
+        st.rafId = 0;
+        openResults();
+    };
+    const beginStage = () => {
+        const st = virusSmashMockState;
+        if (!st) return;
+        st.active = true;
+        st.endAt = performance.now() + Math.max(1000, Number(VIRUS_SMASH_MOCK_CONFIG.durationMs) || 8000);
+        overlay.innerHTML = `
+            <div class="virus-smash-panel virus-smash-panel--stage">
+                <div class="virus-smash-hud">
+                    <div class="virus-smash-meter">
+                        <div class="virus-smash-meter__label">Specimen Integrity</div>
+                        <div class="virus-smash-meter__track"><span class="virus-smash-meter__fill"></span></div>
+                    </div>
+                    <div class="virus-smash-timer">
+                        <div class="virus-smash-meter__label">Time</div>
+                        <div class="virus-smash-meter__track virus-smash-meter__track--time"><span class="virus-smash-timer__fill"></span></div>
+                    </div>
+                </div>
+                <button type="button" class="virus-smash-target" aria-label="Smash virus mock target">
+                    <div class="virus-smash-sprite virus-smash-target__img" aria-hidden="true" style="--virus-smash-sprite:url('${escapeHtmlAttr(getVirusSmashMockSpriteUrl())}')"></div>
+                    <div class="virus-smash-target__glow"></div>
+                </button>
+                <div class="virus-smash-stage-copy">Tap rapidly. This mock does not change the run.</div>
+            </div>
+        `;
+        const hpFill = overlay.querySelector('.virus-smash-meter__fill');
+        const timerFill = overlay.querySelector('.virus-smash-timer__fill');
+        const target = overlay.querySelector('.virus-smash-target');
+        const updateFrame = () => {
+            const live = virusSmashMockState;
+            if (!live || !live.active) return;
+            const now = performance.now();
+            const remain = Math.max(0, live.endAt - now);
+            if (hpFill) {
+                const hpRatio = Math.max(0, Math.min(1, live.hp / Math.max(1, live.maxHp)));
+                hpFill.style.transform = `scaleX(${hpRatio})`;
+            }
+            if (timerFill) {
+                const timeRatio = Math.max(0, Math.min(1, remain / Math.max(1, Number(VIRUS_SMASH_MOCK_CONFIG.durationMs) || 8000)));
+                timerFill.style.transform = `scaleX(${timeRatio})`;
+            }
+            if (remain <= 0) {
+                stopStage();
+                return;
+            }
+            live.rafId = requestAnimationFrame(updateFrame);
+        };
+        if (target) {
+            target.addEventListener('click', (ev) => {
+                try { ev.preventDefault(); ev.stopPropagation(); } catch (e) { }
+                const live = virusSmashMockState;
+                if (!live || !live.active) return;
+                live.hits += 1;
+                live.hp = Math.max(0, live.hp - 1);
+                try { playSfx('level5_boss_hit'); } catch (e) { }
+                target.classList.remove('hit');
+                void target.offsetWidth;
+                target.classList.add('hit');
+                try { if (live.hitTimer) clearTimeout(live.hitTimer); } catch (e) { }
+                live.hitTimer = setTimeout(() => {
+                    try { target.classList.remove('hit'); } catch (e) { }
+                }, 110);
+                if (live.hp <= 0) {
+                    live.destroyed = true;
+                    try { playSfx('level5_boss_dies'); } catch (e) { }
+                    target.classList.add('destroyed');
+                    stopStage();
+                }
+            });
+        }
+        updateFrame();
+    };
+    const beginBtn = overlay.querySelector('.virus-smash-btn--begin');
+    const closeBtn = overlay.querySelector('.virus-smash-btn--ghost');
+    if (beginBtn) beginBtn.addEventListener('click', beginStage, { once: true });
+    if (closeBtn) closeBtn.addEventListener('click', closeMock, { once: true });
+    try { if (beginBtn) beginBtn.focus(); } catch (e) { }
+    return true;
+}
+
+function getInterceptionGridMockSpriteUrl() {
+    return 'https://raw.githubusercontent.com/mpeeples2008/sound_image_assets/main/virus1_clean.png';
+}
+
+function cleanupInterceptionGridMock(immediate = false) {
+    try {
+        const active = interceptionGridMockState;
+        interceptionGridMockState = null;
+        if (active && active.rafId) cancelAnimationFrame(active.rafId);
+        const overlay = (active && active.overlay) || document.querySelector('.interception-grid-overlay');
+        if (!overlay) return;
+        const removeNow = () => { try { overlay.remove(); } catch (e) { } };
+        if (immediate) {
+            removeNow();
+            return;
+        }
+        try {
+            overlay.classList.remove('show');
+            overlay.classList.add('hide');
+            overlay.addEventListener('animationend', removeNow, { once: true });
+        } catch (e) {
+            removeNow();
+        }
+    } catch (e) { }
+}
+
+function showInterceptionGridMockPopup(opts = {}) {
+    cleanupInterceptionGridMock(true);
+    const onClose = (typeof opts.onClose === 'function') ? opts.onClose : () => { };
+    const overlay = document.createElement('div');
+    overlay.className = 'interception-grid-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Interception Grid mock');
+    overlay.innerHTML = `
+        <div class="interception-grid-panel interception-grid-panel--intro">
+            <div class="interception-grid-kicker">BONUS STAGE MOCK</div>
+            <div class="interception-grid-title">INTERCEPTION GRID</div>
+            <div class="interception-grid-body">Tap incoming pathogens before they cross the containment lanes. Standalone presentation test only.</div>
+            <div class="interception-grid-actions">
+                <button type="button" class="interception-grid-btn interception-grid-btn--begin">BEGIN</button>
+                <button type="button" class="interception-grid-btn interception-grid-btn--ghost">CLOSE</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    void overlay.offsetWidth;
+    overlay.classList.add('show');
+    const spriteUrl = getInterceptionGridMockSpriteUrl();
+    interceptionGridMockState = {
+        overlay,
+        onClose,
+        active: false,
+        startAt: 0,
+        endAt: 0,
+        rafId: 0,
+        destroyed: 0,
+        escaped: 0,
+        enemies: [],
+        playfieldRect: null,
+        spriteUrl
+    };
+    const closeMock = () => {
+        const done = (interceptionGridMockState && interceptionGridMockState.onClose) || onClose;
+        cleanupInterceptionGridMock(false);
+        try { done(); } catch (e) { }
+    };
+    const finishMock = () => {
+        const state = interceptionGridMockState;
+        if (!state) return;
+        state.active = false;
+        if (state.rafId) cancelAnimationFrame(state.rafId);
+        overlay.innerHTML = `
+            <div class="interception-grid-panel interception-grid-panel--results">
+                <div class="interception-grid-kicker">MOCK RESULTS</div>
+                <div class="interception-grid-title interception-grid-title--small">INTERCEPTION COMPLETE</div>
+                <div class="interception-grid-results-grid">
+                    <span>Destroyed</span><b>${Math.max(0, state.destroyed)}</b>
+                    <span>Escaped</span><b>${Math.max(0, state.escaped)}</b>
+                    <span>Mock Rating</span><b>${state.destroyed >= 9 ? 'ACE' : state.destroyed >= 6 ? 'SOLID' : 'ROUGH'}</b>
+                </div>
+                <div class="interception-grid-body">No game state was changed. This is only a full-screen bonus-stage mock.</div>
+                <button type="button" class="interception-grid-btn interception-grid-btn--continue">CLOSE</button>
+            </div>
+        `;
+        const btn = overlay.querySelector('.interception-grid-btn--continue');
+        if (btn) btn.addEventListener('click', closeMock, { once: true });
+    };
+    const beginMock = () => {
+        const state = interceptionGridMockState;
+        if (!state) return;
+        overlay.innerHTML = `
+            <div class="interception-grid-panel interception-grid-panel--stage">
+                <div class="interception-grid-hud">
+                    <div class="interception-grid-meter">
+                        <div class="interception-grid-meter__label">Time</div>
+                        <div class="interception-grid-meter__track"><span class="interception-grid-timer__fill"></span></div>
+                    </div>
+                    <div class="interception-grid-scoreline">Destroyed: <b class="ig-destroyed">0</b> <span class="ig-sep">|</span> Escaped: <b class="ig-escaped">0</b></div>
+                </div>
+                <div class="interception-grid-playfield"></div>
+                <div class="interception-grid-body interception-grid-stage-copy">Tap the moving viruses before they breach the right side.</div>
+            </div>
+        `;
+        const playfield = overlay.querySelector('.interception-grid-playfield');
+        const timerFill = overlay.querySelector('.interception-grid-timer__fill');
+        const destroyedEl = overlay.querySelector('.ig-destroyed');
+        const escapedEl = overlay.querySelector('.ig-escaped');
+        if (!playfield) return;
+        const rect = playfield.getBoundingClientRect();
+        state.playfieldRect = rect;
+        state.startAt = performance.now();
+        state.endAt = state.startAt + Math.max(1000, Number(INTERCEPTION_GRID_MOCK_CONFIG.durationMs) || 9000);
+        state.active = true;
+        state.destroyed = 0;
+        state.escaped = 0;
+        state.enemies = [];
+        const laneCount = Math.max(1, Number(INTERCEPTION_GRID_MOCK_CONFIG.lanes) || 3);
+        const laneGap = rect.height / (laneCount + 1);
+        for (let lane = 0; lane < laneCount; lane++) {
+            for (let i = 0; i < Math.max(1, Number(INTERCEPTION_GRID_MOCK_CONFIG.enemiesPerLane) || 4); i++) {
+                const node = document.createElement('button');
+                node.type = 'button';
+                node.className = 'interception-grid-enemy';
+                node.setAttribute('aria-label', 'Intercept virus');
+                node.innerHTML = `<span class="interception-grid-enemy__sprite" style="--interception-grid-sprite:url('${escapeHtmlAttr(state.spriteUrl)}')"></span>`;
+                playfield.appendChild(node);
+                const enemy = {
+                    node,
+                    lane,
+                    y: Math.round((lane + 1) * laneGap),
+                    x: -40 - (i * 88) - (lane * 18),
+                    speed: Number(INTERCEPTION_GRID_MOCK_CONFIG.laneSpeedPxPerSec[lane]) || 120,
+                    active: true
+                };
+                node.addEventListener('click', (ev) => {
+                    try { ev.preventDefault(); ev.stopPropagation(); } catch (e) { }
+                    if (!enemy.active || !interceptionGridMockState || !interceptionGridMockState.active) return;
+                    enemy.active = false;
+                    state.destroyed += 1;
+                    if (destroyedEl) destroyedEl.textContent = String(state.destroyed);
+                    node.classList.add('popped');
+                    try { playSfx('pop'); } catch (e) { try { playSfx('fill'); } catch (e2) { } }
+                    setTimeout(() => { try { node.remove(); } catch (e) { } }, 180);
+                });
+                state.enemies.push(enemy);
+            }
+        }
+        const tick = (now) => {
+            const live = interceptionGridMockState;
+            if (!live || !live.active) return;
+            const remain = Math.max(0, live.endAt - now);
+            if (timerFill) {
+                const ratio = Math.max(0, Math.min(1, remain / Math.max(1, Number(INTERCEPTION_GRID_MOCK_CONFIG.durationMs) || 9000)));
+                timerFill.style.transform = `scaleX(${ratio})`;
+            }
+            for (let i = 0; i < live.enemies.length; i++) {
+                const enemy = live.enemies[i];
+                if (!enemy || !enemy.active) continue;
+                enemy.x += (enemy.speed / 60);
+                if (enemy.node) {
+                    enemy.node.style.transform = `translate(${Math.round(enemy.x)}px, ${Math.round(enemy.y)}px)`;
+                }
+                if (enemy.x >= rect.width - 24) {
+                    enemy.active = false;
+                    live.escaped += 1;
+                    if (escapedEl) escapedEl.textContent = String(live.escaped);
+                    try { enemy.node.classList.add('escaped'); } catch (e) { }
+                    setTimeout(() => { try { enemy.node.remove(); } catch (e) { } }, 180);
+                }
+            }
+            if (remain <= 0) {
+                finishMock();
+                return;
+            }
+            live.rafId = requestAnimationFrame(tick);
+        };
+        state.rafId = requestAnimationFrame(tick);
+    };
+    const beginBtn = overlay.querySelector('.interception-grid-btn--begin');
+    const closeBtn = overlay.querySelector('.interception-grid-btn--ghost');
+    if (beginBtn) beginBtn.addEventListener('click', beginMock, { once: true });
+    if (closeBtn) closeBtn.addEventListener('click', closeMock, { once: true });
+    try { if (beginBtn) beginBtn.focus(); } catch (e) { }
+    return true;
+}
+
         // Difficulty profile (single source of truth for balance tuning)
         // Edit `bands` to tune progression without touching gameplay logic.
         const DIFFICULTY_PROFILE = {
@@ -1687,6 +2087,20 @@ function escapeHtmlAttr(str) {
                         clear: function () { clearFinalVictorySequence(true); return true; },
                         state: function () { return JSON.parse(JSON.stringify(finalVictoryState)); }
                     };
+                } catch (e) { }
+                try {
+                    window.VirusSmash = {
+                        showMock: function () { return showVirusSmashMockPopup(); },
+                        clearMock: function () { cleanupVirusSmashMock(true); return true; }
+                    };
+                    window.showVirusSmashMock = function () { return showVirusSmashMockPopup(); };
+                } catch (e) { }
+                try {
+                    window.InterceptionGrid = {
+                        showMock: function () { return showInterceptionGridMockPopup(); },
+                        clearMock: function () { cleanupInterceptionGridMock(true); return true; }
+                    };
+                    window.showInterceptionGridMock = function () { return showInterceptionGridMockPopup(); };
                 } catch (e) { }
             } catch (e) { }
             let blockerOrientationDeg = 0; // only 0 or 90
@@ -6477,6 +6891,8 @@ function escapeHtmlAttr(str) {
                     try { stopRotatingBlockerTicker(); } catch (e) { }
                     try { clearTechnoGremlinPowers(true); } catch (e) { }
                     try { clearActiveParticlesImmediate(); } catch (e) { }
+                    try { cleanupVirusSmashMock(true); } catch (e) { }
+                    try { cleanupInterceptionGridMock(true); } catch (e) { }
                     finalOfferPreludeActive = false;
                     finalOfferModalOpen = false;
                     levelAdvancePending = false;
@@ -6506,7 +6922,9 @@ function escapeHtmlAttr(str) {
                         '.run-perk-popup',
                         '.final-offer-modal',
                         '.final-offer-prelude',
-                        '.boss20-talk-modal'
+                        '.boss20-talk-modal',
+                        '.virus-smash-overlay',
+                        '.interception-grid-overlay'
                     ];
                     popupSelectors.forEach((sel) => {
                         const nodes = document.querySelectorAll(sel);
