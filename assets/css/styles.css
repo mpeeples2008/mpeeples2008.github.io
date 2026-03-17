@@ -9549,6 +9549,10 @@ html.assistant-disabled .assistant-fallback-bubble {
             box-shadow: inset 0 0 18px rgba(126, 212, 255, 0.08);
         }
 
+        .interception-grid-playfield.breach-flash {
+            animation: interceptionGridBreachFlash 180ms ease-out;
+        }
+
         .interception-grid-playfield::before,
         .interception-grid-playfield::after {
             content: '';
@@ -9567,6 +9571,29 @@ html.assistant-disabled .assistant-fallback-bubble {
 
         .interception-grid-playfield::after {
             top: 66.666%;
+        }
+
+        .interception-grid-playfield::selection {
+            background: transparent;
+        }
+
+        .interception-grid-playfield .interception-grid-breach-edge {
+            display: none;
+        }
+
+        .interception-grid-playfield::marker {
+            content: none;
+        }
+
+        .interception-grid-playfield:after {
+            box-shadow: 0 0 12px rgba(126, 214, 255, 0.24);
+        }
+
+        .interception-grid-playfield {
+            background-image:
+                linear-gradient(180deg, rgba(12, 24, 48, 0.84), rgba(6, 14, 30, 0.94)),
+                repeating-linear-gradient(180deg, rgba(110, 186, 255, 0.08) 0 3px, rgba(0,0,0,0) 3px 106px),
+                linear-gradient(90deg, rgba(0,0,0,0) 0 calc(100% - 18px), rgba(255, 100, 120, 0.18) calc(100% - 18px) 100%);
         }
 
         .interception-grid-enemy {
@@ -9609,6 +9636,17 @@ html.assistant-disabled .assistant-fallback-bubble {
             pointer-events: none;
         }
 
+        .interception-grid-burst {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: #ffe698;
+            text-shadow: 0 0 8px rgba(255, 212, 120, 0.46), 1px 1px 0 rgba(0,0,0,0.72);
+            pointer-events: none;
+            animation: interceptionBurstRise 380ms ease-out forwards;
+        }
+
         .interception-grid-results-grid {
             display: grid;
             grid-template-columns: auto auto;
@@ -9642,6 +9680,18 @@ html.assistant-disabled .assistant-fallback-bubble {
         @keyframes interceptionEnemyEscape {
             from { opacity: 1; }
             to { opacity: 0; transform: translateX(24px) scale(0.82); }
+        }
+
+        @keyframes interceptionBurstRise {
+            from { opacity: 0; transform: translate(-50%, -10%) scale(0.82); }
+            20% { opacity: 1; }
+            to { opacity: 0; transform: translate(-50%, -145%) scale(1.08); }
+        }
+
+        @keyframes interceptionGridBreachFlash {
+            0% { box-shadow: inset 0 0 18px rgba(126, 212, 255, 0.08), 0 0 0 rgba(255, 98, 98, 0); }
+            50% { box-shadow: inset 0 0 18px rgba(126, 212, 255, 0.08), 0 0 22px rgba(255, 110, 110, 0.36); }
+            100% { box-shadow: inset 0 0 18px rgba(126, 212, 255, 0.08), 0 0 0 rgba(255, 98, 98, 0); }
         }
 
         @keyframes interceptionGridVirus1Frames {

@@ -169,7 +169,10 @@ const INTERCEPTION_GRID_MOCK_CONFIG = {
     durationMs: 9000,
     lanes: 3,
     enemiesPerLane: 4,
-    laneSpeedPxPerSec: [120, 155, 190]
+    laneSpeedPxPerSec: [120, 155, 190],
+    formationStepPx: 18,
+    formationDropPx: 12,
+    formationStepIntervalMs: 820
 };
 let interceptionGridMockState = null;
 
@@ -426,9 +429,14 @@ function showInterceptionGridMockPopup(opts = {}) {
         rafId: 0,
         destroyed: 0,
         escaped: 0,
+        combo: 0,
         enemies: [],
         playfieldRect: null,
-        spriteUrl
+        spriteUrl,
+        formationDir: 1,
+        lastFormationStepAt: 0,
+        formationOffsetX: 0,
+        formationOffsetY: 0
     };
     const closeMock = () => {
         const done = (interceptionGridMockState && interceptionGridMockState.onClose) || onClose;
@@ -447,7 +455,7 @@ function showInterceptionGridMockPopup(opts = {}) {
                 <div class="interception-grid-results-grid">
                     <span>Destroyed</span><b>${Math.max(0, state.destroyed)}</b>
                     <span>Escaped</span><b>${Math.max(0, state.escaped)}</b>
-                    <span>Mock Rating</span><b>${state.destroyed >= 9 ? 'ACE' : state.destroyed >= 6 ? 'SOLID' : 'ROUGH'}</b>
+                    <span>Mock Rating</span><b>${state.destroyed >= 10 && state.escaped <= 1 ? 'ACE' : state.destroyed >= 7 && state.escaped <= 3 ? 'SOLID' : 'ROUGH'}</b>
                 </div>
                 <div class="interception-grid-body">No game state was changed. This is only a full-screen bonus-stage mock.</div>
                 <button type="button" class="interception-grid-btn interception-grid-btn--continue">CLOSE</button>
@@ -466,7 +474,7 @@ function showInterceptionGridMockPopup(opts = {}) {
                         <div class="interception-grid-meter__label">Time</div>
                         <div class="interception-grid-meter__track"><span class="interception-grid-timer__fill"></span></div>
                     </div>
-                    <div class="interception-grid-scoreline">Destroyed: <b class="ig-destroyed">0</b> <span class="ig-sep">|</span> Escaped: <b class="ig-escaped">0</b></div>
+                    <div class="interception-grid-scoreline">Destroyed: <b class="ig-destroyed">0</b> <span class="ig-sep">|</span> Escaped: <b class="ig-escaped">0</b> <span class="ig-sep">|</span> Rank: <b class="ig-rank">READY</b></div>
                 </div>
                 <div class="interception-grid-playfield"></div>
                 <div class="interception-grid-body interception-grid-stage-copy">Tap the moving viruses before they breach the right side.</div>
@@ -476,6 +484,7 @@ function showInterceptionGridMockPopup(opts = {}) {
         const timerFill = overlay.querySelector('.interception-grid-timer__fill');
         const destroyedEl = overlay.querySelector('.ig-destroyed');
         const escapedEl = overlay.querySelector('.ig-escaped');
+        const rankEl = overlay.querySelector('.ig-rank');
         if (!playfield) return;
         const rect = playfield.getBoundingClientRect();
         state.playfieldRect = rect;
@@ -508,9 +517,20 @@ function showInterceptionGridMockPopup(opts = {}) {
                     if (!enemy.active || !interceptionGridMockState || !interceptionGridMockState.active) return;
                     enemy.active = false;
                     state.destroyed += 1;
+                    state.combo += 1;
                     if (destroyedEl) destroyedEl.textContent = String(state.destroyed);
+                    if (rankEl) rankEl.textContent = state.combo >= 7 ? 'ACE' : state.combo >= 4 ? 'HOT' : 'TRACKED';
                     node.classList.add('popped');
                     try { playSfx('pop'); } catch (e) { try { playSfx('fill'); } catch (e2) { } }
+                    try {
+                        const burst = document.createElement('div');
+                        burst.className = 'interception-grid-burst';
+                        burst.textContent = state.combo >= 5 ? 'NICE' : '+';
+                        burst.style.left = `${Math.round(enemy.x + live.formationOffsetX + 28)}px`;
+                        burst.style.top = `${Math.round(enemy.y + live.formationOffsetY + 10)}px`;
+                        playfield.appendChild(burst);
+                        setTimeout(() => { try { burst.remove(); } catch (e) { } }, 380);
+                    } catch (e) { }
                     setTimeout(() => { try { node.remove(); } catch (e) { } }, 180);
                 });
                 state.enemies.push(enemy);
@@ -520,22 +540,43 @@ function showInterceptionGridMockPopup(opts = {}) {
             const live = interceptionGridMockState;
             if (!live || !live.active) return;
             const remain = Math.max(0, live.endAt - now);
+            const elapsed = Math.max(0, now - live.startAt);
             if (timerFill) {
                 const ratio = Math.max(0, Math.min(1, remain / Math.max(1, Number(INTERCEPTION_GRID_MOCK_CONFIG.durationMs) || 9000)));
                 timerFill.style.transform = `scaleX(${ratio})`;
+            }
+            if (elapsed - live.lastFormationStepAt >= Math.max(280, Number(INTERCEPTION_GRID_MOCK_CONFIG.formationStepIntervalMs) || 820)) {
+                live.lastFormationStepAt = elapsed;
+                live.formationOffsetX += live.formationDir * Math.max(8, Number(INTERCEPTION_GRID_MOCK_CONFIG.formationStepPx) || 18);
+                if (Math.abs(live.formationOffsetX) >= 54) {
+                    live.formationDir *= -1;
+                    live.formationOffsetY += Math.max(4, Number(INTERCEPTION_GRID_MOCK_CONFIG.formationDropPx) || 12);
+                    try {
+                        playfield.classList.remove('breach-flash');
+                        void playfield.offsetWidth;
+                        playfield.classList.add('breach-flash');
+                    } catch (e) { }
+                }
             }
             for (let i = 0; i < live.enemies.length; i++) {
                 const enemy = live.enemies[i];
                 if (!enemy || !enemy.active) continue;
                 enemy.x += (enemy.speed / 60);
                 if (enemy.node) {
-                    enemy.node.style.transform = `translate(${Math.round(enemy.x)}px, ${Math.round(enemy.y)}px)`;
+                    enemy.node.style.transform = `translate(${Math.round(enemy.x + live.formationOffsetX)}px, ${Math.round(enemy.y + live.formationOffsetY)}px)`;
                 }
-                if (enemy.x >= rect.width - 24) {
+                if ((enemy.x + live.formationOffsetX) >= rect.width - 24) {
                     enemy.active = false;
                     live.escaped += 1;
+                    live.combo = 0;
                     if (escapedEl) escapedEl.textContent = String(live.escaped);
+                    if (rankEl) rankEl.textContent = live.escaped >= 4 ? 'BREACH' : 'ALERT';
                     try { enemy.node.classList.add('escaped'); } catch (e) { }
+                    try {
+                        playfield.classList.remove('breach-flash');
+                        void playfield.offsetWidth;
+                        playfield.classList.add('breach-flash');
+                    } catch (e) { }
                     setTimeout(() => { try { enemy.node.remove(); } catch (e) { } }, 180);
                 }
             }
@@ -4406,7 +4447,7 @@ function showInterceptionGridMockPopup(opts = {}) {
                         { who: 'boss', text: "Impossible! VIRAXIS PRIME does not fall to a S.P.A.R.E. operator." },
                         { who: 'pixel', text: 'You are nothing more than a containment failure!' },
                         { who: 'boss', text: "Then you will fail with me!" },
-                        { who: 'pixel', text: "Operator, VIRAXIS PRIME is overloading the core. Lock onto the targetting marker. We have one chance to end this." }
+                        { who: 'pixel', text: "Operator, VIRAXIS PRIME is overloading the core. Lock onto the targeting marker. We have one chance to end this." }
                     ];
                     let i = 0;
                     const bossSfxKeys = ['evil1', 'evil2', 'evil3', 'evil4', 'evil5', 'evil6'];
