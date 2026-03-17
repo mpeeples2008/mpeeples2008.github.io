@@ -2359,6 +2359,7 @@ function escapeHtmlAttr(str) {
                     finalEndingAchievementGranted: false,
                     finalBossHpScale: 1,
                     finalBossSlowUntil: 0,
+                    viralVentureModsAccepted: 0,
                     continueDealTaken: false,
                     continueDealPenaltyTotal: 0
                 };
@@ -2388,7 +2389,9 @@ function escapeHtmlAttr(str) {
                 { id: 'ending_hostile_takeover', title: 'HOSTILE TAKEOVER', description: 'Win Adventure Mode with the Hostile Takeover ending.', stat: 'endingHostileTakeoverWins', target: 1, scope: 'lifetime' },
                 { id: 'ending_system_restored', title: 'SYSTEM RESTORED', description: 'Win Adventure Mode with the System Restored ending.', stat: 'endingSystemRestoredWins', target: 1, scope: 'lifetime' },
                 { id: 'ending_independent_variable', title: 'INDEPENDENT VARIABLE', description: 'Win Adventure Mode with the Independent Variable ending.', stat: 'endingIndependentVariableWins', target: 1, scope: 'lifetime' },
-                { id: 'ending_true', title: 'The True Ending', description: 'Win Adventure Mode with Independent Variable without using Continue.', stat: 'endingTrueWins', target: 1, scope: 'lifetime' }
+                { id: 'ending_true', title: 'The True Ending', description: 'Win Adventure Mode with Independent Variable without using Continue.', stat: 'endingTrueWins', target: 1, scope: 'lifetime' },
+                { id: 'ending_venture_stack', title: 'Hostile Portfolio', description: 'Beat Adventure Mode with 3 or more Viral Venture mods in one run.', stat: 'endingViralVentureStackWins', target: 1, scope: 'lifetime' },
+                { id: 'modified_run_glitch', title: 'A Glitch In the Matrix', description: 'You\'re in the butter zone now, baby.', stat: 'modifiedRunFlags', target: 1, scope: 'lifetime' }
             ];
             let achievementSaveTimer = null;
             let achievementUiQueued = false;
@@ -2748,6 +2751,23 @@ function escapeHtmlAttr(str) {
                     if (ACHIEVEMENT_DEFS[i].id === key) return ACHIEVEMENT_DEFS[i];
                 }
                 return null;
+            }
+
+            function unlockAchievementById(id) {
+                const def = getAchievementDefById(id);
+                if (!def || !achievementState || !achievementState.unlocked) return false;
+                if (achievementState.unlocked[def.id]) return false;
+                achievementState.unlocked[def.id] = true;
+                if (achievementState.stats && def.stat) {
+                    achievementState.stats[def.stat] = Math.max(
+                        Math.max(0, Number(achievementState.stats[def.stat]) || 0),
+                        Math.max(1, Number(def.target) || 1)
+                    );
+                }
+                try { emitAchievementUnlocked(def, { current: def.target, target: def.target }); } catch (e) { }
+                try { scheduleAchievementSave(0); } catch (e) { }
+                scheduleAchievementsUIRender();
+                return true;
             }
 
             function showNextAchievementToast() {
@@ -3254,6 +3274,7 @@ function escapeHtmlAttr(str) {
                         if (highScoreEl) highScoreEl.textContent = String(highScore);
                         try { window.highScore = highScore; } catch (e) { }
                     }
+                    try { unlockAchievementById('modified_run_glitch'); } catch (e) { }
                     scheduleAchievementsUIRender();
                     if (!runIntegrityState.announced && window.Assistant && Assistant.show) {
                         runIntegrityState.announced = true;
@@ -4224,6 +4245,7 @@ function escapeHtmlAttr(str) {
                 let allowOverflowClicks = false;
                 if (!RUN_PERK_DEFS[id]) id = 'emergency_cells';
                 if (!isRunPerkRelevant(id, getCurrentLevelNumber())) id = 'emergency_cells';
+                const def = RUN_PERK_DEFS[id] || null;
                 if (id === 'emergency_cells') {
                     clicksLeft = clicksLeft + 2;
                 } else if (id === 'storm_capacitor') {
@@ -4296,6 +4318,9 @@ function escapeHtmlAttr(str) {
                     runPerkState.overclockedReservePending = Math.max(2, (Number(runPerkState.overclockedReservePending) || 0) + 2);
                     runPerkState.specialVirusChanceDelta = Math.min(0.20, (Number(runPerkState.specialVirusChanceDelta) || 0) + 0.05);
                     runPerkState.acceptedDeals = (Number(runPerkState.acceptedDeals) || 0) + 1;
+                }
+                if (def && def.source === 'broker' && runPerkState) {
+                    runPerkState.viralVentureModsAccepted = Math.max(0, Number(runPerkState.viralVentureModsAccepted) || 0) + 1;
                 }
                 if (allowOverflowClicks) clicksLeft = Math.max(0, Number(clicksLeft) || 0);
                 else clampClicksToCap();
@@ -6274,6 +6299,9 @@ function escapeHtmlAttr(str) {
                             if (!(runPerkState && runPerkState.continueDealTaken)) {
                                 incrementAchievementStat('endingTrueWins', 1, 'lifetime');
                             }
+                        }
+                        if ((Number(runPerkState && runPerkState.viralVentureModsAccepted) || 0) >= 3) {
+                            incrementAchievementStat('endingViralVentureStackWins', 1, 'lifetime');
                         }
                         runPerkState.finalEndingAchievementGranted = true;
                     }
