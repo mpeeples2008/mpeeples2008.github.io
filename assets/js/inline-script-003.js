@@ -7255,12 +7255,32 @@ function showInterceptionGridMockPopup(opts = {}) {
                     `;
                     document.body.appendChild(el);
                     continueOfferPopupEl = el;
+                    const positionOverBoard = () => {
+                        try {
+                            const board = document.getElementById('board') || document.querySelector('.board');
+                            if (!board) return;
+                            const r = board.getBoundingClientRect();
+                            el.style.left = Math.round(r.left) + 'px';
+                            el.style.top = Math.round(r.top) + 'px';
+                            el.style.width = Math.max(120, Math.round(r.width)) + 'px';
+                            el.style.height = Math.max(120, Math.round(r.height)) + 'px';
+                        } catch (e) { }
+                    };
+                    const onViewportChange = () => positionOverBoard();
+                    positionOverBoard();
+                    window.addEventListener('resize', onViewportChange);
+                    window.addEventListener('scroll', onViewportChange, true);
                     void el.offsetWidth;
                     el.classList.add('show');
+                    try { playSfx('double_deal'); } catch (e) { }
                     const statusEl = el.querySelector('.co-status');
                     const continueBtn = el.querySelector('.co-continue-btn');
                     const giveUpBtn = el.querySelector('.co-giveup-btn');
                     const closeWith = (fn, delayMs = 180) => {
+                        try {
+                            window.removeEventListener('resize', onViewportChange);
+                            window.removeEventListener('scroll', onViewportChange, true);
+                        } catch (e) { }
                         hideContinueOfferPopup(false);
                         setTimeout(() => {
                             try { if (typeof fn === 'function') fn(); } catch (e) { }
@@ -7285,7 +7305,7 @@ function showInterceptionGridMockPopup(opts = {}) {
                             updateHudSponsorMark();
                             outOfClicksShown = false;
                             inputLocked = false;
-                            try { playSfx('fill'); } catch (e) { }
+                            try { playSfx('evil1'); } catch (e) { try { playSfx('fill'); } catch (e2) { } }
                             if (statusEl) {
                                 const lost = Math.max(0, Number(penaltyResult && penaltyResult.penalty) || 0);
                                 statusEl.textContent = lost > 0
