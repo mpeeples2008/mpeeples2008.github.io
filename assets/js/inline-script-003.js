@@ -2376,7 +2376,7 @@ function escapeHtmlAttr(str) {
                 { id: 'run_chain_20', title: 'Chain Master', description: 'Record 3 chains of 20+ in one run (Adventure Mode).', stat: 'runChain20Count', target: 3, scope: 'run' },
                 { id: 'run_storm_3', title: 'Storm Caller', description: 'Use Nano Storm 5 times in one run (Adventure Mode).', stat: 'runNanoStormUses', target: 5, scope: 'run' },
                 { id: 'run_clutch_clear', title: 'Clutch Clear', description: 'Clear any level with 1 click left (Adventure Mode).', stat: 'runClutchClears', target: 1, scope: 'run' },
-                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 5,000 viruses across runs (Adventure Mode).', stat: 'popsLifetime', target: 5000, scope: 'lifetime' },
+                { id: 'life_pop_10000', title: 'Pandemic Cleaner', description: 'Pop 5,000 viruses across runs (Adventure Mode).', stat: 'totalPopsLifetime', target: 5000, scope: 'lifetime' },
                 { id: 'life_chain20_x10', title: 'Combo Veteran', description: 'Record 25 chains of 20+ across runs (Adventure Mode).', stat: 'chain20LifetimeCount', target: 25, scope: 'lifetime' },
                 { id: 'life_shells_250', title: 'Armored Nemesis', description: 'Break 250 armored viruses across runs (Adventure Mode).', stat: 'armoredShellsLifetime', target: 250, scope: 'lifetime' },
                 { id: 'life_levels_100', title: 'Long-Term Operator', description: 'Clear 500 levels across runs (Adventure Mode).', stat: 'levelsClearedLifetime', target: 500, scope: 'lifetime' },
