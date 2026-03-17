@@ -2954,6 +2954,19 @@ function escapeHtmlAttr(str) {
                 evaluateAchievements();
             }
 
+            function resetAllAchievementsInternal() {
+                achievementState = createDefaultAchievementState();
+                resetRunAchievementStats(getCurrentLevelNumber());
+                evaluateAchievements({ emitUnlock: false });
+                scheduleAchievementSave(0);
+                return JSON.parse(JSON.stringify({
+                    stats: achievementState.stats,
+                    lifetimeStats: achievementState.stats,
+                    runStats: runAchievementStats,
+                    unlocked: achievementState.unlocked
+                }));
+            }
+
             try {
                 window.AchievementDefs = ACHIEVEMENT_DEFS.slice();
                 window.Achievements = {
@@ -2978,11 +2991,7 @@ function escapeHtmlAttr(str) {
                     },
                     reset: function () {
                         try { markRunModified('achievement-reset'); } catch (e) { }
-                        achievementState = createDefaultAchievementState();
-                        resetRunAchievementStats(getCurrentLevelNumber());
-                        evaluateAchievements({ emitUnlock: false });
-                        scheduleAchievementSave(0);
-                        return this.getState();
+                        return resetAllAchievementsInternal();
                     },
                     resetRun: function () {
                         try { markRunModified('achievement-reset-run'); } catch (e) { }
@@ -3447,11 +3456,8 @@ function escapeHtmlAttr(str) {
                     try { localStorage.removeItem(highScoreKeyAdventure); } catch (e) { }
                     try { localStorage.removeItem(highScoreKeyEndurance); } catch (e) { }
                     try { window.highScore = 0; } catch (e) { }
-                    try {
-                        if (window.Achievements && typeof window.Achievements.reset === 'function') {
-                            window.Achievements.reset();
-                        }
-                    } catch (e) { }
+                    try { resetAllAchievementsInternal(); } catch (e) { }
+                    try { resetRunIntegrityState(); } catch (e) { }
                     scheduleAchievementsUIRender();
                     try { playSfx('click'); } catch (e) { }
                 } catch (e) {
