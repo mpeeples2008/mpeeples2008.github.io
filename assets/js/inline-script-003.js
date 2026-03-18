@@ -1681,6 +1681,8 @@ function showInterceptionGridMockPopup(opts = {}) {
             let boss20LaughLastAt = 0;
             let boss20ComboCutoffUntil = 0;
             let boss20ComboCutoffResumeTimer = null;
+            let boss20ComboCutoffPending = false;
+            let boss20ComboCutoffTellTimer = null;
             let boss20FinalFormOverlayEl = null;
             let boss20FinalShotReticleEl = null;
             let technoGremlinPowerTimer = null;
@@ -2093,6 +2095,9 @@ function showInterceptionGridMockPopup(opts = {}) {
                         const healed = maybeApplyBoss20Phase3Regen(idx);
                         scheduleRender();
                         return healed;
+                    },
+                    triggerComboCutoff: function () {
+                        return triggerBoss20ComboCutoff(null);
                     },
                     setEnabled: function (enabled) {
                         FEATURE_FLAGS.epicBoss20 = !!enabled;
@@ -8602,6 +8607,11 @@ function showInterceptionGridMockPopup(opts = {}) {
                 boss20State = createDefaultBoss20State();
                 boss20LaughLastAt = 0;
                 boss20ComboCutoffUntil = 0;
+                boss20ComboCutoffPending = false;
+                if (boss20ComboCutoffTellTimer) {
+                    clearTimeout(boss20ComboCutoffTellTimer);
+                    boss20ComboCutoffTellTimer = null;
+                }
                 if (boss20ComboCutoffResumeTimer) {
                     clearTimeout(boss20ComboCutoffResumeTimer);
                     boss20ComboCutoffResumeTimer = null;
@@ -8610,6 +8620,11 @@ function showInterceptionGridMockPopup(opts = {}) {
                     if (boardEl && boardEl.classList) {
                         boardEl.classList.remove('boss20-combo-cutoff-flash', 'boss20-combo-cutoff-shake');
                     }
+                    const cutoffTellEl = boardEl && boardEl.querySelector ? boardEl.querySelector('.cell.boss20-cutoff-tell') : null;
+                    if (cutoffTellEl) cutoffTellEl.classList.remove('boss20-cutoff-tell');
+                    document.querySelectorAll('.boss20-cutoff-core-overlay').forEach((el) => {
+                        try { el.remove(); } catch (e) { }
+                    });
                 } catch (e) { }
                 boss20BlockerHidden = false;
                 boss20BlockerPaused = false;
@@ -8916,11 +8931,26 @@ function showInterceptionGridMockPopup(opts = {}) {
                     const minMs = Math.max(1200, Math.floor(Number(TECHNO_GREMLIN_POWER_CONFIG.jamDurationMinMs) || 6200));
                     const maxMs = Math.max(minMs, Math.floor(Number(TECHNO_GREMLIN_POWER_CONFIG.jamDurationMaxMs) || 8200));
                     const dur = minMs + Math.floor(Math.random() * (maxMs - minMs + 1));
-                    technoGremlinJamUntil = Math.max(Number(technoGremlinJamUntil) || 0, now + dur);
-                    scheduleTechnoGremlinExpire('jam');
-                    try { setStormArmed(false); } catch (e) { }
-                    try { playSfx('techno_jammer'); } catch (e) { }
-                    try { updateHUD(); } catch (e) { }
+                    const lvl = Math.max(1, Math.floor(Number(TECHNO_GREMLIN_POWER_CONFIG.level) || 15));
+                    const bosses = getBossIndicesForLevel(lvl);
+                    const bossIndex = bosses.length ? bosses[0] : -1;
+                    const tellDelayMs = bossIndex >= 0 ? 480 : 0;
+                    const sourceBoardGeneration = boardGeneration;
+                    const applyJam = () => {
+                        if (sourceBoardGeneration !== boardGeneration) return;
+                        if (!hasActiveTechnoGremlinBoss()) return;
+                        technoGremlinJamUntil = Math.max(Number(technoGremlinJamUntil) || 0, Date.now() + dur);
+                        scheduleTechnoGremlinExpire('jam');
+                        try { setStormArmed(false); } catch (e) { }
+                        try { playSfx('techno_jammer'); } catch (e) { }
+                        try { updateHUD(); } catch (e) { }
+                    };
+                    if (tellDelayMs > 0) {
+                        try { playLevel15BossJamTell(bossIndex, tellDelayMs); } catch (e) { }
+                        setTimeout(applyJam, tellDelayMs);
+                    } else {
+                        applyJam();
+                    }
                     return 'jam';
                 }
                 if (kind === 'overclock') {
@@ -11031,6 +11061,36 @@ function showInterceptionGridMockPopup(opts = {}) {
                 } catch (e) { }
             }
 
+            function playLevel15BossJamTell(index, durationMs = 480) {
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= (ROWS * COLS)) return;
+                try {
+                    const cell = boardEl && boardEl.querySelector ? boardEl.querySelector(`.cell[data-index='${idx}']`) : null;
+                    if (!cell) return;
+                    cell.classList.remove('boss-jam-tell');
+                    void cell.offsetWidth;
+                    cell.classList.add('boss-jam-tell');
+                    setTimeout(() => {
+                        try { cell.classList.remove('boss-jam-tell'); } catch (e) { }
+                    }, Math.max(180, Math.floor(Number(durationMs) || 480) + 80));
+                } catch (e) { }
+            }
+
+            function playLevel15BossProjectionTell(index, durationMs = 460) {
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= (ROWS * COLS)) return;
+                try {
+                    const cell = boardEl && boardEl.querySelector ? boardEl.querySelector(`.cell[data-index='${idx}']`) : null;
+                    if (!cell) return;
+                    cell.classList.remove('boss-projection-tell');
+                    void cell.offsetWidth;
+                    cell.classList.add('boss-projection-tell');
+                    setTimeout(() => {
+                        try { cell.classList.remove('boss-projection-tell'); } catch (e) { }
+                    }, Math.max(180, Math.floor(Number(durationMs) || 460) + 80));
+                } catch (e) { }
+            }
+
             function popBossProjectionsForLevel(levelNum, tracker = null, skipIndex = -1) {
                 const lvl = Math.max(1, Math.floor(Number(levelNum) || 1));
                 const skip = Math.floor(Number(skipIndex));
@@ -11294,6 +11354,20 @@ function showInterceptionGridMockPopup(opts = {}) {
                                         applyBossBreakpointPayload(breakpointPayload, idx);
                                     } catch (e) { }
                                 }, 320);
+                            }
+                        } else if (bossLevel === 15) {
+                            const breakpointPayload = getPendingBossBreakpointPayload(meta);
+                            if (breakpointPayload && breakpointPayload.total > 0) {
+                                markBossBreakpointPayloadApplied(meta, breakpointPayload);
+                                playLevel15BossProjectionTell(idx, 460);
+                                const sourceBoardGeneration = boardGeneration;
+                                setTimeout(() => {
+                                    try {
+                                        if (sourceBoardGeneration !== boardGeneration) return;
+                                        if (state[idx] === null || specialState[idx] !== 'boss') return;
+                                        applyBossBreakpointPayload(breakpointPayload, idx);
+                                    } catch (e) { }
+                                }, 460);
                             }
                         } else {
                             maybeTriggerBossBreakpoint(meta, idx);
@@ -12790,7 +12864,55 @@ function showInterceptionGridMockPopup(opts = {}) {
                 if (boss20State.inCinematic) return false;
                 if (boss20State.inFinalWindow) return false;
                 if (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease) return false;
+                if (boss20ComboCutoffPending) return false;
                 return true;
+            }
+
+            function playLevel20ComboCutoffTell(index, durationMs = 220) {
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= (ROWS * COLS)) return;
+                try {
+                    const useCoreOverlay = !!(boss20State && boss20State.finalFormActive);
+                    if (useCoreOverlay && boardEl) {
+                        const boardRect = boardEl.getBoundingClientRect();
+                        if (boardRect && boardRect.width > 0 && boardRect.height > 0) {
+                            const overlay = document.createElement('div');
+                            overlay.className = 'boss20-cutoff-core-overlay';
+                            overlay.style.left = `${boardRect.left + (boardRect.width * 0.5)}px`;
+                            overlay.style.top = `${boardRect.top + (boardRect.height * 0.5)}px`;
+                            overlay.style.width = `${boardRect.width * 0.36}px`;
+                            overlay.style.height = `${boardRect.height * 0.36}px`;
+                            document.body.appendChild(overlay);
+                            setTimeout(() => {
+                                try { overlay.remove(); } catch (e) { }
+                            }, Math.max(120, Math.floor(Number(durationMs) || 220) + 90));
+                        }
+                        return;
+                    }
+                    const cells = [];
+                    if (boss20State && boss20State.finalFormActive) {
+                        const coreCells = Array.isArray(boss20State.finalFormCells) && boss20State.finalFormCells.length
+                            ? boss20State.finalFormCells
+                            : getBoss20CoreCells();
+                        for (let i = 0; i < coreCells.length; i++) {
+                            const cell = boardEl && boardEl.querySelector ? boardEl.querySelector(`.cell[data-index='${Math.floor(Number(coreCells[i]))}']`) : null;
+                            if (cell) cells.push(cell);
+                        }
+                    }
+                    if (!cells.length) {
+                        const cell = boardEl && boardEl.querySelector ? boardEl.querySelector(`.cell[data-index='${idx}']`) : null;
+                        if (cell) cells.push(cell);
+                    }
+                    if (!cells.length) return;
+                    cells.forEach((cell) => cell.classList.remove('boss20-cutoff-tell'));
+                    void cells[0].offsetWidth;
+                    cells.forEach((cell) => cell.classList.add('boss20-cutoff-tell'));
+                    setTimeout(() => {
+                        cells.forEach((cell) => {
+                            try { cell.classList.remove('boss20-cutoff-tell'); } catch (e) { }
+                        });
+                    }, Math.max(120, Math.floor(Number(durationMs) || 220) + 80));
+                } catch (e) { }
             }
 
             function clearActiveParticlesImmediate() {
@@ -12850,20 +12972,54 @@ function showInterceptionGridMockPopup(opts = {}) {
                 if (tracker && tracker.comboCutoffTriggered) return false;
                 const now = Date.now();
                 if (now < Number(boss20ComboCutoffUntil || 0)) return false;
-                boss20ComboCutoffUntil = now + Math.max(80, Math.floor(Number(EPIC_BOSS20_COMBO_CUTOFF_LOCK_MS) || 240));
+                const bosses = getBossIndicesForLevel(20);
+                const bossIndex = bosses.length ? bosses[0] : -1;
+                const tellDelayMs = bossIndex >= 0 ? 220 : 0;
                 if (tracker) tracker.comboCutoffTriggered = true;
-                clearActiveParticlesImmediate();
-                stormResolving = false;
+                boss20ComboCutoffPending = true;
                 inputLocked = true;
-                applyBoss20ComboCutoffFx();
-                try { playSfx(EPIC_BOSS20_COMBO_CUTOFF_SFX || 'techno_jammer'); } catch (e) { }
-                try {
-                    if (boss20State && !boss20State.comboCutoffHintShown && window.Assistant && Assistant.show) {
-                        boss20State.comboCutoffHintShown = true;
-                        Assistant.show('Viraxis just force-cut the cascade. He can shut down overlong chain reactions, so do not rely on one endless combo.', { priority: 2 });
+                const sourceBoardGeneration = boardGeneration;
+                const applyCutoff = () => {
+                    boss20ComboCutoffTellTimer = null;
+                    boss20ComboCutoffPending = false;
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        try { setBoss20BoardFreeze(false); } catch (e) { }
+                        return;
                     }
-                } catch (e) { }
-                scheduleBoss20ComboCutoffResume();
+                    if (!boss20State || !boss20State.active) {
+                        try { setBoss20BoardFreeze(false); } catch (e) { }
+                        return;
+                    }
+                    if (boss20State.inCinematic || boss20State.inFinalWindow) {
+                        try { setBoss20BoardFreeze(false); } catch (e) { }
+                        return;
+                    }
+                    if (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease) {
+                        try { setBoss20BoardFreeze(false); } catch (e) { }
+                        return;
+                    }
+                    boss20ComboCutoffUntil = Date.now() + Math.max(80, Math.floor(Number(EPIC_BOSS20_COMBO_CUTOFF_LOCK_MS) || 240));
+                    clearActiveParticlesImmediate();
+                    try { setBoss20BoardFreeze(false); } catch (e) { }
+                    stormResolving = false;
+                    inputLocked = true;
+                    applyBoss20ComboCutoffFx();
+                    try { playSfx(EPIC_BOSS20_COMBO_CUTOFF_SFX || 'techno_jammer'); } catch (e) { }
+                    try {
+                        if (boss20State && !boss20State.comboCutoffHintShown && window.Assistant && Assistant.show) {
+                            boss20State.comboCutoffHintShown = true;
+                            Assistant.show('Viraxis just force-cut the cascade. He can shut down overlong chain reactions, so do not rely on one endless combo.', { priority: 2 });
+                        }
+                    } catch (e) { }
+                    scheduleBoss20ComboCutoffResume();
+                };
+                if (tellDelayMs > 0) {
+                    try { setBoss20BoardFreeze(true); } catch (e) { }
+                    try { playLevel20ComboCutoffTell(bossIndex, tellDelayMs); } catch (e) { }
+                    boss20ComboCutoffTellTimer = setTimeout(applyCutoff, tellDelayMs);
+                } else {
+                    applyCutoff();
+                }
                 return true;
             }
 
@@ -13285,6 +13441,10 @@ function showInterceptionGridMockPopup(opts = {}) {
                     }
                     // Keep input locked while level-20 boss cinematics/transitions are active.
                     if (isEpicBoss20Level() && boss20State && boss20State.inCinematic) {
+                        inputLocked = true;
+                        return;
+                    }
+                    if (boss20ComboCutoffPending) {
                         inputLocked = true;
                         return;
                     }
