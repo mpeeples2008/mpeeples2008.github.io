@@ -1683,6 +1683,8 @@ function showInterceptionGridMockPopup(opts = {}) {
             let boss20ComboCutoffResumeTimer = null;
             let boss20ComboCutoffPending = false;
             let boss20ComboCutoffTellTimer = null;
+            let boss20Phase3RegenPending = false;
+            let boss20Phase3RegenTimer = null;
             let boss20FinalFormOverlayEl = null;
             let boss20FinalShotReticleEl = null;
             let technoGremlinPowerTimer = null;
@@ -2095,6 +2097,13 @@ function showInterceptionGridMockPopup(opts = {}) {
                         const healed = maybeApplyBoss20Phase3Regen(idx);
                         scheduleRender();
                         return healed;
+                    },
+                    triggerRegen: function () {
+                        const bosses = getBossIndicesForLevel(20);
+                        if (!bosses.length) return 0;
+                        const idx = bosses[0];
+                        boss20State.phase3LastRegenAt = 0;
+                        return triggerBoss20Phase3Regen(idx, { force: true });
                     },
                     triggerComboCutoff: function () {
                         return triggerBoss20ComboCutoff(null);
@@ -8606,6 +8615,16 @@ function showInterceptionGridMockPopup(opts = {}) {
                 clearBoss20FinalShotReticle();
                 boss20State = createDefaultBoss20State();
                 boss20LaughLastAt = 0;
+                boss20Phase3RegenPending = false;
+                if (boss20Phase3RegenTimer) {
+                    clearTimeout(boss20Phase3RegenTimer);
+                    boss20Phase3RegenTimer = null;
+                }
+                try {
+                    document.querySelectorAll('.boss20-regen-core-overlay').forEach((el) => {
+                        try { el.remove(); } catch (e) { }
+                    });
+                } catch (e) { }
                 boss20ComboCutoffUntil = 0;
                 boss20ComboCutoffPending = false;
                 if (boss20ComboCutoffTellTimer) {
@@ -9086,44 +9105,208 @@ function showInterceptionGridMockPopup(opts = {}) {
                 return true;
             }
 
-            function maybeApplyBoss20Phase3Regen(originIndex) {
-                if (!EPIC_BOSS20_PHASE3_REGEN_ENABLED) return 0;
-                if (!isEpicBoss20Level() || !boss20State || !boss20State.active) return 0;
+            function getBoss20Phase3RegenPlan(originIndex, force = false) {
+                if (!EPIC_BOSS20_PHASE3_REGEN_ENABLED) return null;
+                if (!isEpicBoss20Level() || !boss20State || !boss20State.active) return null;
                 const phaseNow = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
                 const inBigForm = !!boss20State.finalFormActive;
-                if (phaseNow < 3 && !inBigForm) return 0;
-                if (boss20State.inCinematic || boss20State.inFinalWindow) return 0;
-                if (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease) return 0;
+                if (phaseNow < 3 && !inBigForm) return null;
+                if (boss20State.inCinematic || boss20State.inFinalWindow) return null;
+                if (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease) return null;
                 const idx = Math.floor(Number(originIndex));
-                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
-                if (state[idx] === null || specialState[idx] !== 'boss') return 0;
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return null;
+                if (state[idx] === null || specialState[idx] !== 'boss') return null;
 
                 const now = Date.now();
                 const minMs = Math.max(400, Math.floor(Number(EPIC_BOSS20_PHASE3_REGEN_MIN_MS) || 2600));
-                if ((now - Number(boss20State.phase3LastRegenAt || 0)) < minMs) return 0;
-                if (Math.random() >= Math.max(0, Math.min(1, Number(EPIC_BOSS20_PHASE3_REGEN_CHANCE) || 0.55))) return 0;
+                if (!force && (now - Number(boss20State.phase3LastRegenAt || 0)) < minMs) return null;
+                if (!force && Math.random() >= Math.max(0, Math.min(1, Number(EPIC_BOSS20_PHASE3_REGEN_CHANCE) || 0.55))) return null;
 
                 const meta = ensureSpecialMeta(idx) || {};
                 const hpNow = Math.max(0, Number(meta.hp) || Number(boss20State.hp) || 0);
                 const maxHp = Math.max(1, Number(meta.maxHp) || Number(boss20State.maxHp) || 1);
-                if (hpNow >= maxHp) return 0;
+                if (hpNow >= maxHp) return null;
 
                 const amt = Math.max(1, Math.floor(Number(EPIC_BOSS20_PHASE3_REGEN_AMOUNT) || 1));
                 const nextHp = Math.max(0, Math.min(maxHp, hpNow + amt));
-                if (nextHp <= hpNow) return 0;
+                if (nextHp <= hpNow) return null;
+                return { idx, now, hpNow, maxHp, nextHp };
+            }
 
-                meta.hp = nextHp;
+            function applyBoss20Phase3RegenPlan(plan) {
+                if (!plan) return 0;
+                const idx = Math.floor(Number(plan.idx));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= state.length) return 0;
+                if (!boss20State || !boss20State.active) return 0;
+                if (state[idx] === null || specialState[idx] !== 'boss') return 0;
+                const meta = ensureSpecialMeta(idx) || {};
+                const hpNow = Math.max(0, Number(meta.hp) || Number(boss20State.hp) || 0);
+                const maxHp = Math.max(1, Number(meta.maxHp) || Number(plan.maxHp) || Number(boss20State.maxHp) || 1);
+                const targetHp = Math.max(hpNow, Math.min(maxHp, Number(plan.nextHp) || hpNow));
+                if (targetHp <= hpNow) return 0;
+                meta.hp = targetHp;
                 meta.maxHp = maxHp;
                 specialMetaState[idx] = meta;
-                boss20State.hp = nextHp;
+                boss20State.hp = targetHp;
                 boss20State.maxHp = maxHp;
-                boss20State.phase3LastRegenAt = now;
+                boss20State.phase3LastRegenAt = Math.max(Date.now(), Number(plan.now) || 0);
                 setMiniBossStateFromMeta(idx, meta);
-                try { showBoss20HpGainFx(idx, nextHp - hpNow); } catch (e) { }
+                try { showBoss20HpGainFx(idx, targetHp - hpNow); } catch (e) { }
                 try { playSfx('fill'); } catch (e) { }
                 try { playBossSummonPulse(idx, 'blue'); } catch (e) { }
                 scheduleRender();
-                return (nextHp - hpNow);
+                return (targetHp - hpNow);
+            }
+
+            function playLevel20RegenTell(index, durationMs = 320) {
+                const idx = Math.floor(Number(index));
+                if (!Number.isFinite(idx) || idx < 0 || idx >= (ROWS * COLS)) return;
+                try {
+                    const boardRect = boardEl ? boardEl.getBoundingClientRect() : null;
+                    if (!boardRect || !boardRect.width || !boardRect.height) return;
+                    const overlay = document.createElement('div');
+                    overlay.className = 'boss20-regen-core-overlay';
+                    overlay.style.left = `${boardRect.left + (boardRect.width * 0.5)}px`;
+                    overlay.style.top = `${boardRect.top + (boardRect.height * 0.5)}px`;
+                    overlay.style.width = `${boardRect.width * 0.34}px`;
+                    overlay.style.height = `${boardRect.height * 0.34}px`;
+                    document.body.appendChild(overlay);
+                    setTimeout(() => {
+                        try { overlay.remove(); } catch (e) { }
+                    }, Math.max(140, Math.floor(Number(durationMs) || 320) + 90));
+                } catch (e) { }
+            }
+
+            function restoreBoss20PendingInputLock() {
+                if (isEpicBoss20Level() && boss20State && boss20State.inCinematic) {
+                    inputLocked = true;
+                    return;
+                }
+                if (boss20Phase3RegenPending || boss20ComboCutoffPending) {
+                    inputLocked = true;
+                    return;
+                }
+                if (Date.now() < Number(boss20ComboCutoffUntil || 0)) {
+                    inputLocked = true;
+                    scheduleBoss20ComboCutoffResume();
+                    return;
+                }
+                if (!stormResolving) inputLocked = false;
+            }
+
+            function performBoss20SpawnAction(origin, phase) {
+                let acted = 0;
+                if (phase === 1) {
+                    const phase1SpawnSize = (Math.random() < 0.68) ? Math.max(0, MAX_SIZE - 1) : MAX_SIZE;
+                    acted = spawnBossArmorPulse(1, origin, { spawnSize: phase1SpawnSize });
+                    if (acted <= 0) acted = spawnBossArmorPulse(1, origin, { anyBoardChance: 1, spawnSize: phase1SpawnSize });
+                } else if (phase === 2) {
+                    if (isBoss20Phase2DesperationActive()) {
+                        const ramp = getBoss20Phase2DesperationRamp();
+                        const basePulse = 3 + (Math.random() < (0.45 + (ramp * 0.35)) ? 1 : 0);
+                        const heavyPulse = 4 + (Math.random() < (0.22 + (ramp * 0.48)) ? 1 : 0);
+                        const modeRoll = Math.random();
+                        const heavyChance = 0.16 + (ramp * 0.42);
+                        const mixedChance = 0.38 + (ramp * 0.28);
+                        if (modeRoll < heavyChance) {
+                            acted = spawnBossArmorPulse(heavyPulse, origin, {
+                                anyBoardChance: 0.90 + (ramp * 0.10),
+                                offAxisChance: 0.58 + (ramp * 0.22),
+                                spawnSize: 0
+                            }) + applyBoss20ArmorThreat(origin, 1 + (ramp > 0.6 ? 1 : 0), { minState: 0 });
+                        } else if (modeRoll < (heavyChance + mixedChance)) {
+                            acted = spawnBossArmorPulse(basePulse, origin, {
+                                anyBoardChance: 0.80 + (ramp * 0.18),
+                                offAxisChance: 0.52 + (ramp * 0.20),
+                                spawnSize: 0
+                            }) + applyBoss20ArmorThreat(origin, 1, { minState: 0 });
+                        } else {
+                            acted = spawnBossArmorPulse(basePulse, origin, {
+                                anyBoardChance: 0.70 + (ramp * 0.20),
+                                offAxisChance: 0.46 + (ramp * 0.20),
+                                spawnSize: 0
+                            });
+                        }
+                        if (acted <= 0) acted = spawnBossArmorPulse(3 + (ramp > 0.5 ? 1 : 0), origin, {
+                            anyBoardChance: 1.0,
+                            offAxisChance: 0.66 + (ramp * 0.16),
+                            spawnSize: 0
+                        });
+                    } else {
+                        const pulseCount = (Math.random() < 0.55) ? 2 : 1;
+                        acted = spawnBossArmorPulse(pulseCount, origin, { anyBoardChance: 0.78, offAxisChance: 0.72 });
+                        if (acted <= 0) acted = applyBoss20ArmorThreat(origin, 2);
+                    }
+                } else {
+                    maybeActivateBoss20HeroMark(origin);
+                    const modeRoll = Math.random();
+                    if (modeRoll < 0.34) {
+                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.92, offAxisChance: 0.58 });
+                    } else if (modeRoll < 0.67) {
+                        acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 0.90, offAxisChance: 0.54 }) + applyBoss20ArmorThreat(origin, 1);
+                    } else {
+                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.96, offAxisChance: 0.64 }) + applyBoss20ArmorThreat(origin, 1);
+                    }
+                    if (acted <= 0) acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 1.0, offAxisChance: 0.72 });
+                }
+                const fueled = ensureBossBoardFuel(20, origin, {
+                    phaseContext: { phase, desperation: (phase === 2) && isBoss20Phase2DesperationActive() }
+                });
+                if (fueled > 0) acted += fueled;
+                if (phase >= 3 || (boss20State && boss20State.finalFormActive)) {
+                    const healed = triggerBoss20Phase3Regen(origin);
+                    if (healed > 0) acted += 1;
+                    const drained = maybeApplyBoss20Phase3ClickDrain(origin);
+                    if (drained > 0) acted += 1;
+                }
+                if (acted > 0) {
+                    boss20State.actionCounter = Math.max(0, Number(boss20State.actionCounter) || 0) + 1;
+                }
+                return acted;
+            }
+
+            function triggerBoss20Phase3Regen(originIndex, opts = null) {
+                const options = opts || {};
+                const force = !!options.force;
+                const immediate = !!options.immediate;
+                const plan = getBoss20Phase3RegenPlan(originIndex, force);
+                if (!plan) return 0;
+                if (immediate) return applyBoss20Phase3RegenPlan(plan);
+                if (boss20Phase3RegenPending) return 0;
+                boss20Phase3RegenPending = true;
+                inputLocked = true;
+                const tellDelayMs = Math.max(220, Math.floor(Number(options.tellDelayMs) || 320));
+                const sourceBoardGeneration = boardGeneration;
+                try { setBoss20BoardFreeze(true); } catch (e) { }
+                try { playLevel20RegenTell(plan.idx, tellDelayMs); } catch (e) { }
+                boss20Phase3RegenTimer = setTimeout(() => {
+                    boss20Phase3RegenTimer = null;
+                    boss20Phase3RegenPending = false;
+                    try { setBoss20BoardFreeze(false); } catch (e) { }
+                    if (sourceBoardGeneration !== boardGeneration) {
+                        restoreBoss20PendingInputLock();
+                        return;
+                    }
+                    if (!boss20State || !boss20State.active) {
+                        restoreBoss20PendingInputLock();
+                        return;
+                    }
+                    if (boss20State.inCinematic || boss20State.inFinalWindow) {
+                        restoreBoss20PendingInputLock();
+                        return;
+                    }
+                    if (boss20State.finalShotActive || boss20State.finalShotTriggered || boss20State.finalShotRelease) {
+                        restoreBoss20PendingInputLock();
+                        return;
+                    }
+                    applyBoss20Phase3RegenPlan(plan);
+                    restoreBoss20PendingInputLock();
+                }, tellDelayMs);
+                return 1;
+            }
+
+            function maybeApplyBoss20Phase3Regen(originIndex) {
+                return triggerBoss20Phase3Regen(originIndex, { immediate: true });
             }
 
             function maybeApplyBoss20Phase3ClickDrain(originIndex) {
@@ -9351,75 +9534,7 @@ function showInterceptionGridMockPopup(opts = {}) {
                 if (!bosses.length) return 0;
                 const origin = bosses[0];
                 const phase = Math.max(1, Math.floor(Number(boss20State.phase) || 1));
-                let acted = 0;
-                if (phase === 1) {
-                    // Phase 1 pacing: mostly larger adds (S3/S4), never smallest S1.
-                    const phase1SpawnSize = (Math.random() < 0.68) ? Math.max(0, MAX_SIZE - 1) : MAX_SIZE;
-                    acted = spawnBossArmorPulse(1, origin, { spawnSize: phase1SpawnSize });
-                    if (acted <= 0) acted = spawnBossArmorPulse(1, origin, { anyBoardChance: 1, spawnSize: phase1SpawnSize });
-                } else if (phase === 2) {
-                    if (isBoss20Phase2DesperationActive()) {
-                        const ramp = getBoss20Phase2DesperationRamp();
-                        const basePulse = 3 + (Math.random() < (0.45 + (ramp * 0.35)) ? 1 : 0);
-                        const heavyPulse = 4 + (Math.random() < (0.22 + (ramp * 0.48)) ? 1 : 0);
-                        const modeRoll = Math.random();
-                        const heavyChance = 0.16 + (ramp * 0.42);
-                        const mixedChance = 0.38 + (ramp * 0.28);
-                        if (modeRoll < heavyChance) {
-                            acted = spawnBossArmorPulse(heavyPulse, origin, {
-                                anyBoardChance: 0.90 + (ramp * 0.10),
-                                offAxisChance: 0.58 + (ramp * 0.22),
-                                spawnSize: 0
-                            }) + applyBoss20ArmorThreat(origin, 1 + (ramp > 0.6 ? 1 : 0), { minState: 0 });
-                        } else if (modeRoll < (heavyChance + mixedChance)) {
-                            acted = spawnBossArmorPulse(basePulse, origin, {
-                                anyBoardChance: 0.80 + (ramp * 0.18),
-                                offAxisChance: 0.52 + (ramp * 0.20),
-                                spawnSize: 0
-                            }) + applyBoss20ArmorThreat(origin, 1, { minState: 0 });
-                        } else {
-                            acted = spawnBossArmorPulse(basePulse, origin, {
-                                anyBoardChance: 0.70 + (ramp * 0.20),
-                                offAxisChance: 0.46 + (ramp * 0.20),
-                                spawnSize: 0
-                            });
-                        }
-                        if (acted <= 0) acted = spawnBossArmorPulse(3 + (ramp > 0.5 ? 1 : 0), origin, {
-                            anyBoardChance: 1.0,
-                            offAxisChance: 0.66 + (ramp * 0.16),
-                            spawnSize: 0
-                        });
-                    } else {
-                        const pulseCount = (Math.random() < 0.55) ? 2 : 1;
-                        acted = spawnBossArmorPulse(pulseCount, origin, { anyBoardChance: 0.78, offAxisChance: 0.72 });
-                        if (acted <= 0) acted = applyBoss20ArmorThreat(origin, 2);
-                    }
-                } else {
-                    maybeActivateBoss20HeroMark(origin);
-                    const modeRoll = Math.random();
-                    if (modeRoll < 0.34) {
-                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.92, offAxisChance: 0.58 });
-                    } else if (modeRoll < 0.67) {
-                        acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 0.90, offAxisChance: 0.54 }) + applyBoss20ArmorThreat(origin, 1);
-                    } else {
-                        acted = spawnBossArmorPulse(3, origin, { anyBoardChance: 0.96, offAxisChance: 0.64 }) + applyBoss20ArmorThreat(origin, 1);
-                    }
-                    if (acted <= 0) acted = spawnBossArmorPulse(2, origin, { anyBoardChance: 1.0, offAxisChance: 0.72 });
-                }
-                const fueled = ensureBossBoardFuel(20, origin, {
-                    phaseContext: { phase, desperation: (phase === 2) && isBoss20Phase2DesperationActive() }
-                });
-                if (fueled > 0) acted += fueled;
-                if (phase >= 3 || (boss20State && boss20State.finalFormActive)) {
-                    const healed = maybeApplyBoss20Phase3Regen(origin);
-                    if (healed > 0) acted += 1;
-                    const drained = maybeApplyBoss20Phase3ClickDrain(origin);
-                    if (drained > 0) acted += 1;
-                }
-                if (acted > 0) {
-                    boss20State.actionCounter = Math.max(0, Number(boss20State.actionCounter) || 0) + 1;
-                }
-                return acted;
+                return performBoss20SpawnAction(origin, phase);
             }
 
             function ensureBoss20PhaseTimer() {
@@ -11294,7 +11409,7 @@ function showInterceptionGridMockPopup(opts = {}) {
                     }
                     if (boss20State.phase >= 3 || boss20State.finalFormActive) {
                         try {
-                            const healed = maybeApplyBoss20Phase3Regen(idx);
+                            const healed = triggerBoss20Phase3Regen(idx);
                             if (healed > 0) {
                                 const refreshedMeta = specialMetaState[idx] || meta;
                                 meta.hp = Math.max(0, Number(refreshedMeta.hp) || Number(meta.hp) || 0);
@@ -13441,6 +13556,10 @@ function showInterceptionGridMockPopup(opts = {}) {
                     }
                     // Keep input locked while level-20 boss cinematics/transitions are active.
                     if (isEpicBoss20Level() && boss20State && boss20State.inCinematic) {
+                        inputLocked = true;
+                        return;
+                    }
+                    if (boss20Phase3RegenPending) {
                         inputLocked = true;
                         return;
                     }
